@@ -10,9 +10,11 @@ describe Parametric do
     let(:klass) do
       Class.new do
         include Parametric
+        param :name, 'name'
         param :page, 'page number', default: 1
         param :per_page, 'items per page', default: 50
         param :status, 'status', options: ['one', 'two', 'three'], multiple: true
+        param :piped_status, 'status with pipes', multiple: true, separator: '|'
         param :country, 'country', options: ['UK', 'CL', 'JPN']
         param :email, 'email', match: /\w+@\w+\.\w+/
         param :emails, 'emails', match: /\w+@\w+\.\w+/, multiple: true, default: 'default@email.com'
@@ -42,7 +44,11 @@ describe Parametric do
         klass.new(email: 'my@email').params[:email].should be_nil
       end
 
-      it 'does not set value if :multiple values do not :match' do
+      it 'does set value if it does :match' do
+        klass.new(email: 'my@email.com').params[:email].should == 'my@email.com'
+      end
+
+      it 'only sets value for :multiple values that :match' do
         klass.new(emails: 'my@email,your,her@email.com').params[:emails].should == ['her@email.com']
       end
 
@@ -50,12 +56,16 @@ describe Parametric do
         klass.new().params[:emails].should == ['default@email.com']
       end
 
-      it 'does set value if it does :match' do
-        klass.new(email: 'my@email.com').params[:email].should == 'my@email.com'
+      it 'turns :multiple comma-separated values into arrays' do
+        klass.new(status: 'one,three').params[:status].should == ['one', 'three']
       end
 
-      it 'turns comma-separated values into arrays' do
-        klass.new(status: 'one,three').params[:status].should == ['one', 'three']
+      it 'turns :multiple separated values with custom separator into arrays' do
+        klass.new(piped_status: 'one|three').params[:piped_status].should == ['one', 'three']
+      end
+
+      it 'does not turn non-multiple comma-separated values into arrays' do
+        klass.new(name: 'foo,bar').params[:name].should == 'foo,bar'
       end
 
       it 'filters out undeclared options' do
@@ -66,12 +76,12 @@ describe Parametric do
         klass.new().params[:status].should == []
       end
 
-      it 'wraps multiple options in array' do
+      it 'wraps single multiple options in array' do
         klass.new(status: 'one').params[:status].should == ['one']
       end
 
-      it 'does not accept multiple options unless multiple == true' do
-        klass.new(country: 'UK,CL').params[:country].should == nil
+      it 'does not accept comma-separated values outside of options unless :multiple == true' do
+        klass.new(country: 'UK,CL').params[:country].should be_nil
       end
 
       it 'does accept single option' do
@@ -79,7 +89,7 @@ describe Parametric do
       end
 
       it 'does not accept single option if not in declared options' do
-        klass.new(country: 'USA').params[:country].should == nil
+        klass.new(country: 'USA').params[:country].should be_nil
       end
     end
 
