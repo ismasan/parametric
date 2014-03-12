@@ -11,6 +11,12 @@ module Parametric
     @params = _reduce(raw_params)
   end
 
+  def available_params
+    @available_params ||= params.each_with_object({}) do |(k,v),memo|
+      memo[k] = v if Utils.present?(v)
+    end
+  end
+
   protected
 
   class Policy
