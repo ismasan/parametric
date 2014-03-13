@@ -60,6 +60,10 @@ describe Parametric do
         klass.new(status: 'one,three').params[:status].should == ['one', 'three']
       end
 
+      it ':multiple values can be arrays' do
+        klass.new(status: ['one','three']).params[:status].should == ['one', 'three']
+      end
+
       it 'turns :multiple separated values with custom separator into arrays' do
         klass.new(piped_status: 'one|three').params[:piped_status].should == ['one', 'three']
       end

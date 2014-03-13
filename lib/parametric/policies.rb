@@ -30,9 +30,9 @@ module Parametric
       OPTION_SEPARATOR = /\s*,\s*/.freeze
 
       def value
-        v = decorated.value.first
-        v = v.split(options.fetch(:separator, OPTION_SEPARATOR)) if v.is_a?(String)
-        Array(v)
+        decorated.value.map do |v|
+          v.is_a?(String) ? v.split(options.fetch(:separator, OPTION_SEPARATOR)) : v
+        end.flatten
       end
     end
 
