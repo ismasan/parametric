@@ -122,12 +122,23 @@ search = OrdersSearch.new
 search.params[:status] # => ['closed']
 ```
 
+## Use cases
+
 ### In Rails
 
 ```ruby
 def index
   @search = OrdersSearch.new(params)
   @results = @search.results
+end
+```
+
+I use this along with [Oat](https://github.com/ismasan/oat) in API projects:
+
+```ruby
+def index
+  search = OrdersSearch.new(params)
+  render json: OrdersSerializer.new(search)
 end
 ```
 
