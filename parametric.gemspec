@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Parametric::VERSION
   spec.authors       = ["Ismael Celis"]
   spec.email         = ["ismaelct@gmail.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = %q{DSL for declaring allowed parameters with options, regexp patern and default values.}
+  spec.description   = %q{Useful for modelling search or form objects, white-listed query parameters and safe parameter defaults.}
   spec.homepage      = ""
   spec.license       = "MIT"
 
