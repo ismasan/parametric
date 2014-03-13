@@ -122,26 +122,6 @@ search = OrdersSearch.new
 search.params[:status] # => ['closed']
 ```
 
-## Use cases
-
-### In Rails
-
-```ruby
-def index
-  @search = OrdersSearch.new(params)
-  @results = @search.results
-end
-```
-
-I use this along with [Oat](https://github.com/ismasan/oat) in API projects:
-
-```ruby
-def index
-  search = OrdersSearch.new(params)
-  render json: OrdersSerializer.new(search)
-end
-```
-
 ## `available_params`
 
 `#available_params` returns the subset of keys that were populated (including defaults). Useful to build query strings.
@@ -186,6 +166,26 @@ order_params = OrdersParams.new(page: 2, q: 'foobar')
 order_params[:page] # => 2
 order_params[:per_page] # => 30
 order_params.each{|key, value| ... }
+```
+
+## Use cases
+
+### In Rails
+
+```ruby
+def index
+  @search = OrdersSearch.new(params)
+  @results = @search.results
+end
+```
+
+I use this along with [Oat](https://github.com/ismasan/oat) in API projects:
+
+```ruby
+def index
+  search = OrdersSearch.new(params)
+  render json: OrdersSerializer.new(search)
+end
 ```
 
 ## Installation
