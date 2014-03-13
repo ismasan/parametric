@@ -131,7 +131,7 @@ def index
 end
 ```
 
-## Available_params
+## `available_params`
 
 `#available_params` returns the subset of keys that were populated (including defaults). Useful to build query strings.
 
@@ -140,7 +140,7 @@ order_search = OrdersSearch.new(page: 2, foo: 'bar')
 order_search.available_params # => {page: 2, per_page: 50}
 ```
 
-## Schema
+## `schema`
 
 `#schema` returns a data structure including meta-data on each parameter, such as "label" and "options". Useful for building forms or self-documented Hypermedia APIs (or maybe [json-schema](http://json-schema.org/example2.html) endpoints).
 
