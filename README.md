@@ -4,7 +4,7 @@ DSL for declaring allowed parameters with options, regexp patern and default val
 
 Useful for building self-documeting APIs, search or form objects.
 
-## Examples
+## Usage
 
 Declare your parameters
 
