@@ -144,4 +144,39 @@ describe Parametric do
       end
     end
   end
+
+  describe Parametric::Hash do
+    let(:klass) do
+      Class.new do
+        include Parametric::Hash
+        param :name, 'User name'
+        param :page, 'page number', default: 1
+        param :per_page, 'items per page', default: 50
+      end
+    end
+
+    let(:subject) { klass.new(name: 'Ismael', page: 2) }
+
+    it 'quacks like a hash' do
+      subject[:name].should == 'Ismael'
+      subject[:page].should == 2
+      subject[:per_page].should == 50
+      subject.map{|k,v| k}.sort.should == [:name, :page, :per_page]
+      subject.keys.sort.should == [:name, :page, :per_page]
+      subject.values.map(&:to_s).sort.should == ['2', '50', 'Ismael']
+      subject.fetch(:page, 0).should == 2
+      subject.fetch(:foo, 0).should == 0
+      subject.merge(foo: 22).should == {name: 'Ismael', page: 2, per_page: 50, foo: 22}
+      subject.select{|k,v| k == :name}.should == {name: 'Ismael'}
+    end
+
+    it 'has #available_params' do
+      subject.available_params[:name].should == 'Ismael'
+    end
+
+    it 'has #schema' do
+      subject.schema[:name][:label].should == 'User name'
+      subject.schema[:name][:value].should == 'Ismael'
+    end
+  end
 end
