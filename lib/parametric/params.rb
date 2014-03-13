@@ -34,11 +34,11 @@ module Parametric
     def _reduce(raw_params)
       self.class._allowed_params.each_with_object({}) do |(key,options),memo|
         policy = Policies::Policy.new(raw_params[key], options)
-        policy = policy.wrap(Policies::MultiplePolicy)  if options[:multiple]
-        policy = policy.wrap(Policies::OptionsPolicy)   if options[:options]
-        policy = policy.wrap(Policies::MatchPolicy)     if options[:match]
-        policy = policy.wrap(Policies::DefaultPolicy)   if options.has_key?(:default)
-        policy = policy.wrap(Policies::SinglePolicy)    unless options[:multiple]
+        policy = policy.wrap(Policies::MultiplePolicy) if options[:multiple]
+        policy = policy.wrap(Policies::OptionsPolicy)  if options[:options]
+        policy = policy.wrap(Policies::MatchPolicy)    if options[:match]
+        policy = policy.wrap(Policies::DefaultPolicy)  if options.has_key?(:default)
+        policy = policy.wrap(Policies::SinglePolicy)   unless options[:multiple]
 
         memo[key] = policy.value
       end
