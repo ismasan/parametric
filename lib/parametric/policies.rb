@@ -1,0 +1,62 @@
+module Parametric
+  module Policies
+
+    class Policy
+      def initialize(value, options, decorated = nil)
+        @value, @options = value, options
+        @decorated = decorated
+      end
+
+      def wrap(decoratedClass)
+        decoratedClass.new(@value, @options, self)
+      end
+
+      def value
+        Array(@value)
+      end
+
+      protected
+      attr_reader :decorated, :options
+    end
+
+    class DefaultPolicy < Policy
+      def value
+        v = decorated.value
+        v.any? ? v : Array(options[:default])
+      end
+    end
+
+    class MultiplePolicy < Policy
+      OPTION_SEPARATOR = /\s*,\s*/.freeze
+
+      def value
+        v = decorated.value.first
+        v = v.split(options.fetch(:separator, OPTION_SEPARATOR)) if v.is_a?(String)
+        Array(v)
+      end
+    end
+
+    class SinglePolicy < Policy
+      def value
+        decorated.value.first
+      end
+    end
+
+    class OptionsPolicy < Policy
+      def value
+        decorated.value.each_with_object([]){|a,arr| 
+          arr << a if options[:options].include?(a)
+        }
+      end
+    end
+
+    class MatchPolicy < Policy
+      def value
+        decorated.value.each_with_object([]){|a,arr| 
+          arr << a if a.to_s =~ options[:match]
+        }
+      end
+    end
+
+  end
+end

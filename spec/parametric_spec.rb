@@ -9,8 +9,8 @@ describe Parametric do
 
     let(:klass) do
       Class.new do
-        include Parametric
-        param :name, 'name'
+        include Parametric::Params
+        param :name, 'User name'
         param :page, 'page number', default: 1
         param :per_page, 'items per page', default: 50
         param :status, 'status', options: ['one', 'two', 'three'], multiple: true
@@ -102,6 +102,45 @@ describe Parametric do
         subject.available_params[:name].should == 'lala'
         subject.available_params[:per_page].should == 20
         subject.available_params[:page].should == 1
+      end
+    end
+
+    describe '#schema' do
+      let(:subject) { klass.new(foo: 'bar', name: 'lala', per_page: 20, status: 'four') }
+
+      it 'returns full param definitions with populated value' do
+        regexp = /\w+@\w+\.\w+/.to_s
+
+        subject.schema[:name][:label].should == 'User name'
+        subject.schema[:name][:value].should == 'lala'
+
+        subject.schema[:page][:label].should == 'page number'
+        subject.schema[:page][:value].should == 1
+
+        subject.schema[:per_page][:label].should == 'items per page'
+        subject.schema[:per_page][:value].should == 20
+
+        subject.schema[:status][:label].should == 'status'
+        subject.schema[:status][:value].should == ''
+        subject.schema[:status][:options].should == ['one', 'two', 'three']
+        subject.schema[:status][:multiple].should be_true
+
+        subject.schema[:piped_status][:label].should == 'status with pipes'
+        subject.schema[:piped_status][:value].should == ''
+        subject.schema[:piped_status][:multiple].should be_true
+
+        subject.schema[:country][:label].should == 'country'
+        subject.schema[:country][:value].should == ''
+        subject.schema[:country][:options].should == ['UK', 'CL', 'JPN']
+
+        subject.schema[:email][:label].should == 'email'
+        subject.schema[:email][:value].should == ''
+        subject.schema[:email][:match].should == regexp
+
+        subject.schema[:emails][:label].should == 'emails'
+        subject.schema[:emails][:value].should == 'default@email.com'
+        subject.schema[:emails][:multiple].should be_true
+        subject.schema[:emails][:match].should == regexp
       end
     end
   end
