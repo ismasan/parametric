@@ -62,7 +62,7 @@ class OrdersSearch
 end
 ```
 
-### :match pattern
+### :match
 
 Pass a regular expression to match parameter value. Non-matching values will be ignored or use default value, if available.
 
