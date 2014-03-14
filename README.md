@@ -1,4 +1,6 @@
 # Parametric
+[![Build Status](https://travis-ci.org/ismasan/parametric.png)](https://travis-ci.org/ismasan/parametric)
+[![Gem Version](https://badge.fury.io/rb/parametric.png)](http://badge.fury.io/rb/parametric)
 
 DSL for declaring allowed parameters with options, regexp patern and default values.
 
