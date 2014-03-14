@@ -124,7 +124,7 @@ search.params[:status] # => ['closed']
 
 ## `available_params`
 
-`#available_params` returns the subset of keys that were populated (including defaults). Useful to build query strings.
+`#available_params` returns the subset of keys that were populated (including defaults). Useful for building query strings.
 
 ```ruby
 order_search = OrdersSearch.new(page: 2, foo: 'bar')
