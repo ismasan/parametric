@@ -1,5 +1,13 @@
 module Parametric
 
+  class ParamsHash < Hash
+    def flat(separator = ',')
+      self.each_with_object({}) do |(k,v),memo|
+        memo[k] = Utils.value(v, separator)
+      end
+    end
+  end
+
   module Params
 
     def self.included(base)
@@ -12,7 +20,7 @@ module Parametric
     end
 
     def available_params
-      @available_params ||= params.each_with_object({}) do |(k,v),memo|
+      @available_params ||= params.each_with_object(ParamsHash.new) do |(k,v),memo|
         memo[k] = v if Utils.present?(v)
       end
     end
@@ -32,7 +40,7 @@ module Parametric
     protected
 
     def _reduce(raw_params)
-      self.class._allowed_params.each_with_object({}) do |(key,options),memo|
+      self.class._allowed_params.each_with_object(ParamsHash.new) do |(key,options),memo|
         policy = Policies::Policy.new(raw_params[key], options)
         policy = policy.wrap(Policies::MultiplePolicy) if options[:multiple]
         policy = policy.wrap(Policies::OptionsPolicy)  if options[:options]

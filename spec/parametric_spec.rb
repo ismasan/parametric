@@ -98,14 +98,20 @@ describe Parametric do
     end
 
     describe '#available_params' do
-      let(:subject) { klass.new(foo: 'bar', name: 'lala', per_page: 20, status: 'four') }
+      let(:subject) { klass.new(foo: 'bar', name: 'lala', per_page: 20, status: 'four', emails: 'one@email.com,two@email.com') }
 
       it 'only includes declared params with values or defaults' do
         subject.available_params.keys.sort.should == [:emails, :name, :page, :per_page]
-        subject.available_params[:emails].should == ["default@email.com"]
+        subject.available_params[:emails].should == ['one@email.com', 'two@email.com']
         subject.available_params[:name].should == 'lala'
         subject.available_params[:per_page].should == 20
         subject.available_params[:page].should == 1
+      end
+
+      describe '#flat' do
+        it 'joins values back' do
+          subject.available_params.flat[:emails].should == 'one@email.com,two@email.com'
+        end
       end
     end
 

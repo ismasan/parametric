@@ -1,10 +1,10 @@
 module Parametric
   module Utils
-    def self.value(val)
+    def self.value(val, separator = ',')
       if val.nil?
         ''
       elsif val.is_a?(Array)
-        val.join(',')
+        val.join(separator)
       else
         val
       end
