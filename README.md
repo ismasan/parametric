@@ -151,18 +151,6 @@ order_search.schema[:status].multiple # => true
 order_search.schema[:status].default # => 'closed'
 ```
 
-```ruby
-order_search.schema # =>
-
-{
-  q: {label: 'Full text search query', value: ''},
-  page: {label: 'Page number', value: 1},
-  per_page: {label: 'Items per page', value: 30},
-  status: {label: 'Order status', value: '', options: ['checkout', 'pending', 'closed', 'shipped'], multiple: true},
-  sort: {label: 'Sort', value: 'updated_on-desc', options: ['updated_on-desc', 'updated_on-asc']}
-}
-```
-
 ## Parametric::Hash
 
 The alternative `Parametric::Hash` class makes your objects quack like a hash, instead of exposing the `#params` object directly.
