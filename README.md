@@ -138,6 +138,20 @@ order_search.available_params # => {page: 2, per_page: 50}
 `#schema` returns a data structure including meta-data on each parameter, such as "label" and "options". Useful for building forms or self-documented Hypermedia APIs (or maybe [json-schema](http://json-schema.org/example2.html) endpoints).
 
 ```ruby
+order_search.schema[:q].label # => 'Full text search query'
+order_search.schema[:q].value # => ''
+
+order_search.schema[:page].label # => 'Page number'
+order_search.schema[:page].value # => 1
+
+order_search.schema[:status].label # => 'Order status'
+order_search.schema[:status].value # => ['pending']
+order_search.schema[:status].options # => ['checkout', 'pending', 'closed', 'shipped']
+order_search.schema[:status].multiple # => true
+order_search.schema[:status].default # => 'closed'
+```
+
+```ruby
 order_search.schema # =>
 
 {
@@ -151,11 +165,10 @@ order_search.schema # =>
 
 ## Parametric::Hash
 
-The alternative `Parametric::Hash` module makes your objects quack like a hash, instead of exposing the `#params` object directly.
+The alternative `Parametric::Hash` class makes your objects quack like a hash, instead of exposing the `#params` object directly.
 
 ```ruby
-class OrdersParams
-  include Parametric::Hash
+class OrdersParams < Parametric::Hash
   param :q, 'Full text search query'
   param :page, 'Page number', default: 1
   param :per_page, 'Items per page', default: 30
@@ -170,9 +183,47 @@ order_params[:per_page] # => 30
 order_params.each{|key, value| ... }
 ```
 
+## Nested structures
+
+You can also nest parameter definitions. This is useful if you need to model POST payloads, for example.
+
+```ruby
+class AccountPayload
+  include Parametric::Params
+  param :status, 'Account status', default: 'pending', options: ['pending', 'active', 'cancelled']
+  param :users, 'Users in this account', multiple: true do
+    param :name, 'User name'
+    param :title, 'Job title', default: 'Employee'
+    param :email, 'User email', match: /\w+@\w+\.\w+/
+  end
+  param :owner, 'Owner user' do
+    param :name, 'User name'
+    param :email, 'User email', match: /\w+@\w+\.\w+/
+  end
+end
+```
+
+The example above expects a data structure like the following:
+
+```ruby
+{
+  status: 'active',
+  users: [
+    {name: 'Joe Bloggs', email: 'joe@bloggs.com'},
+    {name: 'jane Bloggs', email: 'jane@bloggs.com', title: 'CEO'}
+  ],
+  owner: {
+    name: 'Olivia Owner',
+    email: 'olivia@owner.com'
+  }
+}
+```
+
 ## Use cases
 
 ### In Rails
+
+You can use one-level param definitions in GET actions
 
 ```ruby
 def index
@@ -187,6 +238,29 @@ I use this along with [Oat](https://github.com/ismasan/oat) in API projects:
 def index
   search = OrdersSearch.new(params)
   render json: OrdersSerializer.new(search)
+end
+```
+
+You can use nested definitions on POST/PUT actions, for example as part of your own strategy objects.
+
+```ruby
+def create
+  @payload = AccountPayload.new(params)
+  if @payload.save
+    render json: AccountSerializer.new(@payload.order)
+  else
+    render json: ErrorSerializer.new(@payload.errors), status: 422
+  end
+end
+```
+
+You can also use the `#schema` metadata to build Hypermedia "actions" or forms.
+
+```ruby
+# /accounts/new.json
+def new
+  @payload = AccountPayload.new
+  render json: JsonSchemaSerializer.new(@payload.schema)
 end
 ```
 

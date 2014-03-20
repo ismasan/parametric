@@ -12,7 +12,7 @@ module Parametric
       end
 
       def value
-        Array(@value)
+        [@value].flatten
       end
 
       protected
@@ -33,6 +33,14 @@ module Parametric
         decorated.value.map do |v|
           v.is_a?(String) ? v.split(options.fetch(:separator, OPTION_SEPARATOR)) : v
         end.flatten
+      end
+    end
+
+    class NestedPolicy < Policy
+      def value
+        decorated.value.map do |v|
+          options[:nested].new(v)
+        end
       end
     end
 

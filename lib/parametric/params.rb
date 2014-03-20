@@ -1,3 +1,4 @@
+require 'ostruct'
 module Parametric
 
   class ParamsHash < Hash
@@ -21,19 +22,19 @@ module Parametric
 
     def available_params
       @available_params ||= params.each_with_object(ParamsHash.new) do |(k,v),memo|
-        memo[k] = v if Utils.present?(v)
+        if Utils.present?(v)
+          memo[k] = v.respond_to?(:available_params) ? v.available_params : v
+        end
       end
     end
 
     def schema
       @schema ||= params.each_with_object({}) do |(k,v),memo|
-        memo[k] = {
-          value: Utils.value(v),
-          label: self.class._allowed_params[k][:label],
-          multiple: !!self.class._allowed_params[k][:multiple]
-        }
-        memo[k][:match] = self.class._allowed_params[k][:match].to_s if self.class._allowed_params[k].has_key?(:match)
-        memo[k][:options] = self.class._allowed_params[k][:options] if self.class._allowed_params[k].has_key?(:options)
+        is_nested = v.kind_of?(Parametric::Hash)
+        attrs = self.class._allowed_params[k].dup
+        attrs[:value] = is_nested ? v : Utils.value(v)
+        attrs[:schema] = v.schema if is_nested
+        memo[k] = OpenStruct.new(attrs)
       end
     end
 
@@ -41,13 +42,13 @@ module Parametric
 
     def _reduce(raw_params)
       self.class._allowed_params.each_with_object(ParamsHash.new) do |(key,options),memo|
-        policy = Policies::Policy.new(raw_params[key], options)
+        policy = Policies::Policy.new((raw_params.has_key?(key) ? raw_params[key] : []), options)
+        policy = policy.wrap(Policies::NestedPolicy)   if options[:nested]
         policy = policy.wrap(Policies::MultiplePolicy) if options[:multiple]
         policy = policy.wrap(Policies::OptionsPolicy)  if options[:options]
         policy = policy.wrap(Policies::MatchPolicy)    if options[:match]
         policy = policy.wrap(Policies::DefaultPolicy)  if options.has_key?(:default)
         policy = policy.wrap(Policies::SinglePolicy)   unless options[:multiple]
-
         memo[key] = policy.value
       end
     end
@@ -57,8 +58,13 @@ module Parametric
         @allowed_params ||= {}
       end
 
-      def param(field_name, label = '', opts = {})
+      def param(field_name, label = '', opts = {}, &block)
         opts[:label] = label
+        if block_given?
+          nested = Class.new(Parametric::Hash)
+          nested.instance_eval &block
+          opts[:nested] = nested
+        end
         _allowed_params[field_name] = opts
       end
     end
