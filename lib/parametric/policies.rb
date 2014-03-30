@@ -44,6 +44,14 @@ module Parametric
       end
     end
 
+    class CoercePolicy < Policy
+      def value
+        decorated.value.map do |v|
+          v.respond_to?(options[:coerce]) ? v.send(options[:coerce]) : v
+        end
+      end
+    end
+
     class SinglePolicy < Policy
       def value
         decorated.value.first

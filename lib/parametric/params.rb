@@ -43,6 +43,7 @@ module Parametric
     def _reduce(raw_params)
       self.class._allowed_params.each_with_object(ParamsHash.new) do |(key,options),memo|
         policy = Policies::Policy.new((raw_params.has_key?(key) ? raw_params[key] : []), options)
+        policy = policy.wrap(Policies::CoercePolicy)   if options[:coerce]
         policy = policy.wrap(Policies::NestedPolicy)   if options[:nested]
         policy = policy.wrap(Policies::MultiplePolicy) if options[:multiple]
         policy = policy.wrap(Policies::OptionsPolicy)  if options[:options]
@@ -66,6 +67,18 @@ module Parametric
           opts[:nested] = nested
         end
         _allowed_params[field_name] = opts
+      end
+
+      def integer(field_name, label = '', opts = {}, &block)
+        param(field_name, label, opts.merge(coerce: :to_i), &block)
+      end
+
+      def string(field_name, label = '', opts = {}, &block)
+        param(field_name, label, opts.merge(coerce: :to_s), &block)
+      end
+
+      def array(field_name, label = '', opts = {}, &block)
+        param(field_name, label, opts.merge(multiple: true), &block)
       end
     end
 
