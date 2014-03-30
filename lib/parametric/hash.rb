@@ -28,7 +28,9 @@ module Parametric
       :select!,
       :delete,
       :store,
-      :inspect
+      :inspect,
+      :stringify_keys,
+      :symbolize_keys
     )
 
   end
