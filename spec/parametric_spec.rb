@@ -42,8 +42,20 @@ describe Parametric do
       klass.new(status: 'one,three').params[:status].should == ['one', 'three']
     end
 
+    it 'does set value if it does :match' do
+      klass.new(email: 'my@email.com').params[:email].should == 'my@email.com'
+    end
+
     it ':multiple values can be arrays' do
       klass.new(status: ['one','three']).params[:status].should == ['one', 'three']
+    end
+
+    it 'defaults work for false values' do
+      klass.new(email: 'my@email').params[:email].should be_nil
+    end
+
+    it 'does set value if it does :match' do
+      klass.new(available: false).params[:available].should be_false
     end
 
     it 'turns :multiple separated values with custom separator into arrays' do
@@ -111,6 +123,7 @@ describe Parametric do
         param :country, 'country', options: ['UK', 'CL', 'JPN']
         param :email, 'email', match: /\w+@\w+\.\w+/
         param :emails, 'emails', match: /\w+@\w+\.\w+/, multiple: true, default: 'default@email.com'
+        param :available, 'available', default: true
       end
     end
 
@@ -123,7 +136,7 @@ describe Parametric do
       let(:subject) { klass.new(foo: 'bar', name: 'lala', per_page: 20, status: 'four', emails: 'one@email.com,two@email.com') }
 
       it 'only includes declared params with values or defaults' do
-        subject.available_params.keys.sort.should == [:emails, :name, :page, :per_page]
+        subject.available_params.keys.sort.should == [:available, :emails, :name, :page, :per_page]
         subject.available_params[:emails].should == ['one@email.com', 'two@email.com']
         subject.available_params[:name].should == 'lala'
         subject.available_params[:per_page].should == 20

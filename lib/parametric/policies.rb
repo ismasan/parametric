@@ -22,7 +22,7 @@ module Parametric
     class DefaultPolicy < Policy
       def value
         v = decorated.value
-        v.any? ? v : Array(options[:default])
+        v.size > 0 ? v : Array(options[:default])
       end
     end
 
