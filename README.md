@@ -57,7 +57,7 @@ class OrdersSearch
 
   def results
     query = Order.sort(params[:sort])
-    query = query.where(["code LIKE ? OR user_name ?", params[:q]]) if params[:q]
+    query = query.where(["code LIKE ? OR user_name LIKE ?", params[:q]]) if params[:q]
     query = query.where(status: params[:status]) if params[:status].any?
     query = query.paginate(page: params[:page], per_page: params[:per_page])
   end
