@@ -172,6 +172,7 @@ search.available_params[:name] # => 'Mr. Ismael'
 
 The `Parametric::TypedParams` module includes extra DSL methods to coerce values to standard Ruby types.
 
+```ruby
 class UsersSearch
   include Parametric::TypedParams
   integer :age, 'User age'
@@ -180,6 +181,7 @@ class UsersSearch
   # you can still use :coerce
   param :name, 'User name', coerce: lambda{|name| "Mr. #{name}"}
 end
+```
 
 ## Parametric::Hash
 
