@@ -151,6 +151,36 @@ order_search.schema[:status].multiple # => true
 order_search.schema[:status].default # => 'closed'
 ```
 
+## Coercing values
+
+Param definitions take an optional `:coerce` option with a symbol or proc to coerce resulting values.
+
+```ruby
+class UsersSearch
+  include Parametric::Params
+  param :age, 'User age', coerce: :to_i
+  param :name, 'User name', coerce: lambda{|name| "Mr. #{name}"}
+end
+
+search = UsersSearch.new(age: '36', name: 'Ismael')
+
+search.available_params[:age] # => 36
+search.available_params[:name] # => 'Mr. Ismael'
+```
+
+### Parametric::TypedParams
+
+The `Parametric::TypedParams` module includes extra DSL methods to coerce values to standard Ruby types.
+
+class UsersSearch
+  include Parametric::TypedParams
+  integer :age, 'User age'
+  array :accounts
+  string :country_code
+  # you can still use :coerce
+  param :name, 'User name', coerce: lambda{|name| "Mr. #{name}"}
+end
+
 ## Parametric::Hash
 
 The alternative `Parametric::Hash` class makes your objects quack like a hash, instead of exposing the `#params` object directly.
@@ -158,9 +188,9 @@ The alternative `Parametric::Hash` class makes your objects quack like a hash, i
 ```ruby
 class OrdersParams < Parametric::Hash
   param :q, 'Full text search query'
-  param :page, 'Page number', default: 1
-  param :per_page, 'Items per page', default: 30
-  param :status, 'Order status', options: ['checkout', 'pending', 'closed', 'shipped'], multiple: true
+  integer :page, 'Page number', default: 1
+  integer :per_page, 'Items per page', default: 30
+  array :status, 'Order status', options: ['checkout', 'pending', 'closed', 'shipped']
 end
 ```
 

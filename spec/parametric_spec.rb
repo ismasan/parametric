@@ -91,10 +91,10 @@ describe Parametric do
     end
   end
 
-  describe 'DSL' do
+  describe 'TypedParams' do
     let(:klass) do
       Class.new do
-        include Parametric::Params
+        include Parametric::TypedParams
         string :name, 'User name'
         integer :page, 'page number', default: 1
         integer :per_page, 'items per page', default: 50
@@ -116,8 +116,8 @@ describe Parametric do
       Class.new do
         include Parametric::Params
         param :name, 'User name'
-        param :page, 'page number', default: 1
-        param :per_page, 'items per page', default: 50
+        param :page, 'page number', default: 1, coerce: :to_i
+        param :per_page, 'items per page', default: 50, coerce: lambda{|value| value.to_i}
         param :status, 'status', options: ['one', 'two', 'three'], multiple: true
         param :piped_status, 'status with pipes', multiple: true, separator: '|'
         param :country, 'country', options: ['UK', 'CL', 'JPN']
@@ -141,6 +141,16 @@ describe Parametric do
         subject.available_params[:name].should == 'lala'
         subject.available_params[:per_page].should == 20
         subject.available_params[:page].should == 1
+      end
+
+      describe ':coerce option' do
+        it 'accepts method_name as a symbol' do
+          klass.new(page: '10').available_params[:page].should == 10
+        end
+
+        it 'accepts a proc' do
+          klass.new(per_page: '10').available_params[:per_page].should == 10
+        end
       end
 
       describe '#flat' do
@@ -193,8 +203,8 @@ describe Parametric do
   describe Parametric::Hash do
     let(:klass) do
       Class.new(Parametric::Hash) do
-        param :name, 'User name'
-        param :page, 'page number', default: 1
+        string :name, 'User name'
+        integer :page, 'page number', default: 1
         param :per_page, 'items per page', default: 50
       end
     end

@@ -68,18 +68,6 @@ module Parametric
         end
         _allowed_params[field_name] = opts
       end
-
-      def integer(field_name, label = '', opts = {}, &block)
-        param(field_name, label, opts.merge(coerce: :to_i), &block)
-      end
-
-      def string(field_name, label = '', opts = {}, &block)
-        param(field_name, label, opts.merge(coerce: :to_s), &block)
-      end
-
-      def array(field_name, label = '', opts = {}, &block)
-        param(field_name, label, opts.merge(multiple: true), &block)
-      end
     end
 
   end

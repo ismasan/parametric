@@ -47,7 +47,13 @@ module Parametric
     class CoercePolicy < Policy
       def value
         decorated.value.map do |v|
-          v.respond_to?(options[:coerce]) ? v.send(options[:coerce]) : v
+          if options[:coerce].is_a?(Symbol) && v.respond_to?(options[:coerce])
+            v.send(options[:coerce])
+          elsif options[:coerce].respond_to?(:call)
+            options[:coerce].call v
+          else
+            v
+          end
         end
       end
     end
