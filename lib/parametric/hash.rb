@@ -1,7 +1,7 @@
 require 'forwardable'
 module Parametric
   class Hash
-    include Params
+    include TypedParams
     include Enumerable
     extend ::Forwardable
     def_delegators(:params,

@@ -43,6 +43,7 @@ module Parametric
     def _reduce(raw_params)
       self.class._allowed_params.each_with_object(ParamsHash.new) do |(key,options),memo|
         policy = Policies::Policy.new((raw_params.has_key?(key) ? raw_params[key] : []), options)
+        policy = policy.wrap(Policies::CoercePolicy)   if options[:coerce]
         policy = policy.wrap(Policies::NestedPolicy)   if options[:nested]
         policy = policy.wrap(Policies::MultiplePolicy) if options[:multiple]
         policy = policy.wrap(Policies::OptionsPolicy)  if options[:options]
