@@ -80,5 +80,12 @@ module Parametric
       end
     end
 
+    class ValidatorPolicy < Policy
+      def value
+        decorated.value.each_with_object([]){|a,arr|
+          arr << a if options[:validator].call(a)
+        }
+      end
+    end
   end
 end
