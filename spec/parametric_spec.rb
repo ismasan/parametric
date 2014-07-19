@@ -89,6 +89,14 @@ describe Parametric do
     it 'does not accept single option if not in declared options' do
       klass.new(country: 'USA').params[:country].should be_nil
     end
+
+    it 'accepts value if validator returns true' do
+      klass.new(even_number: 2).params[:even_number].should == 2
+    end
+
+    it 'does not accept value if validator returns false' do
+      klass.new(even_number: 3).params[:even_number].should == nil
+    end
   end
 
   describe 'TypedParams' do
@@ -103,6 +111,7 @@ describe Parametric do
         string :country, 'country', options: ['UK', 'CL', 'JPN']
         string :email, 'email', match: /\w+@\w+\.\w+/
         array :emails, 'emails', match: /\w+@\w+\.\w+/, default: 'default@email.com'
+        integer :even_number, 'even number', validator: ->(n) { n.even? }
       end
     end
 
@@ -124,6 +133,7 @@ describe Parametric do
         param :email, 'email', match: /\w+@\w+\.\w+/
         param :emails, 'emails', match: /\w+@\w+\.\w+/, multiple: true, default: 'default@email.com'
         param :available, 'available', default: true
+        param :even_number, 'even number', validator: ->(n) { n.even? }
       end
     end
 
@@ -196,6 +206,9 @@ describe Parametric do
         subject.schema[:emails].value.should == 'default@email.com'
         subject.schema[:emails].multiple.should be_true
         subject.schema[:emails].match.should == regexp
+
+        subject.schema[:even_number].label.should == 'even number'
+        subject.schema[:even_number].value.should == ''
       end
     end
   end

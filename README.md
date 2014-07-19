@@ -86,6 +86,17 @@ class OrdersSearch
 end
 ```
 
+### :validator
+
+Pass a validator proc or lambda which will be called with the supplied value. Values for which true is returned will be allowed. Values for which false is returned will be ignored, or the default used if available.
+
+```ruby
+class OrdersSearch
+  include Parametric::Params
+  param :shoe_count, 'Number of shoes', validator: ->(n) { n.even? }, default: 2
+end
+```
+
 ### :multiple values
 
 `:multiple` values are separated on "," and treated as arrays.
