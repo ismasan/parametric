@@ -89,6 +89,10 @@ describe Parametric do
     it 'does not accept single option if not in declared options' do
       klass.new(country: 'USA').params[:country].should be_nil
     end
+
+    it 'does not include parameters marked as :nullable' do
+      klass.new.params.has_key?(:nullable).should be_false
+    end
   end
 
   describe 'TypedParams' do
@@ -103,6 +107,7 @@ describe Parametric do
         string :country, 'country', options: ['UK', 'CL', 'JPN']
         string :email, 'email', match: /\w+@\w+\.\w+/
         array :emails, 'emails', match: /\w+@\w+\.\w+/, default: 'default@email.com'
+        param :nullable, 'nullable param', nullable: true
       end
     end
 
@@ -124,6 +129,7 @@ describe Parametric do
         param :email, 'email', match: /\w+@\w+\.\w+/
         param :emails, 'emails', match: /\w+@\w+\.\w+/, multiple: true, default: 'default@email.com'
         param :available, 'available', default: true
+        param :nullable, 'nullable param', nullable: true
       end
     end
 

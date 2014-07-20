@@ -50,7 +50,7 @@ module Parametric
         policy = policy.wrap(Policies::MatchPolicy)    if options[:match]
         policy = policy.wrap(Policies::DefaultPolicy)  if options.has_key?(:default)
         policy = policy.wrap(Policies::SinglePolicy)   unless options[:multiple]
-        memo[key] = policy.value
+        memo[key] = policy.value unless options[:nullable] && !raw_params.has_key?(key)
       end
     end
 
