@@ -124,6 +124,23 @@ search = OrdersSearch.new
 search.params[:status] # => ['closed']
 ```
 
+### :nullable fields
+
+In same cases you won't want Parametric to provide nil or empty keys for attributes missing from the input. For example when missing keys has special meaning in your application.
+
+In those cases you can add the `:nullable` option to said param definitions:
+
+```ruby
+class OrdersSearch
+  include Parametric::Params
+  param :query, 'Search query. optional', nullable: true
+  param :tags, 'Tags', multiple: true
+end
+
+search = OrdersSearch.new({})
+search.params # {tags: []}
+```
+
 ## `available_params`
 
 `#available_params` returns the subset of keys that were populated (including defaults). Useful for building query strings.
