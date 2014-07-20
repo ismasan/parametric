@@ -138,6 +138,12 @@ describe Parametric do
       it_should_behave_like 'a configurable params object'
     end
 
+    describe 'subclassing' do
+      let(:subclass){ Class.new(klass) }
+      let(:subject){ subclass.new(foo: 'bar', per_page: 20, status: 'four') }
+      it_should_behave_like 'a configurable params object'
+    end
+
     describe '#available_params' do
       let(:subject) { klass.new(foo: 'bar', name: 'lala', per_page: 20, status: 'four', emails: 'one@email.com,two@email.com') }
 
