@@ -38,7 +38,7 @@ module Parametric
 
     class NestedPolicy < Policy
       def value
-        decorated.value.map do |v|
+        decorated.value.find_all{|v| v.respond_to?(:has_key?)}.map do |v|
           options[:nested].new(v)
         end
       end

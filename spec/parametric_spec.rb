@@ -113,6 +113,19 @@ describe Parametric do
 
     let(:subject) { klass.new(foo: 'bar', per_page: '20', status: 'four') }
     it_should_behave_like 'a configurable params object'
+
+    it 'does not break when value is nil' do
+      klass = Class.new do
+        include Parametric::TypedParams
+        array :friends, 'friends', nullable: true do
+          string :name, 'Name'
+        end
+      end
+      klass.new(friends: nil).params[:friends].should == []
+      klass.new(friends: []).params[:friends].should == []
+      klass.new(friends: [{name: 'foo'}]).params[:friends].first[:name].should == 'foo'
+      klass.new.params.has_key?(:friends).should be_false
+    end
   end
 
   describe Parametric::Params do
