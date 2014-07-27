@@ -1,4 +1,5 @@
 require 'ostruct'
+require 'support/class_attribute'
 module Parametric
 
   class ParamsHash < Hash
@@ -13,6 +14,8 @@ module Parametric
 
     def self.included(base)
       base.send(:attr_reader, :params)
+      base.class_attribute :_allowed_params
+      base._allowed_params = {}
       base.extend DSL
     end
 
@@ -55,8 +58,14 @@ module Parametric
     end
 
     module DSL
-      def _allowed_params
-        @allowed_params ||= {}
+
+      # When subclasses params definitions
+      # we want to copy parent class definitions
+      # so changes in the child class
+      # don't mutate the parent definitions
+      #
+      def inherited(subclass)
+        subclass._allowed_params = self._allowed_params.dup
       end
 
       def param(field_name, label = '', opts = {}, &block)
