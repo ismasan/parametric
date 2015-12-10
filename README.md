@@ -126,7 +126,7 @@ search.params[:status] # => ['closed']
 
 ### :nullable fields
 
-In same cases you won't want Parametric to provide nil or empty keys for attributes missing from the input. For example when missing keys has special meaning in your application.
+In some cases you won't want Parametric to provide nil or empty keys for attributes missing from the input. For example when missing keys have special meaning in your application.
 
 In those cases you can add the `:nullable` option to said param definitions:
 
