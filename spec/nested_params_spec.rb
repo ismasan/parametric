@@ -49,15 +49,15 @@ describe Parametric do
 
     describe '#params' do
       it 'filters nested objects' do
-        expect(subject.params.has_key?(:foo)).to be_false
+        expect(subject.params.has_key?(:foo)).to be_falsey
         expect(subject.params[:name]).to eql('user1')
         expect(subject.params[:account][:name]).to eql('account1')
-        expect(subject.params[:account].has_key?(:lala)).to be_false
+        expect(subject.params[:account].has_key?(:lala)).to be_falsey
         expect(subject.params[:account][:admin][:name]).to eql('Joe Bloggs')
       end
 
       it 'nullifies nested objects that were not passed' do
-        expect(subject.params[:account].has_key?(:shop)).to be_true
+        expect(subject.params[:account].has_key?(:shop)).to be_truthy
         expect(subject.params[:account][:shop]).to be_nil
       end
       
@@ -74,8 +74,8 @@ describe Parametric do
 
     describe '#available_params' do
       it 'does not include key for nested objects that were not passed' do
-        expect(subject.available_params.has_key?(:lala)).to be_false
-        expect(subject.available_params[:account].has_key?(:shop)).to be_false
+        expect(subject.available_params.has_key?(:lala)).to be_falsey
+        expect(subject.available_params[:account].has_key?(:shop)).to be_falsey
       end
     end
 

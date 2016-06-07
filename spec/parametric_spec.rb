@@ -2,96 +2,96 @@ require 'spec_helper'
 
 describe Parametric do
   it 'should have a version number' do
-    Parametric::VERSION.should_not be_nil
+    expect(Parametric::VERSION).not_to be_nil
   end
 
   shared_examples 'a configurable params object' do
     it 'ignores undeclared fields' do
-      subject.params.has_key?(:foo).should be_false
+      expect(subject.params.has_key?(:foo)).to be_falsey
     end
 
     it 'sets passed values' do
-      subject.params[:per_page].should == 20
+      expect(subject.params[:per_page]).to eq(20)
     end
 
     it 'uses defaults if no value passed' do
-      subject.params[:page].should == 1
+      expect(subject.params[:page]).to eq(1)
     end
 
     it 'does not set value if outside of declared options' do
-      subject.params[:status].should == []
+      expect(subject.params[:status]).to eq([])
     end
 
     it 'does not set value if it does not :match' do
-      klass.new(email: 'my@email').params[:email].should be_nil
+      expect(klass.new(email: 'my@email').params[:email]).to be_nil
     end
 
     it 'does set value if it does :match' do
-      klass.new(email: 'my@email.com').params[:email].should == 'my@email.com'
+      expect(klass.new(email: 'my@email.com').params[:email]).to eq('my@email.com')
     end
 
     it 'only sets value for :multiple values that :match' do
-      klass.new(emails: 'my@email,your,her@email.com').params[:emails].should == ['her@email.com']
+      expect(klass.new(emails: 'my@email,your,her@email.com').params[:emails]).to eq(['her@email.com'])
     end
 
     it 'returns :default wrapped in array if :multiple' do
-      klass.new().params[:emails].should == ['default@email.com']
+      expect(klass.new().params[:emails]).to eq(['default@email.com'])
     end
 
     it 'turns :multiple comma-separated values into arrays' do
-      klass.new(status: 'one,three').params[:status].should == ['one', 'three']
+      expect(klass.new(status: 'one,three').params[:status]).to eq(['one', 'three'])
     end
 
     it 'does set value if it does :match' do
-      klass.new(email: 'my@email.com').params[:email].should == 'my@email.com'
+      expect(klass.new(email: 'my@email.com').params[:email]).to eq('my@email.com')
     end
 
     it ':multiple values can be arrays' do
-      klass.new(status: ['one','three']).params[:status].should == ['one', 'three']
+      expect(klass.new(status: ['one','three']).params[:status]).to eq(['one', 'three'])
     end
 
     it 'defaults work for false values' do
-      klass.new(email: 'my@email').params[:email].should be_nil
+      expect(klass.new(email: 'my@email').params[:email]).to be_nil
     end
 
     it 'does set value if it does :match' do
-      klass.new(available: false).params[:available].should be_false
+      expect(klass.new(available: false).params[:available]).to be_falsey
     end
 
     it 'turns :multiple separated values with custom separator into arrays' do
-      klass.new(piped_status: 'one|three').params[:piped_status].should == ['one', 'three']
+      expect(klass.new(piped_status: 'one|three').params[:piped_status]).to eq(['one', 'three'])
     end
 
     it 'does not turn non-multiple comma-separated values into arrays' do
-      klass.new(name: 'foo,bar').params[:name].should == 'foo,bar'
+      expect(klass.new(name: 'foo,bar').params[:name]).to eq('foo,bar')
     end
 
     it 'filters out undeclared options' do
-      klass.new(status: 'one,three,fourteen').params[:status].should == ['one', 'three']
+      expect(klass.new(status: 'one,three,fourteen').params[:status]).to eq(['one', 'three'])
     end
 
     it 'defaults empty multiple options to empty array' do
-      klass.new().params[:status].should == []
+      expect(klass.new().params[:status]).to eq([])
     end
 
     it 'wraps single multiple options in array' do
-      klass.new(status: 'one').params[:status].should == ['one']
+      expect(klass.new(status: 'one').params[:status]).to eq(['one'])
     end
 
     it 'does not accept comma-separated values outside of options unless :multiple == true' do
-      klass.new(country: 'UK,CL').params[:country].should be_nil
+      expect(klass.new(country: 'UK,CL').params[:country]).to be_nil
     end
 
     it 'does accept single option' do
-      klass.new(country: 'UK').params[:country].should == 'UK'
+      expect(klass.new(country: 'UK').params[:country]).to eq('UK')
     end
 
     it 'does not accept single option if not in declared options' do
-      klass.new(country: 'USA').params[:country].should be_nil
+      expect(klass.new(country: 'USA').params[:country]).to be_nil
     end
 
     it 'does not include parameters marked as :nullable' do
-      klass.new.params.has_key?(:nullable).should be_false
+      expect(klass.new.params.has_key?(:nullable)).to be_falsey
     end
   end
 
@@ -121,10 +121,10 @@ describe Parametric do
           string :name, 'Name'
         end
       end
-      klass.new(friends: nil).params[:friends].should == []
-      klass.new(friends: []).params[:friends].should == []
-      klass.new(friends: [{name: 'foo'}]).params[:friends].first[:name].should == 'foo'
-      klass.new.params.has_key?(:friends).should be_false
+      expect(klass.new(friends: nil).params[:friends]).to eq([])
+      expect(klass.new(friends: []).params[:friends]).to eq([])
+      expect(klass.new(friends: [{name: 'foo'}]).params[:friends].first[:name]).to eq('foo')
+      expect(klass.new.params.has_key?(:friends)).to be_falsey
     end
   end
 
@@ -161,26 +161,26 @@ describe Parametric do
       let(:subject) { klass.new(foo: 'bar', name: 'lala', per_page: 20, status: 'four', emails: 'one@email.com,two@email.com') }
 
       it 'only includes declared params with values or defaults' do
-        subject.available_params.keys.sort.should == [:available, :emails, :name, :page, :per_page]
-        subject.available_params[:emails].should == ['one@email.com', 'two@email.com']
-        subject.available_params[:name].should == 'lala'
-        subject.available_params[:per_page].should == 20
-        subject.available_params[:page].should == 1
+        expect(subject.available_params.keys.sort).to eq([:available, :emails, :name, :page, :per_page])
+        expect(subject.available_params[:emails]).to eq(['one@email.com', 'two@email.com'])
+        expect(subject.available_params[:name]).to eq('lala')
+        expect(subject.available_params[:per_page]).to eq(20)
+        expect(subject.available_params[:page]).to eq(1)
       end
 
       describe ':coerce option' do
         it 'accepts method_name as a symbol' do
-          klass.new(page: '10').available_params[:page].should == 10
+          expect(klass.new(page: '10').available_params[:page]).to eq(10)
         end
 
         it 'accepts a proc' do
-          klass.new(per_page: '10').available_params[:per_page].should == 10
+          expect(klass.new(per_page: '10').available_params[:per_page]).to eq(10)
         end
       end
 
       describe '#flat' do
         it 'joins values back' do
-          subject.available_params.flat[:emails].should == 'one@email.com,two@email.com'
+          expect(subject.available_params.flat[:emails]).to eq('one@email.com,two@email.com')
         end
       end
     end
@@ -191,36 +191,36 @@ describe Parametric do
       it 'returns full param definitions with populated value' do
         regexp = /\w+@\w+\.\w+/
 
-        subject.schema[:name].label.should == 'User name'
-        subject.schema[:name].value.should == 'lala'
+        expect(subject.schema[:name].label).to eq('User name')
+        expect(subject.schema[:name].value).to eq('lala')
 
-        subject.schema[:page].label.should == 'page number'
-        subject.schema[:page].value.should == 1
+        expect(subject.schema[:page].label).to eq('page number')
+        expect(subject.schema[:page].value).to eq(1)
 
-        subject.schema[:per_page].label.should == 'items per page'
-        subject.schema[:per_page].value.should == 20
+        expect(subject.schema[:per_page].label).to eq('items per page')
+        expect(subject.schema[:per_page].value).to eq(20)
 
-        subject.schema[:status].label.should == 'status'
-        subject.schema[:status].value.should == ''
-        subject.schema[:status].options.should == ['one', 'two', 'three']
-        subject.schema[:status].multiple.should be_true
+        expect(subject.schema[:status].label).to eq('status')
+        expect(subject.schema[:status].value).to eq('')
+        expect(subject.schema[:status].options).to eq(['one', 'two', 'three'])
+        expect(subject.schema[:status].multiple).to be_truthy
 
-        subject.schema[:piped_status].label.should == 'status with pipes'
-        subject.schema[:piped_status].value.should == ''
-        subject.schema[:piped_status].multiple.should be_true
+        expect(subject.schema[:piped_status].label).to eq('status with pipes')
+        expect(subject.schema[:piped_status].value).to eq('')
+        expect(subject.schema[:piped_status].multiple).to be_truthy
 
-        subject.schema[:country].label.should == 'country'
-        subject.schema[:country].value.should == ''
-        subject.schema[:country].options.should == ['UK', 'CL', 'JPN']
+        expect(subject.schema[:country].label).to eq('country')
+        expect(subject.schema[:country].value).to eq('')
+        expect(subject.schema[:country].options).to eq(['UK', 'CL', 'JPN'])
 
-        subject.schema[:email].label.should == 'email'
-        subject.schema[:email].value.should == ''
-        subject.schema[:email].match.should == regexp
+        expect(subject.schema[:email].label).to eq('email')
+        expect(subject.schema[:email].value).to eq('')
+        expect(subject.schema[:email].match).to eq(regexp)
 
-        subject.schema[:emails].label.should == 'emails'
-        subject.schema[:emails].value.should == 'default@email.com'
-        subject.schema[:emails].multiple.should be_true
-        subject.schema[:emails].match.should == regexp
+        expect(subject.schema[:emails].label).to eq('emails')
+        expect(subject.schema[:emails].value).to eq('default@email.com')
+        expect(subject.schema[:emails].multiple).to be_truthy
+        expect(subject.schema[:emails].match).to eq(regexp)
       end
     end
   end
@@ -237,25 +237,25 @@ describe Parametric do
     let(:subject) { klass.new(name: 'Ismael', page: 2) }
 
     it 'quacks like a hash' do
-      subject[:name].should == 'Ismael'
-      subject[:page].should == 2
-      subject[:per_page].should == 50
-      subject.map{|k,v| k}.sort.should == [:name, :page, :per_page]
-      subject.keys.sort.should == [:name, :page, :per_page]
-      subject.values.map(&:to_s).sort.should == ['2', '50', 'Ismael']
-      subject.fetch(:page, 0).should == 2
-      subject.fetch(:foo, 0).should == 0
-      subject.merge(foo: 22).should == {name: 'Ismael', page: 2, per_page: 50, foo: 22}
-      subject.select{|k,v| k == :name}.should == {name: 'Ismael'}
+      expect(subject[:name]).to eq('Ismael')
+      expect(subject[:page]).to eq(2)
+      expect(subject[:per_page]).to eq(50)
+      expect(subject.map{|k,v| k}.sort).to eq([:name, :page, :per_page])
+      expect(subject.keys.sort).to eq([:name, :page, :per_page])
+      expect(subject.values.map(&:to_s).sort).to eq(['2', '50', 'Ismael'])
+      expect(subject.fetch(:page, 0)).to eq(2)
+      expect(subject.fetch(:foo, 0)).to eq(0)
+      expect(subject.merge(foo: 22)).to eq({name: 'Ismael', page: 2, per_page: 50, foo: 22})
+      expect(subject.select{|k,v| k == :name}).to eq({name: 'Ismael'})
     end
 
     it 'has #available_params' do
-      subject.available_params[:name].should == 'Ismael'
+      expect(subject.available_params[:name]).to eq('Ismael')
     end
 
     it 'has #schema' do
-      subject.schema[:name].label.should == 'User name'
-      subject.schema[:name].value.should == 'Ismael'
+      expect(subject.schema[:name].label).to eq('User name')
+      expect(subject.schema[:name].value).to eq('Ismael')
     end
   end
 end
