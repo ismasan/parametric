@@ -162,6 +162,14 @@ describe Parametric::Field do
     end
 
     describe '#default' do
+      it 'returns default if key is missing' do
+        test_field(subject.default('nope'), {foo: 'd'}, 'nope')
+      end
+
+      it 'returns value if key is present' do
+        test_field(subject.default('nope'), {a_key: 'yai'}, 'yai')
+        test_field(subject.default('nope'), {a_key: nil}, nil)
+      end
     end
 
     describe '#required' do
