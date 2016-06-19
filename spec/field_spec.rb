@@ -173,18 +173,44 @@ describe Parametric::Field do
     end
 
     describe '#required' do
-      it 'is valid when value is present' do
+      before { subject.required }
+
+      it 'is valid when key is present' do
         test_no_error(context) do
-          test_field(subject.required, {a_key: 'yes'}, 'yes')
-          test_field(subject.required, {a_key: true}, true)
-          test_field(subject.required, {a_key: false}, false)
-          test_field(subject.required, {a_key: nil}, nil)
+          test_field(subject, {a_key: 'yes'}, 'yes')
+          test_field(subject, {a_key: true}, true)
+          test_field(subject, {a_key: false}, false)
+          test_field(subject, {a_key: nil}, nil)
         end
       end
 
       it 'is invalid when key is missing' do
         test_error(context) do
-          subject.required.resolve({foo: 123}, context)
+          subject.resolve({foo: 123}, context)
+        end
+      end
+    end
+
+    describe '#present' do
+      before { subject.present }
+
+      it 'is valid when value is present' do
+        test_no_error(context) do
+          test_field(subject, {a_key: 'yes'}, 'yes')
+          test_field(subject, {a_key: true}, true)
+          test_field(subject, {a_key: false}, false)
+        end
+      end
+
+      it 'is invalid when key is missing' do
+        test_error(context) do
+          subject.resolve({foo: 123}, context)
+        end
+      end
+
+      it 'is invalid when value is nil' do
+        test_error(context) do
+          subject.resolve({a_key: nil}, context)
         end
       end
     end

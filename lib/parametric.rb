@@ -115,6 +115,10 @@ module Parametric
       validate :required
     end
 
+    def present
+      required.validate :present
+    end
+
     def options(opts)
       meta options: opts
       validate :options, opts
@@ -410,6 +414,23 @@ module Parametric
 
     validate do |value, key, payload|
       payload.key? key
+    end
+  end
+
+  Parametric.validator :present do
+    message do |*|
+      "is required and value must be present"
+    end
+
+    validate do |value, key, payload|
+      case value
+      when String
+        value.strip != ''
+      when Array, Hash
+        value.any?
+      else
+        !value.nil?
+      end
     end
   end
 
