@@ -19,8 +19,10 @@ module Parametric
   end
 
   # Default validators
+  EMAIL_REGEXP = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i.freeze
+
   Parametric.validator :format, Validators::Format
-  Parametric.validator :email, Validators::Format.new(/\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i)
+  Parametric.validator :email, Validators::Format.new(EMAIL_REGEXP, 'invalid email')
   Parametric.validator :required do
     message do |*|
       "is required"
