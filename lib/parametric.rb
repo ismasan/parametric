@@ -38,7 +38,7 @@ module Parametric
     end
 
     def valid?(key, value, payload)
-      args = (@args + [value])
+      args = (@args + [value, key, payload])
       @message = self.class.message.call(*args) if self.class.message
       @validate_block.call(*args)
     end
@@ -269,18 +269,6 @@ module Parametric
     attr_reader :fields
   end
 
-  class Required
-    attr_reader :message
-
-    def initialize
-      @message = 'is missing'
-    end
-
-    def valid?(key, value, payload)
-      !!value
-    end
-  end
-
   class Format
     attr_reader :message
 
@@ -409,9 +397,18 @@ module Parametric
 
   Parametric.filter :split, ->(v, k, c){ v.to_s.split(',') }
 
-  Parametric.validator :required, Required
   Parametric.validator :format, Format
   Parametric.validator :email, Format.new(/\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i)
+  Parametric.validator :required do
+    message do |*|
+      "is required"
+    end
+
+    validate do |value, key, payload|
+      payload.key? key
+    end
+  end
+
   Parametric.validator :gt do
     message do |num, actual|
       "must be greater than #{num}, but got #{actual}"

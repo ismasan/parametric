@@ -173,7 +173,20 @@ describe Parametric::Field do
     end
 
     describe '#required' do
+      it 'is valid when value is present' do
+        test_no_error(context) do
+          test_field(subject.required, {a_key: 'yes'}, 'yes')
+          test_field(subject.required, {a_key: true}, true)
+          test_field(subject.required, {a_key: false}, false)
+          test_field(subject.required, {a_key: nil}, nil)
+        end
+      end
 
+      it 'is invalid when key is missing' do
+        test_error(context) do
+          subject.required.resolve({foo: 123}, context)
+        end
+      end
     end
 
     describe '#validate' do
