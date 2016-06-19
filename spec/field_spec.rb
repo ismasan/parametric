@@ -104,8 +104,21 @@ describe Parametric::Field do
 
     describe '#options' do
       it 'resolves if value within options' do
-        subject.options(['a', 'b', 'c'])
-        test_field(subject, {a_key: 'b'}, 'b')
+        test_no_error(context) do
+          subject.options(['a', 'b', 'c'])
+          test_field(subject, {a_key: 'b'}, 'b')
+        end
+      end
+
+      it 'resolves if value is array within options' do
+        test_no_error(context) do
+          subject.options(['a', 'b', 'c'])
+          test_field(subject, {a_key: ['b', 'c']}, ['b', 'c'])
+        end
+      end
+
+      it 'does not resolve if missing key' do
+        test_field_noop(subject.options(['a', 'b']), {foobar: 'd'})
       end
 
       context 'value outside options' do
@@ -121,17 +134,34 @@ describe Parametric::Field do
           end
         end
 
-        it 'is valid and returns if default' do
-          subject.default('b')
-          test_no_error(context) do
-            test_field(subject, {a_key: 'd'}, 'b')
+        it 'validates single value and adds error to context' do
+          test_error(context) do
+            subject.resolve({a_key: 'd'}, context)
+          end
+        end
+
+        it 'validates array and adds error to context' do
+          test_error(context) do
+            subject.resolve({a_key: ['a', 'd']}, context)
+          end
+        end
+
+        context 'with default' do
+          before { subject.default('b') }
+
+          it 'is valid and returns if default' do
+            test_no_error(context) do
+              test_field(subject, {a_key: 'd'}, 'b')
+            end
+            test_no_error(context) do
+              test_field(subject, {a_key: ['a', 'd']}, 'b')
+            end
           end
         end
       end
     end
 
     describe '#default' do
-
     end
 
     describe '#required' do
