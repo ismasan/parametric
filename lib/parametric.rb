@@ -18,12 +18,23 @@ module Parametric
       @validate_block
     end
 
+    def self.exists(&block)
+      @exists_block = block if block_given?
+      @exists_block
+    end
+
     attr_reader :message
 
     def initialize(*args)
       @args = args
       @message = 'is invalid'
       @validate_block = self.class.validate || ->(*args) { true }
+      @exists_block = self.class.exists || ->(*args) { true }
+    end
+
+    def exists?(payload, key, value)
+      args = (@args + [value, key, payload])
+      @exists_block.call(*args)
     end
 
     def valid?(key, value, payload)
@@ -68,16 +79,6 @@ module Parametric
     registry.filter name, f
   end
 
-  class OptionsPolicy
-    def initialize(opts)
-      @opts = Array(opts)
-    end
-
-    def ok?(payload, key, value)
-      @opts.include? value
-    end
-  end
-
   class Field
     attr_reader :key, :meta_data
 
@@ -116,7 +117,6 @@ module Parametric
 
     def options(opts)
       meta options: opts
-      policies << OptionsPolicy.new(opts)
       validate :options, opts
     end
 
@@ -208,12 +208,12 @@ module Parametric
     end
 
     def payload_has_key?(payload, key)
-      payload.kind_of?(Hash) && payload.key?(key) && all_policies_ok?(payload, key)
+      payload.kind_of?(Hash) && payload.key?(key) && all_guards_ok?(payload, key)
     end
 
-    def all_policies_ok?(payload, key)
-      policies.all? do |po|
-        po.ok?(payload, key, payload[key])
+    def all_guards_ok?(payload, key)
+      validators.all? do |va|
+        va.exists?(payload, key, payload[key])
       end
     end
   end
@@ -427,7 +427,15 @@ module Parametric
       "must be one of #{options.join(', ')}, but got #{actual}"
     end
 
+    exists do |options, actual, *_|
+      ok? options, actual
+    end
+
     validate do |options, actual|
+      ok? options, actual
+    end
+
+    def ok?(options, actual)
       [actual].flatten.all?{|v| options.include?(v)}
     end
   end
