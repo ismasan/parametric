@@ -273,23 +273,6 @@ module Parametric
     attr_reader :fields
   end
 
-  class Format
-    attr_reader :message
-
-    def initialize(fmt)
-      @message = 'invalid format'
-      @fmt = fmt
-    end
-
-    def exists?(*args)
-      true
-    end
-
-    def valid?(key, value, payload)
-      value.to_s =~ @fmt
-    end
-  end
-
   class Top
     attr_reader :errors
 
@@ -404,61 +387,6 @@ module Parametric
   Parametric.filter :array, ->(v, k, c){ v }
 
   Parametric.filter :split, ->(v, k, c){ v.to_s.split(',') }
-
-  Parametric.validator :format, Format
-  Parametric.validator :email, Format.new(/\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i)
-  Parametric.validator :required do
-    message do |*|
-      "is required"
-    end
-
-    validate do |value, key, payload|
-      payload.key? key
-    end
-  end
-
-  Parametric.validator :present do
-    message do |*|
-      "is required and value must be present"
-    end
-
-    validate do |value, key, payload|
-      case value
-      when String
-        value.strip != ''
-      when Array, Hash
-        value.any?
-      else
-        !value.nil?
-      end
-    end
-  end
-
-  Parametric.validator :gt do
-    message do |num, actual|
-      "must be greater than #{num}, but got #{actual}"
-    end
-
-    validate do |num, actual|
-      actual.to_i > num.to_i
-    end
-  end
-
-  Parametric.validator :options do
-    message do |options, actual|
-      "must be one of #{options.join(', ')}, but got #{actual}"
-    end
-
-    exists do |options, actual, *_|
-      ok? options, actual
-    end
-
-    validate do |options, actual|
-      ok? options, actual
-    end
-
-    def ok?(options, actual)
-      [actual].flatten.all?{|v| options.include?(v)}
-    end
-  end
 end
+
+require 'parametric/validators'
