@@ -127,7 +127,7 @@ module Parametric
         ft = ft.new(*args) if ft.respond_to?(:new)
         ft
       else
-        k
+        k.respond_to?(:new) ? k.new(*args) : k
       end
 
       validators << k
@@ -275,6 +275,10 @@ module Parametric
     def initialize(fmt)
       @message = 'invalid format'
       @fmt = fmt
+    end
+
+    def exists?(*args)
+      true
     end
 
     def valid?(key, value, payload)

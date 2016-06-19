@@ -190,7 +190,58 @@ describe Parametric::Field do
     end
 
     describe '#validate' do
+      let(:validator) do
+        Class.new do
+          def initialize(num)
+            @num = num
+          end
 
+          def message
+            "foo"
+          end
+
+          def exists?(*args)
+            true
+          end
+
+          def valid?(key, value, *args)
+            value.to_i < @num
+          end
+        end
+      end
+
+      it 'works with symbol to registered class' do
+        subject.validate(:format, /^Foo/)
+
+        test_error(context) do
+          subject.resolve({a_key: 'lalalade'}, context)
+        end
+        test_no_error(context) do
+          test_field(subject, {a_key: 'Foobar'}, 'Foobar')
+        end
+      end
+
+      it 'works with a class' do
+        subject.validate(validator, 10)
+
+        test_error(context) do
+          subject.resolve({a_key: 11}, context)
+        end
+        test_no_error(context) do
+          test_field(subject, {a_key: 9}, 9)
+        end
+      end
+
+      it 'works with an instance' do
+        subject.validate(validator.new(10))
+
+        test_error(context) do
+          subject.resolve({a_key: 11}, context)
+        end
+        test_no_error(context) do
+          test_field(subject, {a_key: 9}, 9)
+        end
+      end
     end
 
     describe '#schema' do
