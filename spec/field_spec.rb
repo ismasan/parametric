@@ -124,7 +124,21 @@ describe Parametric::Field do
       end
 
       it 'does not resolve if missing key' do
-        test_field_noop(subject.options(['a', 'b']), {foobar: 'd'})
+        test_no_error(context) do
+          test_field_noop(subject.options(['a', 'b']), {foobar: 'd'})
+        end
+      end
+
+      it 'does resolve if missing key and default set' do
+        test_no_error(context) do
+          test_field(subject.options(['a', 'b']).default('c'), {foo: 1}, 'c')
+        end
+      end
+
+      it 'is invalid if required and missing key' do
+        test_error(context) do
+          test_field_noop(subject.options(['a', 'b']).required, {foobar: 'd'})
+        end
       end
 
       context 'value outside options' do

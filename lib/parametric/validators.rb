@@ -65,12 +65,12 @@ module Parametric
       "must be one of #{options.join(', ')}, but got #{actual}"
     end
 
-    exists do |options, actual, *_|
+    exists do |options, actual, key, payload|
       ok? options, actual
     end
 
-    validate do |options, actual|
-      ok? options, actual
+    validate do |options, actual, key, payload|
+      !payload.key?(key) || ok?(options, actual)
     end
 
     def ok?(options, actual)
