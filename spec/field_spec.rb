@@ -148,12 +148,6 @@ describe Parametric::Field do
           test_field_noop(subject, {a_key: 'd'})
         end
 
-        it 'validates and adds error to context' do
-          test_error(context) do
-            subject.resolve({a_key: 'd'}, context)
-          end
-        end
-
         it 'validates single value and adds error to context' do
           test_error(context) do
             subject.resolve({a_key: 'd'}, context)
