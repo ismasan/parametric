@@ -55,8 +55,18 @@ module Parametric
       "must be greater than #{num}, but got #{actual}"
     end
 
-    validate do |num, actual|
-      actual.to_i > num.to_i
+    validate do |num, actual, key, payload|
+      !payload[key] || actual.to_i > num.to_i
+    end
+  end
+
+  Parametric.validator :lt do
+    message do |num, actual|
+      "must be less than #{num}, but got #{actual}"
+    end
+
+    validate do |num, actual, key, payload|
+      !payload[key] || actual.to_i < num.to_i
     end
   end
 
