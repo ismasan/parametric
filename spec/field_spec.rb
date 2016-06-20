@@ -93,6 +93,12 @@ describe Parametric::Field do
         test_field(subject, {a_key: 'Ismael'}, 'Hello Ismael')
       end
 
+      it 'raises if filter not found' do
+        expect{
+          subject.filter(:foobar)
+        }.to raise_exception
+      end
+
       it 'chains filters' do
         subject
           .filter(custom_klass, 'General')
@@ -234,6 +240,12 @@ describe Parametric::Field do
             value.to_i < @num
           end
         end
+      end
+
+      it 'raises if validator not found' do
+        expect{
+          subject.validate(:foobar)
+        }.to raise_exception
       end
 
       it 'works with symbol to registered class' do
