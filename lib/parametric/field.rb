@@ -1,5 +1,7 @@
 require "parametric/schema"
 module Parametric
+  class ConfigurationError < StandardError; end
+
   class Field
     attr_reader :key, :meta_data
 
@@ -45,31 +47,13 @@ module Parametric
       validate :options, opts
     end
 
-    def validate(k, *args)
-      k = if k.is_a?(Symbol)
-        ft = registry.validators[k]
-        raise "No validator for #{k.inspect}" unless ft
-        ft = ft.new(*args) if ft.respond_to?(:new)
-        ft
-      else
-        k.respond_to?(:new) ? k.new(*args) : k
-      end
-
-      validators << k
+    def validate(key, *args)
+      validators << lookup('validator', key, registry.validators, args)
       self
     end
 
-    def filter(f, *args)
-      f = if f.is_a?(Symbol)
-        ft = registry.filters[f]
-        raise "No filter for #{f.inspect}" unless ft
-        ft = ft.new(*args) if ft.respond_to?(:new)
-        ft
-      else
-        f.respond_to?(:new) ? f.new(*args) : f
-      end
-
-      filters << f
+    def filter(key, *args)
+      filters << lookup('filter', key, registry.filters, args)
       self
     end
 
@@ -141,6 +125,19 @@ module Parametric
         va.exists?(payload, key, payload[key])
       end
     end
+
+    def lookup(set_name, key, set, args)
+      obj = if key.is_a?(Symbol)
+        o = set[key]
+        raise ConfigurationError, "No #{set_name} for #{key.inspect}" unless o
+        o
+      else
+        key
+      end
+
+      obj.respond_to?(:new) ? obj.new(*args) : obj
+    end
+
   end
 
 end

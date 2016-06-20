@@ -96,7 +96,7 @@ describe Parametric::Field do
       it 'raises if filter not found' do
         expect{
           subject.filter(:foobar)
-        }.to raise_exception
+        }.to raise_exception Parametric::ConfigurationError
       end
 
       it 'chains filters' do
@@ -245,7 +245,7 @@ describe Parametric::Field do
       it 'raises if validator not found' do
         expect{
           subject.validate(:foobar)
-        }.to raise_exception
+        }.to raise_exception Parametric::ConfigurationError
       end
 
       it 'works with symbol to registered class' do
