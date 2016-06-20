@@ -8,5 +8,5 @@ module Parametric
   Parametric.filter :array, ->(v, k, c){ v }
 
   # other filters
-  Parametric.filter :split, ->(v, k, c){ v.to_s.split(/\s*,\s*/) }
+  Parametric.filter :split, ->(v, k, c){ v.kind_of?(Array) ? v : v.to_s.split(/\s*,\s*/) }
 end
