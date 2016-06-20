@@ -110,7 +110,7 @@ module Parametric
 
     def run_validations(key, result, payload, context)
       validators.all? do |v|
-        r = v.valid?(key, result, payload)
+        r = v.valid?(result, key, payload)
         context.add_error(v.message) unless r
         r
       end
@@ -122,7 +122,7 @@ module Parametric
 
     def all_guards_ok?(payload, key)
       validators.all? do |va|
-        va.exists?(payload, key, payload[key])
+        va.exists?(payload[key], key, payload)
       end
     end
 

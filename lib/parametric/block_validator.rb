@@ -24,12 +24,12 @@ module Parametric
       @exists_block = self.class.exists || ->(*args) { true }
     end
 
-    def exists?(payload, key, value)
+    def exists?(value, key, payload)
       args = (@args + [value, key, payload])
       @exists_block.call(*args)
     end
 
-    def valid?(key, value, payload)
+    def valid?(value, key, payload)
       args = (@args + [value, key, payload])
       @message = self.class.message.call(*args) if self.class.message
       @validate_block.call(*args)

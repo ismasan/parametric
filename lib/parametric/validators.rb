@@ -8,12 +8,12 @@ module Parametric
         @fmt = fmt
       end
 
-      def exists?(*args)
-        true
+      def exists?(value, key, payload)
+        payload.key?(key)
       end
 
-      def valid?(key, value, payload)
-        value.to_s =~ @fmt
+      def valid?(value, key, payload)
+        !payload.key?(key) || !!(value.to_s =~ @fmt)
       end
     end
   end

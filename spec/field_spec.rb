@@ -250,7 +250,7 @@ describe Parametric::Field do
             true
           end
 
-          def valid?(key, value, *args)
+          def valid?(value, key, *args)
             value.to_i < @num
           end
         end
