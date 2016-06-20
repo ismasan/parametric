@@ -271,7 +271,34 @@ describe Parametric::Field do
     end
 
     describe '#schema' do
+      context 'with block' do
+        before do
+          subject.schema do
+            field :name
+          end
+        end
 
+        it 'works' do
+          test_no_error(context) do
+            test_field(subject, {a_key: {name: "Ismael", title: "Mr."}}, {name: "Ismael"})
+          end
+        end
+      end
+
+      context 'with schema instance' do
+        let(:schema) do
+          Parametric::Schema.new do
+            field :last_name
+          end
+        end
+
+        it 'works' do
+          subject.schema(schema)
+          test_no_error(context) do
+            test_field(subject, {a_key: {last_name: "Celis", title: "Mr."}}, {last_name: "Celis"})
+          end
+        end
+      end
     end
   end
 end
