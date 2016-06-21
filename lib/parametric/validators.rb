@@ -13,7 +13,7 @@ module Parametric
         value
       end
 
-      def valid(value, key, payload)
+      def valid?(value, key, payload)
         true
       end
     end
