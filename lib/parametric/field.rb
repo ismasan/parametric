@@ -7,8 +7,7 @@ module Parametric
 
     def initialize(key, registry = Parametric.registry)
       @key = key
-      @filters = []
-      @validators = []
+      @policies = []
       @registry = registry
       @default_block = nil
       @meta_data = {}
@@ -28,8 +27,7 @@ module Parametric
 
     def type(t)
       meta type: t
-      filter t
-      validate(t) if registry.validators.key?(t)
+      validate(t) if registry.policies.key?(t)
       self
     end
 
@@ -48,12 +46,12 @@ module Parametric
     end
 
     def validate(key, *args)
-      validators << lookup('validator', key, registry.validators, args)
+      policies << lookup(key, args)
       self
     end
 
     def filter(key, *args)
-      validators << lookup('filter', key, registry.filters, args)
+      policies << lookup(key, args)
       self
     end
 
@@ -89,7 +87,7 @@ module Parametric
     end
 
     protected
-    attr_reader :filters, :validators, :registry, :default_block, :policies
+    attr_reader :filters, :policies, :registry, :default_block, :policies
 
     def has_default?
       !!default_block
@@ -103,13 +101,13 @@ module Parametric
     end
 
     def resolve_value(value, context)
-      validators.reduce(value) do |val, f|
+      policies.reduce(value) do |val, f|
         f.coerce(val, key, context)
       end
     end
 
     def run_validations(key, result, payload, context)
-      validators.all? do |v|
+      policies.all? do |v|
         r = v.valid?(result, key, payload)
         context.add_error(v.message) unless r
         r
@@ -121,16 +119,16 @@ module Parametric
     end
 
     def all_guards_ok?(payload, key)
-      validators.all? do |va|
+      policies.all? do |va|
         va.exists?(payload[key], key, payload)
       end
     end
 
-    def lookup(set_name, key, set, args)
+    def lookup(key, args)
       obj = case key
       when Symbol
-        o = set[key]
-        raise ConfigurationError, "No #{set_name} for #{key.inspect}" unless o
+        o = registry.policies[key]
+        raise ConfigurationError, "No policies defined for #{key.inspect}" unless o
         o
       when Proc
         klass = Class.new(BlockValidator)

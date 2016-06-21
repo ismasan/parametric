@@ -2,15 +2,14 @@ require 'parametric/block_validator'
 
 module Parametric
   class Registry
-    attr_reader :validators
+    attr_reader :policies
 
     def initialize
-      @filters = {}
-      @validators = {}
+      @policies = {}
     end
 
     def filters
-      @validators
+      @policies
     end
 
     def validator(name, vdtor = nil, &block)
@@ -22,14 +21,14 @@ module Parametric
         klass
       end
 
-      validators[name] = obj
+      policies[name] = obj
       self
     end
 
     def filter(name, f)
       klass = Class.new(BlockValidator)
       klass.coerce(&f)
-      validators[name] = klass
+      policies[name] = klass
       self
     end
   end

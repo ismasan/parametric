@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'default validators' do
 
   def test_validator(payload, key, name, exists, valid, *args)
-    validator = Parametric.registry.validators[name]
+    validator = Parametric.registry.policies[name]
     validator = validator.new(*args) if validator.respond_to?(:new)
     expect(validator.exists?(payload[key], key, payload)).to eq exists
     expect(validator.valid?(payload[key], key, payload)).to eq valid
