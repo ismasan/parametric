@@ -1,6 +1,24 @@
 module Parametric
   module Validators
-    class Format
+    class Validator
+      def message
+        'is invalid'
+      end
+
+      def exists?(value, key, payload)
+        true
+      end
+
+      def coerce(value, key, context)
+        value
+      end
+
+      def valid(value, key, payload)
+        true
+      end
+    end
+
+    class Format < Validator
       attr_reader :message
 
       def initialize(fmt, msg = 'invalid format')

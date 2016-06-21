@@ -24,11 +24,19 @@ module Parametric
 
     def resolve(payload)
       context = Context.new
-      output = call(payload, nil, context)
+      output = coerce(payload, nil, context)
       Results.new(output, context.errors)
     end
 
-    def call(val, _, context)
+    def exists?(*_)
+      true
+    end
+
+    def valid?(*_)
+      true
+    end
+
+    def coerce(val, _, context)
       fields.each_with_object({}) do |field, m|
         field.resolve(val, context.sub(field.key)) do |r|
           m[field.key] = r

@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'default filters' do
   def test_filter(key, value, expected)
     filter = Parametric.registry.filters[key]
-    expect(filter.call(value, nil, nil)).to eq expected
+    expect(filter.new.coerce(value, nil, nil)).to eq expected
   end
 
   describe ':integer' do

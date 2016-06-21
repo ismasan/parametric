@@ -61,7 +61,15 @@ describe Parametric::Field do
             @title = title
           end
 
-          def call(value, key, context)
+          def exists?(*_)
+            true
+          end
+
+          def valid?(*_)
+            true
+          end
+
+          def coerce(value, key, context)
             "#{@title} #{value}"
           end
         end
@@ -238,6 +246,10 @@ describe Parametric::Field do
 
           def message
             "foo"
+          end
+
+          def coerce(value, key, context)
+            value
           end
 
           def exists?(*args)

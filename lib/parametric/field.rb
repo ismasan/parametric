@@ -53,7 +53,7 @@ module Parametric
     end
 
     def filter(key, *args)
-      filters << lookup('filter', key, registry.filters, args)
+      validators << lookup('filter', key, registry.filters, args)
       self
     end
 
@@ -103,8 +103,8 @@ module Parametric
     end
 
     def resolve_value(value, context)
-      filters.reduce(value) do |val, f|
-        f.call(val, key, context)
+      validators.reduce(value) do |val, f|
+        f.coerce(val, key, context)
       end
     end
 
@@ -127,10 +127,15 @@ module Parametric
     end
 
     def lookup(set_name, key, set, args)
-      obj = if key.is_a?(Symbol)
+      obj = case key
+      when Symbol
         o = set[key]
         raise ConfigurationError, "No #{set_name} for #{key.inspect}" unless o
         o
+      when Proc
+        klass = Class.new(BlockValidator)
+        klass.coerce(&key)
+        klass
       else
         key
       end

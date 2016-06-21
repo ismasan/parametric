@@ -2,11 +2,15 @@ require 'parametric/block_validator'
 
 module Parametric
   class Registry
-    attr_reader :filters, :validators
+    attr_reader :validators
 
     def initialize
       @filters = {}
       @validators = {}
+    end
+
+    def filters
+      @validators
     end
 
     def validator(name, vdtor = nil, &block)
@@ -23,7 +27,10 @@ module Parametric
     end
 
     def filter(name, f)
-      filters[name] = f
+      klass = Class.new(BlockValidator)
+      klass.coerce(&f)
+      validators[name] = klass
+      self
     end
   end
 end

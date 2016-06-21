@@ -10,6 +10,11 @@ module Parametric
       @validate_block
     end
 
+    def self.coerce(&coerce_block)
+      @coerce_block = coerce_block if block_given?
+      @coerce_block
+    end
+
     def self.exists(&block)
       @exists_block = block if block_given?
       @exists_block
@@ -21,12 +26,17 @@ module Parametric
       @args = args
       @message = 'is invalid'
       @validate_block = self.class.validate || ->(*args) { true }
+      @coerce_block = self.class.coerce || ->(v, *_) { v }
       @exists_block = self.class.exists || ->(*args) { true }
     end
 
     def exists?(value, key, payload)
       args = (@args + [value, key, payload])
       @exists_block.call(*args)
+    end
+
+    def coerce(value, key, context)
+      @coerce_block.call(value, key, context)
     end
 
     def valid?(value, key, payload)
