@@ -39,28 +39,6 @@ module Parametric
   # Default validators
   EMAIL_REGEXP = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i.freeze
 
-  Parametric.policy :array do
-    message do |actual|
-      "expects an array, but got #{actual.inspect}"
-    end
-
-    validate do |value, key, payload|
-      !payload.key?(key) || value.is_a?(Array)
-    end
-  end
-
-  Parametric.policy :object do
-    message do |actual|
-      "expects a hash, but got #{actual.inspect}"
-    end
-
-    validate do |value, key, payload|
-      !payload.key?(key) ||
-        value.respond_to?(:[]) &&
-        value.respond_to?(:key?)
-    end
-  end
-
   Parametric.policy :format, Policies::Format
   Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
 

@@ -20,5 +20,6 @@ module Parametric
   end
 end
 
+require 'parametric/default_types'
 require 'parametric/validators'
 require 'parametric/filters'

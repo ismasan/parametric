@@ -1,11 +1,6 @@
 module Parametric
-  # type coercions
-  Parametric.filter :integer, ->(v, k, c){ v.to_i }
-  Parametric.filter :number, ->(v, k, c){ v.to_f }
-  Parametric.filter :string, ->(v, k, c){ v.to_s }
-  Parametric.filter :boolean, ->(v, k, c){ !!v }
-
   # other filters
-  Parametric.filter :split, ->(v, k, c){ v.kind_of?(Array) ? v : v.to_s.split(/\s*,\s*/) }
-
+  Parametric.filter :split, ->(v, k, c){
+    v.kind_of?(Array) ? v : v.to_s.split(/\s*,\s*/)
+  }
 end
