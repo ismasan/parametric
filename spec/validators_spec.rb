@@ -72,4 +72,15 @@ describe 'default validators' do
       test_validator({foo: 'b'}, :key, :options, false, true, %w(a b c))
     }
   end
+
+  describe ':array' do
+    it {
+      test_validator({key: ['a', 'b']}, :key, :array, true, true)
+      test_validator({key: []}, :key, :array, true, true)
+      test_validator({key: nil}, :key, :array, true, false)
+      test_validator({key: 'hello'}, :key, :array, true, false)
+      test_validator({key: 123}, :key, :array, true, false)
+      test_validator({foo: []}, :key, :array, true, true)
+    }
+  end
 end
