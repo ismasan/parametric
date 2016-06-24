@@ -16,9 +16,7 @@ module Parametric
       obj = if vdtor
         vdtor
       else
-        klass = Class.new(BlockValidator)
-        klass.instance_eval &block
-        klass
+        BlockValidator.build(:instance_eval, &block)
       end
 
       policies[name] = obj
@@ -26,9 +24,7 @@ module Parametric
     end
 
     def filter(name, f)
-      klass = Class.new(BlockValidator)
-      klass.coerce(&f)
-      policies[name] = klass
+      policies[name] = BlockValidator.build(:coerce, &f)
       self
     end
   end

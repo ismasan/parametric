@@ -1,5 +1,11 @@
 module Parametric
   class BlockValidator
+    def self.build(meth, &block)
+      klass = Class.new(self)
+      klass.public_send(meth, &block)
+      klass
+    end
+
     def self.message(&block)
       @message_block = block if block_given?
       @message_block

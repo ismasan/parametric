@@ -131,9 +131,7 @@ module Parametric
         raise ConfigurationError, "No policies defined for #{key.inspect}" unless o
         o
       when Proc
-        klass = Class.new(BlockValidator)
-        klass.coerce(&key)
-        klass
+        BlockValidator.build(:coerce, &key)
       else
         key
       end
