@@ -115,7 +115,7 @@ module Parametric
     end
 
     def payload_has_key?(payload, key)
-      payload.kind_of?(Hash) && payload.key?(key) && all_guards_ok?(payload, key)
+      payload.respond_to?(:[]) && payload.key?(key) && all_guards_ok?(payload, key)
     end
 
     def all_guards_ok?(payload, key)
