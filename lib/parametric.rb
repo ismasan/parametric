@@ -11,8 +11,8 @@ module Parametric
     @registry ||= Registry.new
   end
 
-  def self.validator(name, vdtor = nil, &block)
-    registry.validator name, vdtor, &block
+  def self.policy(name, plcy = nil, &block)
+    registry.policy name, plcy, &block
   end
 
   def self.filter(name, f)

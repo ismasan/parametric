@@ -12,9 +12,9 @@ module Parametric
       @policies
     end
 
-    def validator(name, vdtor = nil, &block)
-      obj = if vdtor
-        vdtor
+    def policy(name, plcy = nil, &block)
+      obj = if plcy
+        plcy
       else
         BlockValidator.build(:instance_eval, &block)
       end
