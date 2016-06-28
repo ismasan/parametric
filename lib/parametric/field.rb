@@ -111,7 +111,12 @@ module Parametric
 
     def resolve_value(value, context)
       policies.reduce(value) do |val, f|
-        f.coerce(val, key, context)
+        begin
+          f.coerce(val, key, context)
+        rescue StandardError => e
+          context.add_error e.message
+          value
+        end
       end
     end
 

@@ -114,6 +114,15 @@ describe Parametric::Field do
 
         test_field(subject, {a_key: 'Ismael'}, 'Commander General Ismael')
       end
+
+      it 'add coercion exceptions to #errors' do
+        subject
+          .coerce(->(*_){ raise "This is an error" })
+
+        test_error(context) do
+          test_field(subject, {a_key: 'b'}, 'b')
+        end
+      end
     end
 
     describe '#options' do
