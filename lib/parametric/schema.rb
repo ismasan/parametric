@@ -28,12 +28,23 @@ module Parametric
       Results.new(output, context.errors)
     end
 
+    def walk(meta_key = nil, &visitor)
+      r = visit(meta_key, &visitor)
+      Results.new(r, {})
+    end
+
     def exists?(*_)
       true
     end
 
     def valid?(*_)
       true
+    end
+
+    def visit(meta_key = nil, &visitor)
+      fields.each_with_object({}) do |field, m|
+        m[field.key] = field.visit(meta_key, &visitor)
+      end
     end
 
     def coerce(val, _, context)

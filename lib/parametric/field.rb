@@ -61,6 +61,16 @@ module Parametric
       filter sc
     end
 
+    def visit(meta_key = nil, &visitor)
+      sc = meta_data.fetch(:schema, self)
+      if sc = meta_data[:schema]
+        r = sc.visit(meta_key, &visitor)
+        (meta_data[:type] == :array) ? [r] : r
+      else
+        meta_key ? meta_data[meta_key] : yield(self)
+      end
+    end
+
     def resolve(payload, context, &block)
       if payload_has_key?(payload, key)
         value = payload[key] # might be nil
