@@ -62,7 +62,6 @@ module Parametric
     end
 
     def visit(meta_key = nil, &visitor)
-      sc = meta_data.fetch(:schema, self)
       if sc = meta_data[:schema]
         r = sc.visit(meta_key, &visitor)
         (meta_data[:type] == :array) ? [r] : r
