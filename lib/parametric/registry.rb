@@ -8,7 +8,7 @@ module Parametric
       @policies = {}
     end
 
-    def filters
+    def coercions
       @policies
     end
 
@@ -23,7 +23,7 @@ module Parametric
       self
     end
 
-    def filter(name, f)
+    def coercion(name, f)
       policies[name] = BlockValidator.build(:coerce, &f)
       self
     end

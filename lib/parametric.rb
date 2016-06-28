@@ -15,11 +15,11 @@ module Parametric
     registry.policy name, plcy, &block
   end
 
-  def self.filter(name, f)
-    registry.filter name, f
+  def self.coercion(name, f)
+    registry.coercion name, f
   end
 end
 
 require 'parametric/default_types'
 require 'parametric/validators'
-require 'parametric/filters'
+require 'parametric/coercions'

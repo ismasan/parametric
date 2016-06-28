@@ -54,7 +54,7 @@ describe Parametric::Field do
       end
     end
 
-    describe '#filter' do
+    describe '#coerce' do
       let(:custom_klass) do
         Class.new do
           def initialize(title = 'Sr.')
@@ -76,41 +76,41 @@ describe Parametric::Field do
       end
 
       it 'works with lambdas' do
-        subject.filter(->(value, key, context){ "Mr. #{value}" })
+        subject.coerce(->(value, key, context){ "Mr. #{value}" })
         test_field(subject, {a_key: 'Ismael'}, 'Mr. Ismael')
       end
 
       it 'works with class' do
-        subject.filter(custom_klass)
+        subject.coerce(custom_klass)
         test_field(subject, {a_key: 'Ismael'}, 'Sr. Ismael')
       end
 
       it 'works with class and arguments' do
-        subject.filter(custom_klass, 'Lord')
+        subject.coerce(custom_klass, 'Lord')
         test_field(subject, {a_key: 'Ismael'}, 'Lord Ismael')
       end
 
       it 'works with instance' do
-        subject.filter(custom_klass.new('Dr.'))
+        subject.coerce(custom_klass.new('Dr.'))
         test_field(subject, {a_key: 'Ismael'}, 'Dr. Ismael')
       end
 
-      it 'works with filter in registry' do
-        registry.filter :foo, ->(v, k, c){ "Hello #{v}" }
-        subject.filter(:foo)
+      it 'works with coercion in registry' do
+        registry.coercion :foo, ->(v, k, c){ "Hello #{v}" }
+        subject.coerce(:foo)
         test_field(subject, {a_key: 'Ismael'}, 'Hello Ismael')
       end
 
-      it 'raises if filter not found' do
+      it 'raises if coercion not found' do
         expect{
-          subject.filter(:foobar)
+          subject.coerce(:foobar)
         }.to raise_exception Parametric::ConfigurationError
       end
 
-      it 'chains filters' do
+      it 'chains coercions' do
         subject
-          .filter(custom_klass, 'General')
-          .filter(custom_klass, 'Commander')
+          .coerce(custom_klass, 'General')
+          .coerce(custom_klass, 'Commander')
 
         test_field(subject, {a_key: 'Ismael'}, 'Commander General Ismael')
       end

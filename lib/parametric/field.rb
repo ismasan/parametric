@@ -50,7 +50,7 @@ module Parametric
       self
     end
 
-    def filter(key, *args)
+    def coerce(key, *args)
       policies << lookup(key, args)
       self
     end
@@ -58,7 +58,7 @@ module Parametric
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
       meta schema: sc
-      filter sc
+      coerce sc
     end
 
     def visit(meta_key = nil, &visitor)
@@ -96,7 +96,7 @@ module Parametric
     end
 
     protected
-    attr_reader :filters, :policies, :registry, :default_block, :policies
+    attr_reader :policies, :registry, :default_block
 
     def has_default?
       !!default_block

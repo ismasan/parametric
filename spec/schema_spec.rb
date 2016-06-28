@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Parametric::Schema do
   before do
-    Parametric.filter :flexible_bool, ->(v, k, c){
+    Parametric.coercion :flexible_bool, ->(v, k, c){
       case v
       when '1', 'true', 'TRUE', true
         true
@@ -18,13 +18,13 @@ describe Parametric::Schema do
       field(:title).type(:string).present
       field(:price).type(:integer)
       field(:status).type(:string).options(['visible', 'hidden'])
-      field(:tags).type(:array).filter(:split)
+      field(:tags).type(:array).coerce(:split)
       field(:description).type(:string)
       field(:variants).type(:array).schema do
         field(:name).type(:string).present
         field(:sku)
         field(:stock).type(:integer).default(1)
-        field(:available_if_no_stock).type(:boolean).filter(:flexible_bool).default(false)
+        field(:available_if_no_stock).type(:boolean).coerce(:flexible_bool).default(false)
       end
     end
   end

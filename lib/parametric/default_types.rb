@@ -1,9 +1,9 @@
 module Parametric
   # type coercions
-  Parametric.filter :integer, ->(v, k, c){ v.to_i }
-  Parametric.filter :number, ->(v, k, c){ v.to_f }
-  Parametric.filter :string, ->(v, k, c){ v.to_s }
-  Parametric.filter :boolean, ->(v, k, c){ !!v }
+  Parametric.coercion :integer, ->(v, k, c){ v.to_i }
+  Parametric.coercion :number, ->(v, k, c){ v.to_f }
+  Parametric.coercion :string, ->(v, k, c){ v.to_s }
+  Parametric.coercion :boolean, ->(v, k, c){ !!v }
 
   # type validations
   Parametric.policy :array do
