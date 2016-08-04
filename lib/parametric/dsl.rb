@@ -33,15 +33,17 @@ module Parametric
 
       def inherited(subclass)
         parent_schema = self.schema || Parametric::Schema.new
-        subclass.schema = parent_schema.merge(Parametric::Schema.new)
+        subclass.schema = parent_schema#.merge(Parametric::Schema.new)
       end
 
-      def schema(&block)
+      def schema(options = {}, &block)
+        new_schema = Parametric::Schema.new(options, &block)
+
         if block_given? # defining schema
-          if @schema
-            @schema.apply(block)
+          @schema = if @schema
+            @schema.merge(new_schema)
           else
-            @schema = Parametric::Schema.new(&block)
+            new_schema
           end
         end
 

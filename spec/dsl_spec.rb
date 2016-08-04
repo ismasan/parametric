@@ -6,17 +6,16 @@ describe "classes including DSL module" do
     Class.new do
       include Parametric::DSL
 
-      schema do
+      schema(age_type: :integer) do |opts|
         field(:title).type(:string)
-        field(:age).type(:integer)
+        field(:age).type(opts[:age_type])
       end
     end
   end
 
   let!(:child) do
     Class.new(parent) do
-      schema do
-        field(:age).type(:string)
+      schema(age_type: :string) do
         field(:description).type(:string)
       end
     end
