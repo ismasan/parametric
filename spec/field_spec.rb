@@ -326,6 +326,23 @@ describe Parametric::Field do
         end
       end
 
+      context 'yielding instance to block' do
+        before do
+          fields = [:name, :last_name, :age]
+          subject.schema do
+            fields.each do |field_name|
+              field field_name
+            end
+          end
+        end
+
+        it 'works' do
+          test_no_error(context) do
+            test_field(subject, {a_key: {name: "Ismael", last_name: "Celis"}}, {name: "Ismael", last_name: "Celis"})
+          end
+        end
+      end
+
       context 'with schema instance' do
         let(:schema) do
           Parametric::Schema.new do
