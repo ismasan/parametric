@@ -77,4 +77,31 @@ describe Parametric::Schema do
       expect(results.errors['$.variants[1].name']).not_to be_nil
     end
   end
+
+  describe "#merge" do
+    let!(:schema1) {
+      described_class.new do
+        field(:title).type(:string).present
+        field(:price).type(:integer)
+      end
+    }
+
+    let!(:schema2) {
+      described_class.new do
+        field(:price).type(:string)
+        field(:description).type(:string)
+      end
+    }
+
+    it "returns a new schema adding new fields and updating existing ones" do
+      new_schema = schema1.merge(schema2)
+      expect(new_schema.fields.keys).to match_array([:title, :price, :description])
+
+      # did not mutate original
+      expect(schema1.fields[:price].meta_data[:type]).to eq :integer
+
+      expect(new_schema.fields[:title].meta_data[:type]).to eq :string
+      expect(new_schema.fields[:price].meta_data[:type]).to eq :string
+    end
+  end
 end
