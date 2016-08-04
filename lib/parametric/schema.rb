@@ -2,23 +2,19 @@ require 'ostruct'
 
 module Parametric
   class Schema
-    attr_reader :fields
+    attr_reader :fields, :definitions
 
     def initialize(&block)
       @fields = {}
-      self.instance_eval(&block) if block_given?
+      @definitions = block
+      apply(block) if block_given?
     end
 
     def merge(other_schema)
       instance = self.class.new
 
-      self.fields.each do |_, f|
-        instance.field f.clone
-      end
-
-      other_schema.fields.each do |_, f|
-        instance.field f.clone
-      end
+      instance.apply(definitions)
+      instance.apply(other_schema.definitions)
 
       instance
     end
@@ -75,5 +71,11 @@ module Parametric
         end
       end
     end
+
+    def apply(block)
+      self.instance_eval(&block) if block
+      self
+    end
+
   end
 end
