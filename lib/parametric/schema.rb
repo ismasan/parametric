@@ -13,11 +13,11 @@ module Parametric
       instance = self.class.new
 
       self.fields.each do |_, f|
-        instance.field f
+        instance.field f.clone
       end
 
       other_schema.fields.each do |_, f|
-        instance.field f
+        instance.field f.clone
       end
 
       instance
