@@ -42,6 +42,18 @@ module Parametric
   Parametric.policy :format, Policies::Format
   Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
 
+  Parametric.policy :noop do
+    exists do |value, key, payload|
+      true
+    end
+  end
+
+  Parametric.policy :declared do
+    exists do |value, key, payload|
+      payload.key? key
+    end
+  end
+
   Parametric.policy :required do
     message do |*|
       "is required"
@@ -95,7 +107,7 @@ module Parametric
     end
 
     exists do |options, actual, key, payload|
-      ok? options, actual
+      payload.key?(key)
     end
 
     validate do |options, actual, key, payload|

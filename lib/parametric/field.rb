@@ -1,9 +1,10 @@
-require "parametric/schema"
 module Parametric
   class ConfigurationError < StandardError; end
 
   class Field
     attr_reader :key, :meta_data
+
+    Result = Struct.new(:eligible?, :value)
 
     def initialize(key, registry = Parametric.registry)
       @key = key
@@ -50,6 +51,11 @@ module Parametric
       self
     end
 
+    def policy(key, *args)
+      policies << lookup(key, args)
+      self
+    end
+
     def coerce(key, *args)
       policies << lookup(key, args)
       self
@@ -70,72 +76,51 @@ module Parametric
       end
     end
 
-    def resolve(payload, context, &block)
-      if payload_has_key?(payload, key)
-        value = payload[key] # might be nil
-        result = if value.is_a?(Array)
-          resolve_array value, context
-        else
-          resolve_value value, context
-        end
+    def resolve(payload, context)
+      eligible = payload.key?(key)
+      value = payload[key] # might be nil
 
-        if run_validations(key, result, payload, context)
-          yield result if block_given?
-          result
-        end
-      elsif has_default?
-        result = default_block.call(key, payload, context)
-        if run_validations(key, result, payload, context)
-          yield result if block_given?
-          result
-        end
-      else
-        run_validations(key, nil, payload, context)
-        nil
+      if !eligible && has_default?
+        eligible = true
+        value = default_block.call(key, payload, context)
+        return Result.new(eligible, value)
       end
+
+      policies.each do |policy|
+        if !policy.exists?(value, key, payload)
+          eligible = false
+          if has_default?
+            eligible = true
+            value = default_block.call(key, payload, context)
+          end
+          break
+        else
+          value = resolve_one(policy, value, context)
+          if !policy.valid?(value, key, payload)
+            eligible = true # eligible, but has errors
+            context.add_error policy.message
+            break # only one error at a time
+          end
+        end
+      end
+
+      Result.new(eligible, value)
     end
 
-    protected
+    private
     attr_reader :policies, :registry, :default_block
+
+    def resolve_one(policy, value, context)
+      begin
+        policy.coerce(value, key, context)
+      rescue StandardError => e
+        context.add_error e.message
+        value
+      end
+    end
 
     def has_default?
       !!default_block
-    end
-
-    def resolve_array(arr, context)
-      arr.map.with_index do |v, idx|
-        ctx = context.sub(idx)
-        resolve_value v, ctx
-      end
-    end
-
-    def resolve_value(value, context)
-      policies.reduce(value) do |val, f|
-        begin
-          f.coerce(val, key, context)
-        rescue StandardError => e
-          context.add_error e.message
-          value
-        end
-      end
-    end
-
-    def run_validations(key, result, payload, context)
-      policies.all? do |v|
-        r = v.valid?(result, key, payload)
-        context.add_error(v.message) unless r
-        r
-      end
-    end
-
-    def payload_has_key?(payload, key)
-      payload.respond_to?(:[]) && payload.key?(key) && all_guards_ok?(payload, key)
-    end
-
-    def all_guards_ok?(payload, key)
-      policies.all? do |va|
-        va.exists?(payload[key], key, payload)
-      end
     end
 
     def lookup(key, args)
@@ -152,7 +137,5 @@ module Parametric
 
       obj.respond_to?(:new) ? obj.new(*args) : obj
     end
-
   end
-
 end

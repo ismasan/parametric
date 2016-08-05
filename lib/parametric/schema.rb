@@ -66,16 +66,29 @@ module Parametric
     end
 
     def coerce(val, _, context)
-      fields.each_with_object({}) do |(_, field), m|
-        field.resolve(val, context.sub(field.key)) do |r|
-          m[field.key] = r
-        end
+      if val.is_a?(Array)
+        val.map.with_index{|v, idx|
+          coerce_one(v, context.sub(idx))
+        }
+      else
+        coerce_one val, context
       end
     end
 
     def apply(block, opts = {})
       self.instance_exec(opts, &block) if block
       self
+    end
+
+    private
+
+    def coerce_one(val, context)
+      fields.each_with_object({}) do |(_, field), m|
+        r = field.resolve(val, context.sub(field.key))
+        if r.eligible?
+          m[field.key] = r.value
+        end
+      end
     end
   end
 end

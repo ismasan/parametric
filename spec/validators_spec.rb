@@ -66,9 +66,9 @@ describe 'default validators' do
   describe ':options' do
     it {
       test_validator({key: 'b'}, :key, :options, true, true, %w(a b c))
-      test_validator({key: 'd'}, :key, :options, false, false, %w(a b c))
+      test_validator({key: 'd'}, :key, :options, true, false, %w(a b c))
       test_validator({key: ['c', 'b']}, :key, :options, true, true, %w(a b c))
-      test_validator({key: ['c', 'b', 'd']}, :key, :options, false, false, %w(a b c))
+      test_validator({key: ['c', 'b', 'd']}, :key, :options, true, false, %w(a b c))
       test_validator({foo: 'b'}, :key, :options, false, true, %w(a b c))
     }
   end

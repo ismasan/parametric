@@ -1,56 +1,271 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Parametric::Field do
-  let(:key) { :a_key }
-  let(:context) { Parametric::Context.new }
   let(:registry) { Parametric.registry }
-  subject { described_class.new(key, registry) }
+  let(:context) { Parametric::Context.new}
+  subject { described_class.new(:a_key, registry) }
 
-  def test_field(field, payload, expected)
-    field.resolve(payload, context) do |r|
-      expect(r).to eq expected
-      return
-    end
-    raise "did not resolve"
+  def resolve(subject, payload)
+    subject.resolve(payload, context)
   end
 
-  def test_field_noop(field, payload)
-    result = :noop
-    field.resolve(payload, context) do |r|
-      result = r
-    end
-    expect(result).to eq :noop
+  def has_errors
+    expect(context.errors.keys).not_to be_empty
   end
 
-  def test_error(ctx, &block)
-    expect(ctx).to receive(:add_error)
-    yield
+  def no_errors
+    expect(context.errors.keys).to be_empty
   end
 
-  def test_no_error(ctx, &block)
-    expect(ctx).not_to receive(:add_error)
-    yield
+  def has_error(key, message)
+    expect(context.errors[key]).to include(message)
   end
 
-  describe '#resolve' do
-    it 'returns value' do
-      test_field(subject, {a_key: 'value'}, 'value')
+  describe "#resolve" do
+    let(:payload) { {a_key: "Joe"} }
+
+    it "returns value" do
+      resolve(subject, payload).tap do |r|
+        expect(r.eligible?).to be true
+        no_errors
+        expect(r.value).to eq "Joe"
+      end
     end
 
-    describe '#type' do
-      it 'coerces integer' do
+    describe "#type" do
+      it "coerces integer" do
         subject.type(:integer)
-        test_field(subject, {a_key: '10.0'}, 10)
+        resolve(subject, a_key: "10.0").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq 10
+        end
       end
 
-      it 'coerces number' do
+      it "coerces number" do
         subject.type(:number)
-        test_field(subject, {a_key: '10.0'}, 10.0)
+        resolve(subject, a_key: "10.0").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq 10.0
+        end
       end
 
-      it 'coerces string' do
+      it "coerces string" do
         subject.type(:string)
-        test_field(subject, {a_key: 10.0}, '10.0')
+        resolve(subject, a_key: 10.0).tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "10.0"
+        end
+      end
+    end
+
+    describe "#default" do
+      it "is default if missing key" do
+        resolve(subject.default("AA"), foobar: 1).tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "AA"
+        end
+      end
+
+      it "returns value if key is present" do
+        resolve(subject.default("AA"), a_key: nil).tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq nil
+        end
+
+        resolve(subject.default("AA"), a_key: "abc").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "abc"
+        end
+      end
+    end
+
+    describe "#present" do
+      it "is valid if value is present" do
+        resolve(subject.present, a_key: "abc").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "abc"
+        end
+      end
+
+      it "is invalid if value is empty" do
+        resolve(subject.present, a_key: "").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq ""
+        end
+
+        resolve(subject.present, a_key: nil).tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq nil
+        end
+      end
+
+      it "is invalid if key is missing" do
+        resolve(subject.present, foo: "abc").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq nil
+        end
+      end
+    end
+
+    describe "#required" do
+      it "is valid if key is present" do
+        resolve(subject.required, a_key: "abc").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "abc"
+        end
+      end
+
+      it "is valid if key is present and value empty" do
+        resolve(subject.required, a_key: "").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq ""
+        end
+      end
+
+      it "is invalid if key is missing" do
+        resolve(subject.required, foobar: "lala").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq nil
+        end
+      end
+    end
+
+    describe "#options" do
+      before do
+        subject.options(['a', 'b', 'c'])
+      end
+
+      it "resolves if value within options" do
+        resolve(subject, a_key: "b").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "b"
+        end
+      end
+
+      it "resolves if value is array within options" do
+        resolve(subject, a_key: ["b", "c"]).tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq ["b", "c"]
+        end
+      end
+
+      it "does not resolve if missing key" do
+        resolve(subject, foobar: ["b", "c"]).tap do |r|
+          expect(r.eligible?).to be false
+          no_errors
+          expect(r.value).to be_nil
+        end
+      end
+
+      it "does resolve if missing key and default set" do
+        subject.default("Foobar")
+        resolve(subject, foobar: ["b", "c"]).tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Foobar"
+        end
+      end
+
+      it "is invalid if missing key and required" do
+        subject = described_class.new(:a_key).required.options(%w(a b c))
+        resolve(subject, foobar: ["b", "c"]).tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to be_nil
+        end
+      end
+
+      it "is invalid if value outside options" do
+        resolve(subject, a_key: "x").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq "x"
+        end
+
+        resolve(subject, a_key: ["x", "b"]).tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq ["x", "b"]
+        end
+      end
+    end
+
+    describe ":split policy" do
+      it "splits by comma" do
+        resolve(subject.policy(:split), a_key: "tag1,tag2").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq ["tag1", "tag2"]
+        end
+      end
+    end
+
+    describe ":declared policy" do
+      it "is eligible if key exists" do
+        resolve(subject.policy(:declared).present, a_key: "").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq ""
+        end
+      end
+
+      it "is not eligible if key does not exist" do
+        resolve(subject.policy(:declared).present, foo: "").tap do |r|
+          expect(r.eligible?).to be false
+          no_errors
+          expect(r.value).to eq nil
+        end
+      end
+    end
+
+    describe ":noop policy" do
+      it "does not do anything" do
+        resolve(subject.policy(:noop).present, a_key: "").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq ""
+        end
+
+        resolve(subject.policy(:noop).present, foo: "").tap do |r|
+          expect(r.eligible?).to be true
+          has_errors
+          expect(r.value).to eq nil
+        end
+      end
+    end
+
+    describe "#schema" do
+      it "runs sub-schema" do
+        subject.schema do
+          field(:name).type(:string)
+          field(:tags).policy(:split).type(:array)
+        end
+
+        payload = {a_key: [{name: "n1", tags: "t1,t2"}, {name: "n2", tags: ["t3"]}]}
+
+        resolve(subject, payload).tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq([
+            {name: "n1", tags: ["t1", "t2"]},
+            {name: "n2", tags: ["t3"]},
+          ])
+        end
       end
     end
 
@@ -77,28 +292,48 @@ describe Parametric::Field do
 
       it 'works with lambdas' do
         subject.coerce(->(value, key, context){ "Mr. #{value}" })
-        test_field(subject, {a_key: 'Ismael'}, 'Mr. Ismael')
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Mr. Ismael"
+        end
       end
 
       it 'works with class' do
         subject.coerce(custom_klass)
-        test_field(subject, {a_key: 'Ismael'}, 'Sr. Ismael')
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Sr. Ismael"
+        end
       end
 
       it 'works with class and arguments' do
         subject.coerce(custom_klass, 'Lord')
-        test_field(subject, {a_key: 'Ismael'}, 'Lord Ismael')
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Lord Ismael"
+        end
       end
 
       it 'works with instance' do
         subject.coerce(custom_klass.new('Dr.'))
-        test_field(subject, {a_key: 'Ismael'}, 'Dr. Ismael')
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Dr. Ismael"
+        end
       end
 
       it 'works with coercion in registry' do
         registry.coercion :foo, ->(v, k, c){ "Hello #{v}" }
         subject.coerce(:foo)
-        test_field(subject, {a_key: 'Ismael'}, 'Hello Ismael')
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Hello Ismael"
+        end
       end
 
       it 'raises if coercion not found' do
@@ -112,249 +347,21 @@ describe Parametric::Field do
           .coerce(custom_klass, 'General')
           .coerce(custom_klass, 'Commander')
 
-        test_field(subject, {a_key: 'Ismael'}, 'Commander General Ismael')
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Commander General Ismael"
+        end
       end
 
       it 'add coercion exceptions to #errors' do
         subject
           .coerce(->(*_){ raise "This is an error" })
 
-        test_error(context) do
-          test_field(subject, {a_key: 'b'}, 'b')
-        end
-      end
-    end
-
-    describe '#options' do
-      it 'resolves if value within options' do
-        test_no_error(context) do
-          subject.options(['a', 'b', 'c'])
-          test_field(subject, {a_key: 'b'}, 'b')
-        end
-      end
-
-      it 'resolves if value is array within options' do
-        test_no_error(context) do
-          subject.options(['a', 'b', 'c'])
-          test_field(subject, {a_key: ['b', 'c']}, ['b', 'c'])
-        end
-      end
-
-      it 'does not resolve if missing key' do
-        test_no_error(context) do
-          test_field_noop(subject.options(['a', 'b']), {foobar: 'd'})
-        end
-      end
-
-      it 'does resolve if missing key and default set' do
-        test_no_error(context) do
-          test_field(subject.options(['a', 'b']).default('c'), {foo: 1}, 'c')
-        end
-      end
-
-      it 'is invalid if required and missing key' do
-        test_error(context) do
-          test_field_noop(subject.options(['a', 'b']).required, {foobar: 'd'})
-        end
-      end
-
-      context 'value outside options' do
-        before { subject.options(['a', 'b', 'c']) }
-
-        it 'does not resolve' do
-          test_field_noop(subject, {a_key: 'd'})
-        end
-
-        it 'validates single value and adds error to context' do
-          test_error(context) do
-            subject.resolve({a_key: 'd'}, context)
-          end
-        end
-
-        it 'validates array and adds error to context' do
-          test_error(context) do
-            subject.resolve({a_key: ['a', 'd']}, context)
-          end
-        end
-
-        context 'with default' do
-          before { subject.default('b') }
-
-          it 'is valid and returns if default' do
-            test_no_error(context) do
-              test_field(subject, {a_key: 'd'}, 'b')
-            end
-            test_no_error(context) do
-              test_field(subject, {a_key: ['a', 'd']}, 'b')
-            end
-          end
-        end
-      end
-    end
-
-    describe '#default' do
-      it 'returns default if key is missing' do
-        test_field(subject.default('nope'), {foo: 'd'}, 'nope')
-      end
-
-      it 'returns value if key is present' do
-        test_field(subject.default('nope'), {a_key: 'yai'}, 'yai')
-        test_field(subject.default('nope'), {a_key: nil}, nil)
-      end
-    end
-
-    describe '#required' do
-      before { subject.required }
-
-      it 'is valid when key is present' do
-        test_no_error(context) do
-          test_field(subject, {a_key: 'yes'}, 'yes')
-          test_field(subject, {a_key: true}, true)
-          test_field(subject, {a_key: false}, false)
-          test_field(subject, {a_key: nil}, nil)
-        end
-      end
-
-      it 'is invalid when key is missing' do
-        test_error(context) do
-          subject.resolve({foo: 123}, context)
-        end
-      end
-    end
-
-    describe '#present' do
-      before { subject.present }
-
-      it 'is valid when value is present' do
-        test_no_error(context) do
-          test_field(subject, {a_key: 'yes'}, 'yes')
-          test_field(subject, {a_key: true}, true)
-          test_field(subject, {a_key: false}, false)
-        end
-      end
-
-      it 'is invalid when key is missing' do
-        test_error(context) do
-          subject.resolve({foo: 123}, context)
-        end
-      end
-
-      it 'is invalid when value is nil' do
-        test_error(context) do
-          subject.resolve({a_key: nil}, context)
-        end
-      end
-    end
-
-    describe '#validate' do
-      let(:validator) do
-        Class.new do
-          def initialize(num)
-            @num = num
-          end
-
-          def message
-            "foo"
-          end
-
-          def coerce(value, key, context)
-            value
-          end
-
-          def exists?(*args)
-            true
-          end
-
-          def valid?(value, key, *args)
-            value.to_i < @num
-          end
-        end
-      end
-
-      it 'raises if validator not found' do
-        expect{
-          subject.validate(:foobar)
-        }.to raise_exception Parametric::ConfigurationError
-      end
-
-      it 'works with symbol to registered class' do
-        subject.validate(:format, /^Foo/)
-
-        test_error(context) do
-          subject.resolve({a_key: 'lalalade'}, context)
-        end
-        test_no_error(context) do
-          test_field(subject, {a_key: 'Foobar'}, 'Foobar')
-        end
-      end
-
-      it 'works with a class' do
-        subject.validate(validator, 10)
-
-        test_error(context) do
-          subject.resolve({a_key: 11}, context)
-        end
-        test_no_error(context) do
-          test_field(subject, {a_key: 9}, 9)
-        end
-      end
-
-      it 'works with an instance' do
-        subject.validate(validator.new(10))
-
-        test_error(context) do
-          subject.resolve({a_key: 11}, context)
-        end
-        test_no_error(context) do
-          test_field(subject, {a_key: 9}, 9)
-        end
-      end
-    end
-
-    describe '#schema' do
-      context 'with block' do
-        before do
-          subject.schema do
-            field :name
-          end
-        end
-
-        it 'works' do
-          test_no_error(context) do
-            test_field(subject, {a_key: {name: "Ismael", title: "Mr."}}, {name: "Ismael"})
-          end
-        end
-      end
-
-      context 'yielding instance to block' do
-        before do
-          fields = [:name, :last_name, :age]
-          subject.schema do
-            fields.each do |field_name|
-              field field_name
-            end
-          end
-        end
-
-        it 'works' do
-          test_no_error(context) do
-            test_field(subject, {a_key: {name: "Ismael", last_name: "Celis"}}, {name: "Ismael", last_name: "Celis"})
-          end
-        end
-      end
-
-      context 'with schema instance' do
-        let(:schema) do
-          Parametric::Schema.new do
-            field :last_name
-          end
-        end
-
-        it 'works' do
-          subject.schema(schema)
-          test_no_error(context) do
-            test_field(subject, {a_key: {last_name: "Celis", title: "Mr."}}, {last_name: "Celis"})
-          end
+        resolve(subject, a_key: "b").tap do |r|
+          expect(r.eligible?).to be true
+          has_error("$", "This is an error")
+          expect(r.value).to eq "b"
         end
       end
     end
