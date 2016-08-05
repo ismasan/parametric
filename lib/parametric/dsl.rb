@@ -46,7 +46,7 @@ module Parametric
           end
         end
 
-        @schema
+        @schema ||= Parametric::Schema.new
       end
     end
   end

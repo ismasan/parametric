@@ -45,15 +45,54 @@ describe "classes including DSL module" do
     end
   end
 
+  describe "inheriting schema policy" do
+    let!(:a) {
+      Class.new do
+        include Parametric::DSL
+
+        schema.policy(:present) do
+          field(:title).type(:string)
+        end
+      end
+    }
+
+    let!(:b) {
+      Class.new(a) do
+      end
+    }
+
+    it "inherits policy" do
+      results = a.schema.resolve({})
+      expect(results.errors["$.title"]).not_to be_empty
+
+      results = b.schema.resolve({})
+      expect(results.errors["$.title"]).not_to be_empty
+    end
+  end
+
   describe "overriding schema policy" do
+    let!(:a) {
+      Class.new do
+        include Parametric::DSL
+
+        schema.policy(:present) do
+          field(:title).type(:string)
+        end
+      end
+    }
+
+    let!(:b) {
+      Class.new(a) do
+        schema.policy(:declared)
+      end
+    }
+
     it "does not mutate parent schema" do
-      child.schema.policy(:present)
-
-      results = parent.schema.resolve({})
-      expect(results.errors).to be_empty
-
-      results = child.schema.resolve({})
+      results = a.schema.resolve({})
       expect(results.errors).not_to be_empty
+
+      results = b.schema.resolve({})
+      expect(results.errors).to be_empty
     end
   end
 end
