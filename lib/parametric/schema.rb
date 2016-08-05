@@ -71,7 +71,7 @@ module Parametric
       Results.new(r, {})
     end
 
-    def exists?(value, key, payload)
+    def eligible?(value, key, payload)
       payload.key? key
     end
 

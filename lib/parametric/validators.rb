@@ -5,7 +5,7 @@ module Parametric
         'is invalid'
       end
 
-      def exists?(value, key, payload)
+      def eligible?(value, key, payload)
         true
       end
 
@@ -26,7 +26,7 @@ module Parametric
         @fmt = fmt
       end
 
-      def exists?(value, key, payload)
+      def eligible?(value, key, payload)
         payload.key?(key)
       end
 
@@ -43,13 +43,13 @@ module Parametric
   Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
 
   Parametric.policy :noop do
-    exists do |value, key, payload|
+    eligible do |value, key, payload|
       true
     end
   end
 
   Parametric.policy :declared do
-    exists do |value, key, payload|
+    eligible do |value, key, payload|
       payload.key? key
     end
   end
@@ -106,7 +106,7 @@ module Parametric
       "must be one of #{options.join(', ')}, but got #{actual}"
     end
 
-    exists do |options, actual, key, payload|
+    eligible do |options, actual, key, payload|
       payload.key?(key)
     end
 

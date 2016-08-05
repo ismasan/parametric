@@ -87,7 +87,7 @@ module Parametric
       end
 
       policies.each do |policy|
-        if !policy.exists?(value, key, payload)
+        if !policy.eligible?(value, key, payload)
           eligible = false
           if has_default?
             eligible = true

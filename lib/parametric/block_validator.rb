@@ -21,9 +21,9 @@ module Parametric
       @coerce_block
     end
 
-    def self.exists(&block)
-      @exists_block = block if block_given?
-      @exists_block
+    def self.eligible(&block)
+      @eligible_block = block if block_given?
+      @eligible_block
     end
 
     attr_reader :message
@@ -33,12 +33,12 @@ module Parametric
       @message = 'is invalid'
       @validate_block = self.class.validate || ->(*args) { true }
       @coerce_block = self.class.coerce || ->(v, *_) { v }
-      @exists_block = self.class.exists || ->(*args) { true }
+      @eligible_block = self.class.eligible || ->(*args) { true }
     end
 
-    def exists?(value, key, payload)
+    def eligible?(value, key, payload)
       args = (@args + [value, key, payload])
-      @exists_block.call(*args)
+      @eligible_block.call(*args)
     end
 
     def coerce(value, key, context)

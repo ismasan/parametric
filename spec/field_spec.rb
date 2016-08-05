@@ -276,7 +276,7 @@ describe Parametric::Field do
             @title = title
           end
 
-          def exists?(*_)
+          def eligible?(*_)
             true
           end
 
