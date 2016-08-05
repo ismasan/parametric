@@ -69,6 +69,7 @@ describe Parametric::Schema do
     resolve(subject, {}) do |results|
       expect(results.valid?).to be false
       expect(results.errors['$.title']).not_to be_nil
+      expect(results.errors['$.variants']).to be_nil
       expect(results.errors['$.status']).to be_nil
     end
 

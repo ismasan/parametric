@@ -60,8 +60,8 @@ module Parametric
       Results.new(r, {})
     end
 
-    def exists?(*_)
-      true
+    def exists?(value, key, payload)
+      payload.key? key
     end
 
     def valid?(*_)
