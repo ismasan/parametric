@@ -7,7 +7,8 @@ module Parametric
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
-      @definitions = block
+      @definitions = []
+      @definitions << block if block_given?
       @default_field_policies = []
     end
 
@@ -16,16 +17,22 @@ module Parametric
       @fields
     end
 
-    def policy(name)
-      default_field_policies << name
+    def policy(*names, &block)
+      @default_field_policies = names
+      @definitions << block if block_given?
+
       self
     end
 
     def merge(other_schema)
-      instance = self.class.new
+      instance = self.class.new(other_schema.options)
 
-      instance.apply(definitions, other_schema.options)
-      instance.apply(other_schema.definitions, other_schema.options)
+      definitions.each do |d|
+        instance.definitions << d
+      end
+      other_schema.definitions.each do |d|
+        instance.definitions << d
+      end
 
       instance
     end
@@ -84,11 +91,6 @@ module Parametric
       end
     end
 
-    def apply(block, opts = {})
-      self.instance_exec(opts, &block) if block
-      self
-    end
-
     private
 
     attr_reader :default_field_policies
@@ -108,7 +110,9 @@ module Parametric
 
     def apply!
       return if @applied
-      apply(definitions, options)
+      definitions.each do |d|
+        self.instance_exec(options, &d)
+      end
       @applied = true
     end
   end

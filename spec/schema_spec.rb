@@ -89,6 +89,22 @@ describe Parametric::Schema do
       end
     end
 
+    it "replaces previous policies" do
+      subject.policy(:declared)
+      subject.policy(:present)
+
+      resolve(subject, {title: "hello"}) do |results|
+        expect(results.valid?).to be false
+        expect(results.errors.keys).to match_array(%w(
+          $.price
+          $.status
+          $.tags
+          $.description
+          $.variants
+        ))
+      end
+    end
+
     it "applies :noop policy to all fields" do
       subject.policy(:noop)
 

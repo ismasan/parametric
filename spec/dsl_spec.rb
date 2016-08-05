@@ -44,4 +44,16 @@ describe "classes including DSL module" do
       expect(child_output[:description]).to eq "A description"
     end
   end
+
+  describe "overriding schema policy" do
+    it "does not mutate parent schema" do
+      child.schema.policy(:present)
+
+      results = parent.schema.resolve({})
+      expect(results.errors).to be_empty
+
+      results = child.schema.resolve({})
+      expect(results.errors).not_to be_empty
+    end
+  end
 end
