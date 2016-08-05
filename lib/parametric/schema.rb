@@ -27,10 +27,14 @@ module Parametric
     def merge(other_schema)
       instance = self.class.new(other_schema.options)
 
+      copy_into(instance)
+      other_schema.copy_into(instance)
+    end
+
+    def copy_into(instance)
+      instance.policy(*default_field_policies) if default_field_policies.any?
+
       definitions.each do |d|
-        instance.definitions << d
-      end
-      other_schema.definitions.each do |d|
         instance.definitions << d
       end
 
