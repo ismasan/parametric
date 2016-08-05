@@ -78,6 +78,26 @@ describe Parametric::Schema do
     end
   end
 
+  describe "#policy" do
+    it "applies policy to all fields" do
+      subject.policy(:declared)
+
+      resolve(subject, {}) do |results|
+        expect(results.valid?).to be true
+        expect(results.errors.keys).to be_empty
+      end
+    end
+
+    it "applies :noop policy to all fields" do
+      subject.policy(:noop)
+
+      resolve(subject, {}) do |results|
+        expect(results.valid?).to be false
+        expect(results.errors['$.title']).not_to be_nil
+      end
+    end
+  end
+
   describe "#merge" do
     context "no options" do
       let!(:schema1) {

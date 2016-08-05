@@ -2,13 +2,23 @@ require 'ostruct'
 
 module Parametric
   class Schema
-    attr_reader :fields, :definitions, :options
+    attr_reader :definitions, :options
 
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
       @definitions = block
-      apply(block, @options) if block_given?
+      @default_field_policies = []
+    end
+
+    def fields
+      apply!
+      @fields
+    end
+
+    def policy(name)
+      default_field_policies << name
+      self
     end
 
     def merge(other_schema)
@@ -29,15 +39,14 @@ module Parametric
       end
     end
 
-    def field(key)
-      if key.kind_of?(Field)
-        fields[key.key] = key
-        key
+    def field(field_or_key)
+      f, key = if field_or_key.kind_of?(Field)
+        [field_or_key, field_or_key.key]
       else
-        f = Field.new(key)
-        fields[key.to_sym] = f
-        f
+        [Field.new(field_or_key), field_or_key.to_sym]
       end
+
+      @fields[key] = apply_default_field_policies_to(f)
     end
 
     def resolve(payload)
@@ -82,6 +91,8 @@ module Parametric
 
     private
 
+    attr_reader :default_field_policies
+
     def coerce_one(val, context)
       fields.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
@@ -89,6 +100,16 @@ module Parametric
           m[field.key] = r.value
         end
       end
+    end
+
+    def apply_default_field_policies_to(field)
+      default_field_policies.reduce(field) {|f, policy_name| f.policy(policy_name) }
+    end
+
+    def apply!
+      return if @applied
+      apply(definitions, options)
+      @applied = true
     end
   end
 end
