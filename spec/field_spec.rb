@@ -5,6 +5,12 @@ describe Parametric::Field do
   let(:context) { Parametric::Context.new}
   subject { described_class.new(:a_key, registry) }
 
+  def register_coercion(name, block)
+    registry.policy name do
+      coerce &block
+    end
+  end
+
   def resolve(subject, payload)
     subject.resolve(payload, context)
   end
@@ -291,7 +297,7 @@ describe Parametric::Field do
       end
 
       it 'works with policy in registry' do
-        registry.coercion :foo, ->(v, k, c){ "Hello #{v}" }
+        register_coercion :foo, ->(v, k, c){ "Hello #{v}" }
         subject.policy(:foo)
         resolve(subject, a_key: "Ismael").tap do |r|
           expect(r.eligible?).to be true
@@ -354,7 +360,7 @@ describe Parametric::Field do
       end
 
       it 'add policy exceptions to #errors' do
-        registry.coercion :error, ->(v, k, c){ raise "This is an error" }
+        register_coercion :error, ->(v, k, c){ raise "This is an error" }
 
         subject.policy(:error)
 

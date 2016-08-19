@@ -14,12 +14,7 @@ module Parametric
   def self.policy(name, plcy = nil, &block)
     registry.policy name, plcy, &block
   end
-
-  def self.coercion(name, f)
-    registry.coercion name, f
-  end
 end
 
 require 'parametric/default_types'
 require 'parametric/validators'
-require 'parametric/coercions'

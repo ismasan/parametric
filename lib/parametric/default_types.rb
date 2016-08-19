@@ -1,9 +1,28 @@
 module Parametric
   # type coercions
-  Parametric.coercion :integer, ->(v, k, c){ v.to_i }
-  Parametric.coercion :number, ->(v, k, c){ v.to_f }
-  Parametric.coercion :string, ->(v, k, c){ v.to_s }
-  Parametric.coercion :boolean, ->(v, k, c){ !!v }
+  Parametric.policy :integer do
+    coerce do |v, k, c|
+      v.to_i
+    end
+  end
+
+  Parametric.policy :number do
+    coerce do |v, k, c|
+      v.to_f
+    end
+  end
+
+  Parametric.policy :string do
+    coerce do |v, k, c|
+      v.to_s
+    end
+  end
+
+  Parametric.policy :boolean do
+    coerce do |v, k, c|
+      !!v
+    end
+  end
 
   # type validations
   Parametric.policy :array do
@@ -28,4 +47,9 @@ module Parametric
     end
   end
 
+  Parametric.policy :split do
+    coerce do |v, k, c|
+      v.kind_of?(Array) ? v : v.to_s.split(/\s*,\s*/)
+    end
+  end
 end

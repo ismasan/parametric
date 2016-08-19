@@ -22,11 +22,6 @@ module Parametric
       policies[name] = obj
       self
     end
-
-    def coercion(name, f)
-      policies[name] = BlockValidator.build(:coerce, &f)
-      self
-    end
   end
 end
 
