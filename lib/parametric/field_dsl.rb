@@ -2,8 +2,7 @@ module Parametric
   # Field DSL
   # host instance must implement:
   # #meta(options Hash)
-  # #validate(key Symbol) self
-  # #registry() Registry
+  # #policy(key Symbol) self
   #
   module FieldDSL
     def required
