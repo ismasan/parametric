@@ -17,4 +17,4 @@ module Parametric
 end
 
 require 'parametric/default_types'
-require 'parametric/validators'
+require 'parametric/policies'
