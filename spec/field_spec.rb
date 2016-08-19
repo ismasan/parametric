@@ -269,7 +269,7 @@ describe Parametric::Field do
       end
     end
 
-    describe '#coerce' do
+    describe '#policy' do
       let(:custom_klass) do
         Class.new do
           def initialize(title = 'Sr.')
@@ -290,45 +290,9 @@ describe Parametric::Field do
         end
       end
 
-      it 'works with lambdas' do
-        subject.coerce(->(value, key, context){ "Mr. #{value}" })
-        resolve(subject, a_key: "Ismael").tap do |r|
-          expect(r.eligible?).to be true
-          no_errors
-          expect(r.value).to eq "Mr. Ismael"
-        end
-      end
-
-      it 'works with class' do
-        subject.coerce(custom_klass)
-        resolve(subject, a_key: "Ismael").tap do |r|
-          expect(r.eligible?).to be true
-          no_errors
-          expect(r.value).to eq "Sr. Ismael"
-        end
-      end
-
-      it 'works with class and arguments' do
-        subject.coerce(custom_klass, 'Lord')
-        resolve(subject, a_key: "Ismael").tap do |r|
-          expect(r.eligible?).to be true
-          no_errors
-          expect(r.value).to eq "Lord Ismael"
-        end
-      end
-
-      it 'works with instance' do
-        subject.coerce(custom_klass.new('Dr.'))
-        resolve(subject, a_key: "Ismael").tap do |r|
-          expect(r.eligible?).to be true
-          no_errors
-          expect(r.value).to eq "Dr. Ismael"
-        end
-      end
-
-      it 'works with coercion in registry' do
+      it 'works with policy in registry' do
         registry.coercion :foo, ->(v, k, c){ "Hello #{v}" }
-        subject.coerce(:foo)
+        subject.policy(:foo)
         resolve(subject, a_key: "Ismael").tap do |r|
           expect(r.eligible?).to be true
           no_errors
@@ -336,16 +300,19 @@ describe Parametric::Field do
         end
       end
 
-      it 'raises if coercion not found' do
+      it 'raises if policy not found' do
         expect{
-          subject.coerce(:foobar)
+          subject.policy(:foobar)
         }.to raise_exception Parametric::ConfigurationError
       end
 
-      it 'chains coercions' do
+      it 'chains policies' do
+        registry.policy :general, custom_klass.new("General")
+        registry.policy :commander, custom_klass.new("Commander")
+
         subject
-          .coerce(custom_klass, 'General')
-          .coerce(custom_klass, 'Commander')
+          .policy(:general)
+          .policy(:commander)
 
         resolve(subject, a_key: "Ismael").tap do |r|
           expect(r.eligible?).to be true
@@ -354,9 +321,42 @@ describe Parametric::Field do
         end
       end
 
-      it 'add coercion exceptions to #errors' do
-        subject
-          .coerce(->(*_){ raise "This is an error" })
+      it "can instantiate policy class and pass arguments" do
+        registry.policy :job_title, custom_klass
+
+        subject.policy(:job_title, "Developer")
+
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Developer Ismael"
+        end
+      end
+
+      it "can take a class not in the registry" do
+        subject.policy(custom_klass, "Developer")
+
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Developer Ismael"
+        end
+      end
+
+      it "can take an instance not in the registry" do
+        subject.policy(custom_klass.new("Developer"), "ignore this")
+
+        resolve(subject, a_key: "Ismael").tap do |r|
+          expect(r.eligible?).to be true
+          no_errors
+          expect(r.value).to eq "Developer Ismael"
+        end
+      end
+
+      it 'add policy exceptions to #errors' do
+        registry.coercion :error, ->(v, k, c){ raise "This is an error" }
+
+        subject.policy(:error)
 
         resolve(subject, a_key: "b").tap do |r|
           expect(r.eligible?).to be true

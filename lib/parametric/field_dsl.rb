@@ -8,21 +8,21 @@ module Parametric
   module FieldDSL
     def required
       meta required: true
-      validate :required
+      policy :required
     end
 
     def present
-      required.validate :present
+      required.policy :present
     end
 
     def options(opts)
       meta options: opts
-      validate :options, opts
+      policy :options, opts
     end
 
     def type(t)
       meta type: t
-      validate(t) if registry.policies.key?(t)
+      policy(t)
       self
     end
   end

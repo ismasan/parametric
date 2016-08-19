@@ -39,7 +39,7 @@ module Parametric
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
       meta schema: sc
-      coerce sc
+      policy sc
     end
 
     def visit(meta_key = nil, &visitor)
@@ -99,18 +99,12 @@ module Parametric
     end
 
     def lookup(key, args)
-      obj = case key
-      when Symbol
-        o = registry.policies[key]
-        raise ConfigurationError, "No policies defined for #{key.inspect}" unless o
-        o
-      when Proc
-        BlockValidator.build(:coerce, &key)
-      else
-        key
-      end
+      obj = key.is_a?(Symbol) ? registry.policies[key] : key
+
+      raise ConfigurationError, "No policies defined for #{key.inspect}" unless obj
 
       obj.respond_to?(:new) ? obj.new(*args) : obj
     end
   end
 end
+
