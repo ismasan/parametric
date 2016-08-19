@@ -34,7 +34,6 @@ module Parametric
       self
     end
     alias_method :validate, :policy
-    alias_method :coerce, :policy
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))

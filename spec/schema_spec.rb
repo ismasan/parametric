@@ -19,13 +19,13 @@ describe Parametric::Schema do
       field(:title).type(:string).present
       field(:price).type(:integer)
       field(:status).type(:string).options(['visible', 'hidden'])
-      field(:tags).coerce(:split).type(:array)
+      field(:tags).policy(:split).type(:array)
       field(:description).type(:string)
       field(:variants).type(:array).schema do
         field(:name).type(:string).present
         field(:sku)
         field(:stock).type(:integer).default(1)
-        field(:available_if_no_stock).type(:boolean).coerce(:flexible_bool).default(false)
+        field(:available_if_no_stock).type(:boolean).policy(:flexible_bool).default(false)
       end
     end
   end
