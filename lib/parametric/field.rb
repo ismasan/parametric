@@ -1,7 +1,11 @@
+require "parametric/field_dsl"
+
 module Parametric
   class ConfigurationError < StandardError; end
 
   class Field
+    include FieldDSL
+
     attr_reader :key, :meta_data
 
     Result = Struct.new(:eligible?, :value)
@@ -24,26 +28,6 @@ module Parametric
       meta default: value
       @default_block = (value.respond_to?(:call) ? value : ->(key, payload, context) { value })
       self
-    end
-
-    def type(t)
-      meta type: t
-      validate(t) if registry.policies.key?(t)
-      self
-    end
-
-    def required
-      meta required: true
-      validate :required
-    end
-
-    def present
-      required.validate :present
-    end
-
-    def options(opts)
-      meta options: opts
-      validate :options, opts
     end
 
     def validate(key, *args)
