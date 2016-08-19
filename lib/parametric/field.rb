@@ -7,7 +7,6 @@ module Parametric
     include FieldDSL
 
     attr_reader :key, :meta_data
-
     Result = Struct.new(:eligible?, :value)
 
     def initialize(key, registry = Parametric.registry)
@@ -30,20 +29,12 @@ module Parametric
       self
     end
 
-    def validate(key, *args)
-      policies << lookup(key, args)
-      self
-    end
-
     def policy(key, *args)
       policies << lookup(key, args)
       self
     end
-
-    def coerce(key, *args)
-      policies << lookup(key, args)
-      self
-    end
+    alias_method :validate, :policy
+    alias_method :coerce, :policy
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
