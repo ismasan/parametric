@@ -2,8 +2,6 @@ require 'ostruct'
 
 module Parametric
   class Schema
-    attr_reader :definitions, :options
-
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
@@ -94,6 +92,10 @@ module Parametric
         coerce_one val, context
       end
     end
+
+    protected
+
+    attr_reader :definitions, :options
 
     private
 
