@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/ismasan/parametric.png)](https://travis-ci.org/ismasan/parametric)
 [![Gem Version](https://badge.fury.io/rb/parametric.png)](http://badge.fury.io/rb/parametric)
 
-Utilities for defining schemas including custom validations and coercions.
+Utilities for declaring and manipulating attribute schemas, including custom validations and coercions.
 
 Useful for building self-documeting APIs, search or form objects.
 
@@ -46,7 +46,7 @@ form.errors # => {"$.title" => ["is required"]}
 If options are defined, it validates that value is in options
 
 ```ruby
-form = schema.resolve({title: A new blog post", status: "foobar"})
+form = schema.resolve({title: "A new blog post", status: "foobar"})
 form.errors # => {"$.status" => ["expected one of draft, published but got foobar"]}
 ```
 
@@ -326,7 +326,7 @@ cto_schema.resolve(name: "Joe Bloggs").output # => {name: "Joe Bloggs, CTO"}
 For simple policies that don't need all policy methods, you can:
 
 ```ruby
-Parametric.policy :cto_job_title
+Parametric.policy :cto_job_title do
   coerce do |value, key, context|
     "#{value}, CTO"
   end
@@ -339,7 +339,7 @@ end
 ```
 
 ```ruby
-Parametric.policy :over_21_and_under_25
+Parametric.policy :over_21_and_under_25 do
   coerce do |age, key, context|
     age.to_i
   end
