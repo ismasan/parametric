@@ -8,6 +8,7 @@ module Parametric
       @definitions = []
       @definitions << block if block_given?
       @default_field_policies = []
+      @ignored_field_keys = []
     end
 
     def fields
@@ -17,7 +18,16 @@ module Parametric
 
     def policy(*names, &block)
       @default_field_policies = names
-      @definitions << block if block_given?
+      definitions << block if block_given?
+
+      self
+    end
+
+    def ignore(*field_keys, &block)
+      @ignored_field_keys += field_keys
+      @ignored_field_keys.uniq!
+
+      definitions << block if block_given?
 
       self
     end
@@ -36,6 +46,7 @@ module Parametric
         instance.definitions << d
       end
 
+      instance.ignore *ignored_field_keys
       instance
     end
 
@@ -55,7 +66,11 @@ module Parametric
         [Field.new(field_or_key), field_or_key.to_sym]
       end
 
-      @fields[key] = apply_default_field_policies_to(f)
+      if ignored_field_keys.include?(f.key)
+        f
+      else
+        @fields[key] = apply_default_field_policies_to(f)
+      end
     end
 
     def resolve(payload)
@@ -99,7 +114,7 @@ module Parametric
 
     private
 
-    attr_reader :default_field_policies
+    attr_reader :default_field_policies, :ignored_field_keys
 
     def coerce_one(val, context)
       fields.each_with_object({}) do |(_, field), m|

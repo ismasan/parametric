@@ -499,7 +499,7 @@ class CreateUserForm
       raise InvalidFormError.new(errors)
     end
 
-    _run
+    run
   end
 
   def valid?
@@ -508,7 +508,7 @@ class CreateUserForm
 
   private
 
-  def _run
+  def run
     User.create!(params)
   end
 end
@@ -534,7 +534,7 @@ class UpdateUserForm < CreateUserForm
   end
 
   private
-  def _run
+  def run
     @user.update params
   end
 end
@@ -562,6 +562,32 @@ class UpdateUserForm < CreateUserForm
   schema.policy(:declared) do
     # Validation will only run if key exists
     field(:age).type(:integer).present
+  end
+end
+```
+
+### Ignoring fields defined in the parent class
+
+Sometimes you'll want a child class to inherit most fields from the parent, but ignoring some.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema do
+    field(:uuid).present
+    field(:status).required.options(["inactive", "active"])
+    field(:name)
+  end
+end
+```
+
+The child class can use `ignore(*fields)` to ignore fields defined in the parent.
+
+```ruby
+class UpdateUserForm < CreateUserForm
+  schema.ignore(:uuid, :status) do
+    # optionally add new fields here
   end
 end
 ```

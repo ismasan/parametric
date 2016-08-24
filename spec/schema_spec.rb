@@ -170,4 +170,31 @@ describe Parametric::Schema do
       end
     end
   end
+
+  describe "#ignore" do
+    it "ignores fields" do
+      s1 = described_class.new.ignore(:title, :status) do
+        field(:status)
+        field(:title).type(:string).present
+        field(:price).type(:integer)
+      end
+
+      output = s1.resolve(status: "draft", title: "foo", price: "100").output
+      expect(output).to eq({price: 100})
+    end
+
+    it "ignores when merging" do
+      s1 = described_class.new do
+        field(:status)
+        field(:title).type(:string).present
+      end
+
+      s1 = described_class.new.ignore(:title, :status) do
+        field(:price).type(:integer)
+      end
+
+      output = s1.resolve(title: "foo", status: "draft", price: "100").output
+      expect(output).to eq({price: 100})
+    end
+  end
 end

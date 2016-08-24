@@ -95,4 +95,33 @@ describe "classes including DSL module" do
       expect(results.errors).to be_empty
     end
   end
+
+  describe "removes fields defined in the parent class" do
+    let!(:a) {
+      Class.new do
+        include Parametric::DSL
+
+        schema do
+          field(:title).type(:string)
+        end
+      end
+    }
+
+    let!(:b) {
+      Class.new(a) do
+        schema.ignore(:title) do
+          field(:age)
+        end
+      end
+    }
+
+    it "removes inherited field from child class" do
+      results = a.schema.resolve({title: "Mr.", age: 20})
+      expect(results.output).to eq({title: "Mr."})
+
+      results = b.schema.resolve({title: "Mr.", age: 20})
+      expect(results.output).to eq({age: 20})
+    end
+  end
 end
+
