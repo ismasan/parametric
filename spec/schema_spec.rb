@@ -196,5 +196,14 @@ describe Parametric::Schema do
       output = s1.resolve(title: "foo", status: "draft", price: "100").output
       expect(output).to eq({price: 100})
     end
+
+    it "returns self so it can be chained" do
+      s1 = described_class.new do
+        field(:status)
+        field(:title).type(:string).present
+      end
+
+      expect(s1.ignore(:status)).to eq s1
+    end
   end
 end
