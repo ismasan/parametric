@@ -636,6 +636,77 @@ class UpdateUserForm < CreateUserForm
 end
 ```
 
+## A pattern: changing schema policy on the fly.
+
+You can use a combination of `#clone` and `#policy` to change schema-wide field policies on the fly.
+
+For example, you might have a form object that supports creating a new user and defining mandatory fields.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema do
+    field(:name).present
+    field(:age).present
+  end
+
+  attr_reader :errors, :params
+
+  def initialize(payload: {})
+    @payload = payload
+    results = self.class.schema.resolve(params)
+    @errors = results.errors
+    @params = results.output
+  end
+
+  def run!
+    User.create(params)
+  end
+end
+```
+
+Now you might want to use the same form object to _update_ and existing user supporting partial updates.
+In this case, however, attributes should only be validated if the attributes exist in the payload. We need to apply the `:declared` policy to all schema fields, only if a user exists.
+
+We can do this by producing a clone of the class-level schema and applying any necessary policies on the fly.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema do
+    field(:name).present
+    field(:age).present
+  end
+
+  attr_reader :errors, :params
+
+  def initialize(payload: {}, user: nil)
+    @payload = payload
+    @user = user
+
+    # pick a policy based on user
+    policy = user ? :declared : :noop
+    # clone original schema and apply policy
+    schema = self.class.schema.clone.policy(policy)
+
+    # resolve params
+    results = schema.resolve(params)
+    @errors = results.errors
+    @params = results.output
+  end
+
+  def run!
+    if @user
+      @user.update_attributes(params)
+    else
+      User.create(params)
+    end
+  end
+end
+```
+
 ## Installation
 
 Add this line to your application's Gemfile:
