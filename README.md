@@ -350,6 +350,23 @@ Parametric.policy :over_21_and_under_25 do
 end
 ```
 
+## Cloning schemas
+
+The `#clone` method returns a new instance of a schema with all field definitions copied over.
+
+```ruby
+new_schema = original_schema.clone
+```
+
+New copies can be further manipulated without affecting the original.
+
+```ruby
+# See below for #policy and #ignore
+new_schema = original_schema.clone.policy(:declared).ignore(:id) do |sc|
+  field(:another_field).present
+end
+```
+
 ## Merging schemas
 
 The `#merge` method will merge field definitions in two schemas and produce a new schema instance.

@@ -171,6 +171,28 @@ describe Parametric::Schema do
     end
   end
 
+  describe "#clone" do
+    let!(:schema1) {
+      described_class.new do |opts|
+        field(:id).present
+        field(:title).type(:string).present
+        field(:price)
+      end
+    }
+
+    it "returns a copy that can be further manipulated" do
+      schema2 = schema1.clone.policy(:declared).ignore(:id)
+      expect(schema1.fields.keys).to match_array([:id, :title, :price])
+      expect(schema2.fields.keys).to match_array([:title, :price])
+
+      results1 = schema1.resolve(id: "abc", price: 100)
+      expect(results1.errors.keys).to eq ["$.title"]
+
+      results2 = schema2.resolve(id: "abc", price: 100)
+      expect(results2.errors.keys).to eq []
+    end
+  end
+
   describe "#ignore" do
     it "ignores fields" do
       s1 = described_class.new.ignore(:title, :status) do

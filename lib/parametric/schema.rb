@@ -32,6 +32,11 @@ module Parametric
       self
     end
 
+    def clone
+      instance = self.class.new(options)
+      copy_into instance
+    end
+
     def merge(other_schema)
       instance = self.class.new(other_schema.options)
 
