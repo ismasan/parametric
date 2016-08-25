@@ -4,7 +4,7 @@
 
 Utilities for declaring and manipulating attribute schemas, including custom validations and coercions.
 
-Useful for building self-documeting APIs, search or form objects.
+Useful for building self-documeting APIs, search or form objects. Or possibly as an alternative to Rails' _strong parameters_ (it has no dependencies on Rails and can be used stand-alone).
 
 ## Schema
 
