@@ -618,7 +618,7 @@ class CreateUserForm
   include Parametric::DSL
 
   schema(default_policy: :noop) do |opts|
-    field(:name).validate(opts[:default_policy).type(:string).required
+    field(:name).validate(opts[:default_policy]).type(:string).required
     field(:email).validate(opts[:default_policy).validate(:email).required
     field(:age).type(:integer)
   end
