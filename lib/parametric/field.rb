@@ -30,10 +30,13 @@ module Parametric
     end
 
     def policy(key, *args)
-      policies << lookup(key, args)
+      pol = lookup(key, args)
+      meta pol.meta_data
+      policies << pol
       self
     end
     alias_method :validate, :policy
+    alias_method :type, :policy
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))

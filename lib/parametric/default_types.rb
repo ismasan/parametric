@@ -4,11 +4,19 @@ module Parametric
     coerce do |v, k, c|
       v.to_i
     end
+
+    meta_data do
+      {type: :integer}
+    end
   end
 
   Parametric.policy :number do
     coerce do |v, k, c|
       v.to_f
+    end
+
+    meta_data do
+      {type: :number}
     end
   end
 
@@ -16,11 +24,19 @@ module Parametric
     coerce do |v, k, c|
       v.to_s
     end
+
+    meta_data do
+      {type: :string}
+    end
   end
 
   Parametric.policy :boolean do
     coerce do |v, k, c|
       !!v
+    end
+
+    meta_data do
+      {type: :boolean}
     end
   end
 
@@ -32,6 +48,10 @@ module Parametric
 
     validate do |value, key, payload|
       !payload.key?(key) || value.is_a?(Array)
+    end
+
+    meta_data do
+      {type: :array}
     end
   end
 
@@ -45,11 +65,19 @@ module Parametric
         value.respond_to?(:[]) &&
         value.respond_to?(:key?)
     end
+
+    meta_data do
+      {type: :object}
+    end
   end
 
   Parametric.policy :split do
     coerce do |v, k, c|
       v.kind_of?(Array) ? v : v.to_s.split(/\s*,\s*/)
+    end
+
+    meta_data do
+      {type: :array}
     end
   end
 end

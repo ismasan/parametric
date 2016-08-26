@@ -1,27 +1,9 @@
 module Parametric
   module Policies
-    class Policy
-      def message
-        'is invalid'
-      end
-
-      def eligible?(value, key, payload)
-        true
-      end
-
-      def coerce(value, key, context)
-        value
-      end
-
-      def valid?(value, key, payload)
-        true
-      end
-    end
-
-    class Format < Policy
+    class Format
       attr_reader :message
 
-      def initialize(fmt, msg = 'invalid format')
+      def initialize(fmt, msg = "invalid format")
         @message = msg
         @fmt = fmt
       end
@@ -30,8 +12,16 @@ module Parametric
         payload.key?(key)
       end
 
+      def coerce(value, key, context)
+        value
+      end
+
       def valid?(value, key, payload)
         !payload.key?(key) || !!(value.to_s =~ @fmt)
+      end
+
+      def meta_data
+        {}
       end
     end
   end
@@ -62,6 +52,10 @@ module Parametric
     validate do |value, key, payload|
       payload.key? key
     end
+
+    meta_data do
+      {required: true}
+    end
   end
 
   Parametric.policy :present do
@@ -78,6 +72,10 @@ module Parametric
       else
         !value.nil?
       end
+    end
+
+    meta_data do
+      {present: true}
     end
   end
 
@@ -112,6 +110,10 @@ module Parametric
 
     validate do |options, actual, key, payload|
       !payload.key?(key) || ok?(options, actual)
+    end
+
+    meta_data do |opts|
+      {options: opts}
     end
 
     def ok?(options, actual)

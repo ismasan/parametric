@@ -97,6 +97,10 @@ module Parametric
       true
     end
 
+    def meta_data
+      {}
+    end
+
     def visit(meta_key = nil, &visitor)
       fields.each_with_object({}) do |(_, field), m|
         m[field.key] = field.visit(meta_key, &visitor)

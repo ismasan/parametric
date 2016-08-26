@@ -26,6 +26,11 @@ module Parametric
       @eligible_block
     end
 
+    def self.meta_data(&block)
+      @meta_data_block = block if block_given?
+      @meta_data_block
+    end
+
     attr_reader :message
 
     def initialize(*args)
@@ -34,6 +39,7 @@ module Parametric
       @validate_block = self.class.validate || ->(*args) { true }
       @coerce_block = self.class.coerce || ->(v, *_) { v }
       @eligible_block = self.class.eligible || ->(*args) { true }
+      @meta_data_block = self.class.meta_data || ->() { {} }
     end
 
     def eligible?(value, key, payload)
@@ -49,6 +55,10 @@ module Parametric
       args = (@args + [value, key, payload])
       @message = self.class.message.call(*args) if self.class.message
       @validate_block.call(*args)
+    end
+
+    def meta_data
+      @meta_data_block.call *@args
     end
   end
 end

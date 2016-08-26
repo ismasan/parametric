@@ -38,6 +38,15 @@ describe Parametric::Field do
       end
     end
 
+    describe "#meta_data" do
+      [:string, :integer, :number, :array, :object, :boolean].each do |t|
+        it "policy #{t} adds #{t} to meta data" do
+          subject.type(t)
+          expect(subject.meta_data[:type]).to eq t
+        end
+      end
+    end
+
     describe "#type" do
       it "coerces integer" do
         subject.type(:integer)
@@ -293,6 +302,10 @@ describe Parametric::Field do
           def coerce(value, key, context)
             "#{@title} #{value}"
           end
+
+          def meta_data
+            {foo: "bar"}
+          end
         end
       end
 
@@ -347,6 +360,11 @@ describe Parametric::Field do
           no_errors
           expect(r.value).to eq "Developer Ismael"
         end
+      end
+
+      it "adds policy meta data" do
+        subject.policy(custom_klass, "Developer")
+        expect(subject.meta_data[:foo]).to eq "bar"
       end
 
       it "can take an instance not in the registry" do
