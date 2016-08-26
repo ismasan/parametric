@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/ismasan/parametric.png)](https://travis-ci.org/ismasan/parametric)
 [![Gem Version](https://badge.fury.io/rb/parametric.png)](http://badge.fury.io/rb/parametric)
 
-Utilities for declaring and manipulating attribute schemas, including custom validations and coercions.
+Declaratively define data schemas in your Ruby objects, and use them to whitelist, validate or transform inputs to your programs.
 
 Useful for building self-documeting APIs, search or form objects. Or possibly as an alternative to Rails' _strong parameters_ (it has no dependencies on Rails and can be used stand-alone).
 
