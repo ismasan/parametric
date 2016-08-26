@@ -93,6 +93,26 @@ results = person_schema.resolve(
 results.errors # => {"$.friends[0].name" => "is required"}
 ```
 
+### Reusing nested schemas
+
+You can optionally use an existing schema instance as a nested schema:
+
+```ruby
+friends_schema = Parametric::Schema.new do
+  field(:friends).type(:array).schema do
+    field(:name).type(:string).required
+    field(:email).validate(:email)
+  end
+end
+
+person_schema = Parametric::Schema.new do
+  field(:name).type(:string).required
+  field(:age).type(:integer)
+  # Nest friends_schema
+  field(:friends).type(:array).schema(friends_schema)
+end
+```
+
 ## Built-in policies
 
 Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.
