@@ -17,7 +17,7 @@ describe Parametric::Schema do
   subject do
     described_class.new do
       field(:title).policy(:string).present
-      field(:price).policy(:integer)
+      field(:price).policy(:integer).meta(label: "A price")
       field(:status).policy(:string).options(['visible', 'hidden'])
       field(:tags).policy(:split).policy(:array)
       field(:description).policy(:string)
@@ -26,6 +26,22 @@ describe Parametric::Schema do
         field(:sku)
         field(:stock).policy(:integer).default(1)
         field(:available_if_no_stock).policy(:boolean).policy(:flexible_bool).default(false)
+      end
+    end
+  end
+
+  describe "#schema" do
+    it "represents data structure and meta data" do
+      sc = subject.schema
+      expect(sc[:title].present).to be true
+      expect(sc[:title].type).to eq :string
+      expect(sc[:price].type).to eq :integer
+      expect(sc[:price].label).to eq "A price"
+      expect(sc[:variants].type).to eq :array
+      sc[:variants].schema.tap do |sc|
+        expect(sc[:name].type).to eq :string
+        expect(sc[:name].present).to be true
+        expect(sc[:stock].default).to eq 1
       end
     end
   end
