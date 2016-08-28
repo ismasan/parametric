@@ -443,25 +443,25 @@ create_user_schema = Parametric::Schema.do
 end
 ```
 
-## #schema
+## #structure
 
-A `Schema` instance has a `#schema` method that allows instrospecting schema meta data.
+A `Schema` instance has a `#structure` method that allows instrospecting schema meta data.
 
 ```ruby
-create_user_schema.schema[:name].label # => "User's full name"
-create_user_schema.schema[:age].label # => "User's age"
-create_user_schema.schema[:friends].label # => "User friends"
-# Recursive schema data
-create_user_schema.schema[:friends].schema[:name].label # => "Friend full name"
+create_user_schema.structure[:name][:label] # => "User's full name"
+create_user_schema.structure[:age][:label] # => "User's age"
+create_user_schema.structure[:friends][:label] # => "User friends"
+# Recursive schema structures
+create_user_schema.structure[:friends].structure[:name].label # => "Friend full name"
 ```
 
-Note that many field methods add field meta data.
+Note that many field policies add field meta data.
 
 ```ruby
-create_user_schema.schema[:name].type # => :string
-create_user_schema.schema[:name].required # => true
-create_user_schema.schema[:status].options # => ["published", "unpublished"]
-create_user_schema.schema[:status].default # => "published"
+create_user_schema.schema[:name][:type] # => :string
+create_user_schema.schema[:name][:required] # => true
+create_user_schema.schema[:status][:options] # => ["published", "unpublished"]
+create_user_schema.schema[:status][:default] # => "published"
 ```
 
 ## #walk

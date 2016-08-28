@@ -30,18 +30,18 @@ describe Parametric::Schema do
     end
   end
 
-  describe "#schema" do
+  describe "#structure" do
     it "represents data structure and meta data" do
-      sc = subject.schema
-      expect(sc[:title].present).to be true
-      expect(sc[:title].type).to eq :string
-      expect(sc[:price].type).to eq :integer
-      expect(sc[:price].label).to eq "A price"
-      expect(sc[:variants].type).to eq :array
-      sc[:variants].schema.tap do |sc|
-        expect(sc[:name].type).to eq :string
-        expect(sc[:name].present).to be true
-        expect(sc[:stock].default).to eq 1
+      sc = subject.structure
+      expect(sc[:title][:present]).to be true
+      expect(sc[:title][:type]).to eq :string
+      expect(sc[:price][:type]).to eq :integer
+      expect(sc[:price][:label]).to eq "A price"
+      expect(sc[:variants][:type]).to eq :array
+      sc[:variants][:structure].tap do |sc|
+        expect(sc[:name][:type]).to eq :string
+        expect(sc[:name][:present]).to be true
+        expect(sc[:stock][:default]).to eq 1
       end
     end
   end

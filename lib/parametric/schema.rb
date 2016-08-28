@@ -1,5 +1,3 @@
-require 'ostruct'
-
 module Parametric
   class Schema
     def initialize(options = {}, &block)
@@ -55,12 +53,12 @@ module Parametric
       instance
     end
 
-    def schema
+    def structure
       fields.each_with_object({}) do |(_, field), obj|
         meta = field.meta_data.dup
         sc = meta.delete(:schema)
-        meta[:schema] = sc.schema if sc
-        obj[field.key] = OpenStruct.new(meta)
+        meta[:structure] = sc.structure if sc
+        obj[field.key] = meta
       end
     end
 
