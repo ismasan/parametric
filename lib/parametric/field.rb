@@ -35,7 +35,6 @@ module Parametric
       policies << pol
       self
     end
-    alias_method :validate, :policy
     alias_method :type, :policy
 
     def schema(sc = nil, &block)

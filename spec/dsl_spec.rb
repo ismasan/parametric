@@ -7,8 +7,8 @@ describe "classes including DSL module" do
       include Parametric::DSL
 
       schema(age_type: :integer) do |opts|
-        field(:title).type(:string)
-        field(:age).type(opts[:age_type])
+        field(:title).policy(:string)
+        field(:age).policy(opts[:age_type])
       end
     end
   end
@@ -16,7 +16,7 @@ describe "classes including DSL module" do
   let!(:child) do
     Class.new(parent) do
       schema(age_type: :string) do
-        field(:description).type(:string)
+        field(:description).policy(:string)
       end
     end
   end
@@ -51,7 +51,7 @@ describe "classes including DSL module" do
         include Parametric::DSL
 
         schema.policy(:present) do
-          field(:title).type(:string)
+          field(:title).policy(:string)
         end
       end
     }
@@ -76,7 +76,7 @@ describe "classes including DSL module" do
         include Parametric::DSL
 
         schema.policy(:present) do
-          field(:title).type(:string)
+          field(:title).policy(:string)
         end
       end
     }
@@ -102,7 +102,7 @@ describe "classes including DSL module" do
         include Parametric::DSL
 
         schema do
-          field(:title).type(:string)
+          field(:title).policy(:string)
         end
       end
     }

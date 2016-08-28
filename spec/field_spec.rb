@@ -41,15 +41,24 @@ describe Parametric::Field do
     describe "#meta_data" do
       [:string, :integer, :number, :array, :object, :boolean].each do |t|
         it "policy #{t} adds #{t} to meta data" do
-          subject.type(t)
+          subject.policy(t)
           expect(subject.meta_data[:type]).to eq t
         end
       end
     end
 
     describe "#type" do
-      it "coerces integer" do
+      it "is an alias for #policy" do
         subject.type(:integer)
+        resolve(subject, a_key: "10.0").tap do |r|
+          expect(r.value).to eq 10
+        end
+      end
+    end
+
+    describe "#policy" do
+      it "coerces integer" do
+        subject.policy(:integer)
         resolve(subject, a_key: "10.0").tap do |r|
           expect(r.eligible?).to be true
           no_errors
@@ -58,7 +67,7 @@ describe Parametric::Field do
       end
 
       it "coerces number" do
-        subject.type(:number)
+        subject.policy(:number)
         resolve(subject, a_key: "10.0").tap do |r|
           expect(r.eligible?).to be true
           no_errors
@@ -67,7 +76,7 @@ describe Parametric::Field do
       end
 
       it "coerces string" do
-        subject.type(:string)
+        subject.policy(:string)
         resolve(subject, a_key: 10.0).tap do |r|
           expect(r.eligible?).to be true
           no_errors
@@ -267,8 +276,8 @@ describe Parametric::Field do
     describe "#schema" do
       it "runs sub-schema" do
         subject.schema do
-          field(:name).type(:string)
-          field(:tags).policy(:split).type(:array)
+          field(:name).policy(:string)
+          field(:tags).policy(:split).policy(:array)
         end
 
         payload = {a_key: [{name: "n1", tags: "t1,t2"}, {name: "n2", tags: ["t3"]}]}

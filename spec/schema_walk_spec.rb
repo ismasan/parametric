@@ -4,8 +4,8 @@ describe 'Schema#walk' do
   let(:schema) do
     Parametric::Schema.new do
       field(:title).meta(example: 'a title', label: 'custom title')
-      field(:tags).type(:array).meta(example: ['tag1', 'tag2'], label: 'comma-separated tags')
-      field(:friends).type(:array).schema do
+      field(:tags).policy(:array).meta(example: ['tag1', 'tag2'], label: 'comma-separated tags')
+      field(:friends).policy(:array).schema do
         field(:name).meta(example: 'a friend', label: 'friend full name')
         field(:age).meta(example: 34, label: 'age')
       end

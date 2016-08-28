@@ -16,16 +16,16 @@ describe Parametric::Schema do
 
   subject do
     described_class.new do
-      field(:title).type(:string).present
-      field(:price).type(:integer)
-      field(:status).type(:string).options(['visible', 'hidden'])
-      field(:tags).policy(:split).type(:array)
-      field(:description).type(:string)
-      field(:variants).type(:array).schema do
-        field(:name).type(:string).present
+      field(:title).policy(:string).present
+      field(:price).policy(:integer)
+      field(:status).policy(:string).options(['visible', 'hidden'])
+      field(:tags).policy(:split).policy(:array)
+      field(:description).policy(:string)
+      field(:variants).policy(:array).schema do
+        field(:name).policy(:string).present
         field(:sku)
-        field(:stock).type(:integer).default(1)
-        field(:available_if_no_stock).type(:boolean).policy(:flexible_bool).default(false)
+        field(:stock).policy(:integer).default(1)
+        field(:available_if_no_stock).policy(:boolean).policy(:flexible_bool).default(false)
       end
     end
   end
@@ -120,15 +120,15 @@ describe Parametric::Schema do
     context "no options" do
       let!(:schema1) {
         described_class.new do
-          field(:title).type(:string).present
-          field(:price).type(:integer)
+          field(:title).policy(:string).present
+          field(:price).policy(:integer)
         end
       }
 
       let!(:schema2) {
         described_class.new do
-          field(:price).type(:string)
-          field(:description).type(:string)
+          field(:price).policy(:string)
+          field(:description).policy(:string)
         end
       }
 
@@ -147,14 +147,14 @@ describe Parametric::Schema do
     context "with options" do
       let!(:schema1) {
         described_class.new(price_type: :integer) do |opts|
-          field(:title).type(:string).present
-          field(:price).type(opts[:price_type])
+          field(:title).policy(:string).present
+          field(:price).policy(opts[:price_type])
         end
       }
 
       let!(:schema2) {
         described_class.new(price_type: :string) do
-          field(:description).type(:string)
+          field(:description).policy(:string)
         end
       }
 
@@ -175,7 +175,7 @@ describe Parametric::Schema do
     let!(:schema1) {
       described_class.new do |opts|
         field(:id).present
-        field(:title).type(:string).present
+        field(:title).policy(:string).present
         field(:price)
       end
     }
@@ -197,8 +197,8 @@ describe Parametric::Schema do
     it "ignores fields" do
       s1 = described_class.new.ignore(:title, :status) do
         field(:status)
-        field(:title).type(:string).present
-        field(:price).type(:integer)
+        field(:title).policy(:string).present
+        field(:price).policy(:integer)
       end
 
       output = s1.resolve(status: "draft", title: "foo", price: "100").output
@@ -208,11 +208,11 @@ describe Parametric::Schema do
     it "ignores when merging" do
       s1 = described_class.new do
         field(:status)
-        field(:title).type(:string).present
+        field(:title).policy(:string).present
       end
 
       s1 = described_class.new.ignore(:title, :status) do
-        field(:price).type(:integer)
+        field(:price).policy(:integer)
       end
 
       output = s1.resolve(title: "foo", status: "draft", price: "100").output
@@ -222,7 +222,7 @@ describe Parametric::Schema do
     it "returns self so it can be chained" do
       s1 = described_class.new do
         field(:status)
-        field(:title).type(:string).present
+        field(:title).policy(:string).present
       end
 
       expect(s1.ignore(:status)).to eq s1

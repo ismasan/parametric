@@ -60,7 +60,7 @@ person_schema = Parametric::Schema.new do
   field(:age).type(:integer)
   field(:friends).type(:array).schema do
     field(:name).type(:string).required
-    field(:email).validate(:email)
+    field(:email).policy(:email)
   end
 end
 ```
@@ -101,7 +101,7 @@ You can optionally use an existing schema instance as a nested schema:
 friends_schema = Parametric::Schema.new do
   field(:friends).type(:array).schema do
     field(:name).type(:string).required
-    field(:email).validate(:email)
+    field(:email).policy(:email)
   end
 end
 
@@ -157,15 +157,15 @@ field(:published).type(:boolean)
 Check value against custom regexp
 
 ```ruby
-field(:salutation).validate(:format, /^Mr\/s/)
+field(:salutation).policy(:format, /^Mr\/s/)
 # optional custom error message
-field(:salutation).validate(:format, /^Mr\/s\./, "must start with Mr/s.")
+field(:salutation).policy(:format, /^Mr\/s\./, "must start with Mr/s.")
 ```
 
 ### :email
 
 ```ruby
-field(:business_email).validate(:email)
+field(:business_email).policy(:email)
 ```
 
 ### :required
@@ -176,7 +176,7 @@ Check that the key exists in the input.
 field(:name).required
 
 # same as
-field(:name).validate(:required)
+field(:name).policy(:required)
 ```
 
 Note that _required_ does not validate that the value is not empty. Use _present_ for that.
@@ -189,7 +189,7 @@ Check that the key exists and the value is not blank.
 field(:name).present
 
 # same as
-field(:name).validate(:present)
+field(:name).policy(:present)
 ```
 
 If the value is a `String`, it validates that it's not blank. If an `Array`, it checks that it's not empty. Otherwise it checks that the value is not `nil`.
@@ -210,7 +210,7 @@ The example above will check that the value is not empty, but only if the key ex
 Validate that the value is greater than a number
 
 ```ruby
-field(:age).validate(:gt, 21)
+field(:age).policy(:gt, 21)
 ```
 
 ### :lt
@@ -218,7 +218,7 @@ field(:age).validate(:gt, 21)
 Validate that the value is less than a number
 
 ```ruby
-field(:age).validate(:lt, 21)
+field(:age).policy(:lt, 21)
 ```
 
 ### :options
@@ -229,7 +229,7 @@ Pass allowed values for a field
 field(:status).options(["draft", "published"])
 
 # Same as
-field(:status).validate(:options, ["draft", "published"])
+field(:status).policy(:options, ["draft", "published"])
 ```
 
 ### :split
@@ -400,7 +400,7 @@ end
 friends_schema = Parametric::Schema.new do
   field(:friends).type(:array).schema do
     field(:name).required
-    field(:email).validate(:email)
+    field(:email).policy(:email)
   end
 end
 
@@ -438,7 +438,7 @@ create_user_schema = Parametric::Schema.do
   field(:age).type(:integer).meta(label: "User's age")
   field(:friends).type(:array).meta(label: "User friends").schema do
     field(:name).type(:string).present.meta(label: "Friend full name")
-    field(:email).validate(:email).meta(label: "Friend's email")
+    field(:email).policy(:email).meta(label: "Friend's email")
   end
 end
 ```
@@ -519,7 +519,7 @@ class CreateUserForm
 
   schema do
     field(:name).type(:string).required
-    field(:email).validate(:email).required
+    field(:email).policy(:email).required
     field(:age).type(:integer)
   end
 
@@ -638,8 +638,8 @@ class CreateUserForm
   include Parametric::DSL
 
   schema(default_policy: :noop) do |opts|
-    field(:name).validate(opts[:default_policy]).type(:string).required
-    field(:email).validate(opts[:default_policy).validate(:email).required
+    field(:name).policy(opts[:default_policy]).type(:string).required
+    field(:email).policy(opts[:default_policy).policy(:email).required
     field(:age).type(:integer)
   end
 
