@@ -39,8 +39,10 @@ describe Parametric::Field do
     end
   end
 
+  BUILT_IN_COERCIONS = [:string, :integer, :number, :array, :object, :boolean]
+
   describe "#meta_data" do
-    [:string, :integer, :number, :array, :object, :boolean].each do |t|
+    BUILT_IN_COERCIONS.each do |t|
       it "policy #{t} adds #{t} to meta data" do
         subject.policy(t)
         expect(subject.meta_data[:type]).to eq t
