@@ -50,6 +50,41 @@ describe Parametric::Field do
     end
   end
 
+  describe "policy shortcuts" do
+    context "built-in policies" do
+      BUILT_IN_COERCIONS.each do |t|
+        it "responds to #{t}" do
+          expect(subject.respond_to?(t)).to be true
+        end
+
+        it "policy #{t} can be invoked as a method" do
+          subject.public_send(t)
+          expect(subject.meta_data[:type]).to eq t
+        end
+      end
+    end
+
+    context "policies with arguments" do
+      it "works" do
+        subject.options(%w(a b c))
+        resolve(subject, a_key: "d").tap do |r|
+          expect(r.value).to eq "d"
+          has_errors
+        end
+      end
+    end
+
+    context "custom policies" do
+      it "are exposes as methods" do
+        register_coercion :foo, ->(v, k, c) { "Hello #{v}" }
+
+        resolve(subject.foo, a_key: "Joe").tap do |r|
+          expect(r.value).to eq "Hello Joe"
+        end
+      end
+    end
+  end
+
   describe "#type" do
     it "is an alias for #policy" do
       subject.type(:integer)

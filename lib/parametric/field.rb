@@ -1,11 +1,7 @@
-require "parametric/field_dsl"
-
 module Parametric
   class ConfigurationError < StandardError; end
 
   class Field
-    include FieldDSL
-
     attr_reader :key, :meta_data
     Result = Struct.new(:eligible?, :value)
 
@@ -27,6 +23,14 @@ module Parametric
       meta default: value
       @default_block = (value.respond_to?(:call) ? value : ->(key, payload, context) { value })
       self
+    end
+
+    def respond_to_missing?(key, include_private = false)
+      registry.policies.key? key.to_sym
+    end
+
+    def method_missing(key, *args, &_)
+      policy key.to_sym, *args
     end
 
     def policy(key, *args)
