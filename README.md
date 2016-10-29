@@ -647,7 +647,7 @@ class CreateUserForm
 end
 ```
 
-The `:noop` policy does nothing. The sub-class can pass it's own _default_policy_.
+The `:noop` policy does nothing. The sub-class can pass its own _default_policy_.
 
 ```ruby
 class UpdateUserForm < CreateUserForm
