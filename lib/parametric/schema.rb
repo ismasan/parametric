@@ -1,3 +1,7 @@
+require "parametric/context"
+require "parametric/results"
+require "parametric/field"
+
 module Parametric
   class Schema
     def initialize(options = {}, &block)
