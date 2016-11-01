@@ -1,4 +1,4 @@
-require "parametric/schema"
+require "parametric"
 
 module Parametric
   module DSL
