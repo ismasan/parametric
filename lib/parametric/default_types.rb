@@ -1,3 +1,5 @@
+require "date"
+
 module Parametric
   # type coercions
   Parametric.policy :integer do
@@ -78,6 +80,16 @@ module Parametric
 
     meta_data do
       {type: :array}
+    end
+  end
+
+  Parametric.policy :datetime do
+    coerce do |v, k, c|
+      DateTime.parse(v.to_s)
+    end
+
+    meta_data do
+      {type: :datetime}
     end
   end
 end

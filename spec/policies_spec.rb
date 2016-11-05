@@ -6,6 +6,22 @@ describe 'default coercions' do
     expect(coercion.new.coerce(value, nil, nil)).to eq expected
   end
 
+  describe ':datetime' do
+    it {
+      coercion = Parametric.registry.coercions[:datetime]
+      coercion.new.coerce("2016-11-05T14:23:34Z", nil, nil).tap do |d|
+        expect(d).to be_a Date
+        expect(d.year).to eq 2016
+        expect(d.month).to eq 11
+        expect(d.day).to eq 5
+        expect(d.hour).to eq 14
+        expect(d.minute).to eq 23
+        expect(d.second).to eq 34
+        expect(d.zone).to eq "+00:00"
+      end
+    }
+  end
+
   describe ':integer' do
     it {
       test_coercion(:integer, '10', 10)

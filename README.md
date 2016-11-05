@@ -147,9 +147,16 @@ field(:price).type(:number)
 
 Returns `true` or `false` (`nil` is converted to `false`).
 
-
 ```ruby
 field(:published).type(:boolean)
+```
+
+### :datetime
+
+Attempts parsing value with [Datetime.parse](http://ruby-doc.org/stdlib-2.3.1/libdoc/date/rdoc/DateTime.html#method-c-parse). If invalid, the error will be added to the output's `errors` object.
+
+```ruby
+field(:expires_on).type(:datetime)
 ```
 
 ### :format
