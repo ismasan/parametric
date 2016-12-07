@@ -40,7 +40,7 @@ module Parametric
     end
 
     def merge(other_schema)
-      instance = self.class.new(other_schema.options)
+      instance = self.class.new(options.merge(other_schema.options))
 
       copy_into(instance)
       other_schema.copy_into(instance)

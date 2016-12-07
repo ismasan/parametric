@@ -162,9 +162,9 @@ describe Parametric::Schema do
 
     context "with options" do
       let!(:schema1) {
-        described_class.new(price_type: :integer) do |opts|
+        described_class.new(price_type: :integer, label: "Foo") do |opts|
           field(:title).policy(:string).present
-          field(:price).policy(opts[:price_type])
+          field(:price).policy(opts[:price_type]).meta(label: opts[:label])
         end
       }
 
@@ -173,6 +173,12 @@ describe Parametric::Schema do
           field(:description).policy(:string)
         end
       }
+
+      it "inherits options" do
+        new_schema = schema1.merge(schema2)
+        expect(new_schema.fields[:price].meta_data[:type]).to eq :string
+        expect(new_schema.fields[:price].meta_data[:label]).to eq "Foo"
+      end
 
       it "re-applies blocks with new options" do
         new_schema = schema1.merge(schema2)
