@@ -24,6 +24,7 @@ module Parametric
     #
     def self.included(base)
       base.extend(ClassMethods)
+      base.schema = Parametric::Schema.new
     end
 
     module ClassMethods
@@ -32,26 +33,14 @@ module Parametric
       end
 
       def inherited(subclass)
-        child_schema = if self.schema
-          self.schema.merge(Parametric::Schema.new)
-        else
-          Parametric::Schema.new
-        end
-
-        subclass.schema = child_schema
+        subclass.schema = @schema.merge(Parametric::Schema.new)
       end
 
       def schema(options = {}, &block)
-        if block_given? # defining schema
-          new_schema = Parametric::Schema.new(options, &block)
-          @schema = if @schema
-            @schema.merge(new_schema)
-          else
-            new_schema
-          end
-        end
+        return @schema unless options.any? || block_given?
 
-        @schema ||= Parametric::Schema.new
+        new_schema = Parametric::Schema.new(options, &block)
+        @schema = @schema.merge(new_schema)
       end
     end
   end

@@ -2,23 +2,23 @@ require 'spec_helper'
 require "parametric/dsl"
 
 describe "classes including DSL module" do
-  let!(:parent) do
-    Class.new do
-      include Parametric::DSL
+  class Parent
+    include Parametric::DSL
 
-      schema(age_type: :integer) do |opts|
-        field(:title).policy(:string)
-        field(:age).policy(opts[:age_type])
-      end
+    schema(age_type: :integer) do |opts|
+      field(:title).policy(:string)
+      field(:age).policy(opts[:age_type])
     end
   end
 
-  let!(:child) do
-    Class.new(parent) do
-      schema(age_type: :string) do
-        field(:description).policy(:string)
-      end
+  class Child < Parent
+    schema(age_type: :string) do
+      field(:description).policy(:string)
     end
+  end
+
+  class GrandChild < Child
+    schema(age_type: :integer)
   end
 
   describe "#schema" do
@@ -31,8 +31,8 @@ describe "classes including DSL module" do
     }
 
     it "merges parent's schema into child's" do
-      parent_output = parent.schema.resolve(input).output
-      child_output = child.schema.resolve(input).output
+      parent_output = Parent.schema.resolve(input).output
+      child_output = Child.schema.resolve(input).output
 
       expect(parent_output.keys).to match_array([:title, :age])
       expect(parent_output[:title]).to eq "A title"
@@ -42,6 +42,15 @@ describe "classes including DSL module" do
       expect(child_output[:title]).to eq "A title"
       expect(child_output[:age]).to eq "38"
       expect(child_output[:description]).to eq "A description"
+    end
+
+    it "inherits options" do
+      grand_child_output = GrandChild.schema.resolve(input).output
+
+      expect(grand_child_output.keys).to match_array([:title, :age, :description])
+      expect(grand_child_output[:title]).to eq "A title"
+      expect(grand_child_output[:age]).to eq 38
+      expect(grand_child_output[:description]).to eq "A description"
     end
   end
 
