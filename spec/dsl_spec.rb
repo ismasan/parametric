@@ -66,8 +66,7 @@ describe "classes including DSL module" do
     }
 
     let!(:b) {
-      Class.new(a) do
-      end
+      Class.new(a)
     }
 
     it "inherits policy" do

@@ -9,17 +9,11 @@ module Parametric
     end
 
     def coercions
-      @policies
+      policies
     end
 
     def policy(name, plcy = nil, &block)
-      obj = if plcy
-        plcy
-      else
-        BlockValidator.build(:instance_eval, &block)
-      end
-
-      policies[name] = obj
+      policies[name] = (plcy || BlockValidator.build(:instance_eval, &block))
       self
     end
   end
