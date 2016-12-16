@@ -1,84 +1,123 @@
 module Parametric
   module Policies
+    class Format
+      attr_reader :message
 
-    class Policy
-      def initialize(value, options, decorated = nil)
-        @value, @options = value, options
-        @decorated = decorated
+      def initialize(fmt, msg = "invalid format")
+        @message = msg
+        @fmt = fmt
       end
 
-      def wrap(decoratedClass)
-        decoratedClass.new(@value, @options, self)
+      def eligible?(value, key, payload)
+        payload.key?(key)
       end
 
-      def value
-        [@value].flatten
+      def coerce(value, key, context)
+        value
       end
 
-      protected
-      attr_reader :decorated, :options
-    end
-
-    class DefaultPolicy < Policy
-      def value
-        v = decorated.value
-        v.size > 0 ? v : Array(options[:default])
+      def valid?(value, key, payload)
+        !payload.key?(key) || !!(value.to_s =~ @fmt)
       end
-    end
 
-    class MultiplePolicy < Policy
-      OPTION_SEPARATOR = /\s*,\s*/.freeze
-
-      def value
-        decorated.value.map do |v|
-          v.is_a?(String) ? v.split(options.fetch(:separator, OPTION_SEPARATOR)) : v
-        end.flatten
+      def meta_data
+        {}
       end
     end
+  end
 
-    class NestedPolicy < Policy
-      def value
-        decorated.value.find_all{|v| v.respond_to?(:has_key?)}.map do |v|
-          options[:nested].new(v)
-        end
-      end
+  # Default validators
+  EMAIL_REGEXP = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i.freeze
+
+  Parametric.policy :format, Policies::Format
+  Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
+
+  Parametric.policy :noop do
+    eligible do |value, key, payload|
+      true
+    end
+  end
+
+  Parametric.policy :declared do
+    eligible do |value, key, payload|
+      payload.key? key
+    end
+  end
+
+  Parametric.policy :required do
+    message do |*|
+      "is required"
     end
 
-    class CoercePolicy < Policy
-      def value
-        decorated.value.map do |v|
-          if options[:coerce].is_a?(Symbol) && v.respond_to?(options[:coerce])
-            v.send(options[:coerce])
-          elsif options[:coerce].respond_to?(:call)
-            options[:coerce].call v
-          else
-            v
-          end
-        end
-      end
+    validate do |value, key, payload|
+      payload.key? key
     end
 
-    class SinglePolicy < Policy
-      def value
-        decorated.value.first
-      end
+    meta_data do
+      {required: true}
+    end
+  end
+
+  Parametric.policy :present do
+    message do |*|
+      "is required and value must be present"
     end
 
-    class OptionsPolicy < Policy
-      def value
-        decorated.value.each_with_object([]){|a,arr| 
-          arr << a if options[:options].include?(a)
-        }
-      end
-    end
-
-    class MatchPolicy < Policy
-      def value
-        decorated.value.each_with_object([]){|a,arr| 
-          arr << a if a.to_s =~ options[:match]
-        }
+    validate do |value, key, payload|
+      case value
+      when String
+        value.strip != ''
+      when Array, Hash
+        value.any?
+      else
+        !value.nil?
       end
     end
 
+    meta_data do
+      {present: true}
+    end
+  end
+
+  Parametric.policy :gt do
+    message do |num, actual|
+      "must be greater than #{num}, but got #{actual}"
+    end
+
+    validate do |num, actual, key, payload|
+      !payload[key] || actual.to_i > num.to_i
+    end
+  end
+
+  Parametric.policy :lt do
+    message do |num, actual|
+      "must be less than #{num}, but got #{actual}"
+    end
+
+    validate do |num, actual, key, payload|
+      !payload[key] || actual.to_i < num.to_i
+    end
+  end
+
+  Parametric.policy :options do
+    message do |options, actual|
+      "must be one of #{options.join(', ')}, but got #{actual}"
+    end
+
+    eligible do |options, actual, key, payload|
+      payload.key?(key)
+    end
+
+    validate do |options, actual, key, payload|
+      !payload.key?(key) || ok?(options, actual)
+    end
+
+    meta_data do |opts|
+      {options: opts}
+    end
+
+    def ok?(options, actual)
+      [actual].flatten.all?{|v| options.include?(v)}
+    end
   end
 end

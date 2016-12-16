@@ -2,302 +2,735 @@
 [![Build Status](https://travis-ci.org/ismasan/parametric.png)](https://travis-ci.org/ismasan/parametric)
 [![Gem Version](https://badge.fury.io/rb/parametric.png)](http://badge.fury.io/rb/parametric)
 
-DSL for declaring allowed parameters with options, regexp pattern and default values.
+Declaratively define data schemas in your Ruby objects, and use them to whitelist, validate or transform inputs to your programs.
 
-Useful for building self-documeting APIs, search or form objects.
+Useful for building self-documeting APIs, search or form objects. Or possibly as an alternative to Rails' _strong parameters_ (it has no dependencies on Rails and can be used stand-alone).
 
-## Usage
+## Schema
 
-Declare your parameters
+Define a schema
 
 ```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :q, 'Full text search query'
-  param :page, 'Page number', default: 1
-  param :per_page, 'Items per page', default: 30
-  param :status, 'Order status', options: ['checkout', 'pending', 'closed', 'shipped'], multiple: true
+schema = Parametric::Schema.new do
+  field(:title).type(:string).present
+  field(:status).options(["draft", "published"]).default("draft")
+  field(:tags).type(:array)
 end
 ```
 
 Populate and use. Missing keys return defaults, if provided.
 
 ```ruby
-order_search = OrdersSearch.new(page: 2, q: 'foobar')
-order_search.params[:page] # => 2
-order_search.params[:per_page] # => 30
-order_search.params[:q] # => 'foobar'
-order_search.params[:status] # => nil
+form = schema.resolve(title: "A new blog post", tags: ["tech"])
+
+form.output # => {title: "A new blog post", tags: ["tech"], status: "draft"}
+form.errors # => {}
 ```
 
 Undeclared keys are ignored.
 
 ```ruby
-order_search = OrdersSearch.new(page: 2, foo: 'bar')
-order_params.params.has_key?(:foo) # => false
+form = schema.resolve(foobar: "BARFOO", title: "A new blog post", tags: ["tech"])
+
+form.output # => {title: "A new blog post", tags: ["tech"], status: "draft"}
 ```
 
+Validations are run and errors returned
+
+
 ```ruby
-order_search = OrderParams.new(status: 'checkout,closed')
-order_search.params[:status] #=> ['checkout', 'closed']
+form = schema.resolve({})
+form.errors # => {"$.title" => ["is required"]}
 ```
 
-### Search object pattern
-
-A class that declares allowed params and defaults, and builds a query.
+If options are defined, it validates that value is in options
 
 ```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :q, 'Full text search query'
-  param :page, 'Page number', default: 1
-  param :per_page, 'Items per page', default: 30
-  param :status, 'Order status', options: ['checkout', 'pending', 'closed', 'shipped'], multiple: true
-  param :sort, 'Sort', options: ['updated_on-desc', 'updated_on-asc'], default: 'updated_on-desc'
+form = schema.resolve({title: "A new blog post", status: "foobar"})
+form.errors # => {"$.status" => ["expected one of draft, published but got foobar"]}
+```
 
-  def results
-    query = Order.sort(params[:sort])
-    query = query.where(["code LIKE ? OR user_name LIKE ?", params[:q]]) if params[:q]
-    query = query.where(status: params[:status]) if params[:status].any?
-    query = query.paginate(page: params[:page], per_page: params[:per_page])
+## Nested schemas
+
+A schema can have nested schemas, for example for defining complex forms.
+
+```ruby
+person_schema = Parametric::Schema.new do
+  field(:name).type(:string).required
+  field(:age).type(:integer)
+  field(:friends).type(:array).schema do
+    field(:name).type(:string).required
+    field(:email).policy(:email)
   end
 end
 ```
 
-### :match
-
-Pass a regular expression to match parameter value. Non-matching values will be ignored or use default value, if available.
+It works as expected
 
 ```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :email, 'Valid email address', match: /\w+@\w+\.\w+/
-end
+results = person_schema.resolve(
+  name: "Joe",
+  age: "38",
+  friends: [
+    {name: "Jane", email: "jane@email.com"}
+  ]
+)
+
+results.output # => {name: "Joe", age: 38, friends: [{name: "Jane", email: "jane@email.com"}]}
 ```
 
-### :options array
-
-Declare allowed values in an array. Values not in the options will be ignored or use default value.
+Validation errors use [JSON path](http://goessner.net/articles/JsonPath/) expressions to describe errors in nested structures
 
 ```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :sort, 'Sort', options: ['updated_on-desc', 'updated_on-asc'], default: 'updated_on-desc'
-end
+results = person_schema.resolve(
+  name: "Joe",
+  age: "38",
+  friends: [
+    {email: "jane@email.com"}
+  ]
+)
+
+results.errors # => {"$.friends[0].name" => "is required"}
 ```
 
-### :multiple values
+### Reusing nested schemas
 
-`:multiple` values are separated on "," and treated as arrays.
-
-```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :status, 'Order status', multiple: true
-end
-
-search = OrdersSearch.new(status: 'closed,shipped,abandoned')
-search.params[:status] # => ['closed', 'shipped', 'abandoned']
-```
-
-If `:options` array is declared, values outside of the options will be filtered out.
+You can optionally use an existing schema instance as a nested schema:
 
 ```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :status, 'Order status', options: ['checkout', 'pending', 'closed', 'shipped'], multiple: true
-end
-
-search = OrdersSearch.new(status: 'closed,shipped,abandoned')
-search.params[:status] # => ['closed', 'shipped']
-```
-
-When using `:multiple`, results and defaults are always returned as an array, for consistency.
-
-```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :status, 'Order status', multiple: true, default: 'closed'
-end
-
-search = OrdersSearch.new
-search.params[:status] # => ['closed']
-```
-
-### :nullable fields
-
-In some cases you won't want Parametric to provide nil or empty keys for attributes missing from the input. For example when missing keys have special meaning in your application.
-
-In those cases you can add the `:nullable` option to said param definitions:
-
-```ruby
-class OrdersSearch
-  include Parametric::Params
-  param :query, 'Search query. optional', nullable: true
-  param :tags, 'Tags', multiple: true
-end
-
-search = OrdersSearch.new({})
-search.params # {tags: []}
-```
-
-## `available_params`
-
-`#available_params` returns the subset of keys that were populated (including defaults). Useful for building query strings.
-
-```ruby
-order_search = OrdersSearch.new(page: 2, foo: 'bar')
-order_search.available_params # => {page: 2, per_page: 50}
-```
-
-## `schema`
-
-`#schema` returns a data structure including meta-data on each parameter, such as "label" and "options". Useful for building forms or self-documented Hypermedia APIs (or maybe [json-schema](http://json-schema.org/example2.html) endpoints).
-
-```ruby
-order_search.schema[:q].label # => 'Full text search query'
-order_search.schema[:q].value # => ''
-
-order_search.schema[:page].label # => 'Page number'
-order_search.schema[:page].value # => 1
-
-order_search.schema[:status].label # => 'Order status'
-order_search.schema[:status].value # => ['pending']
-order_search.schema[:status].options # => ['checkout', 'pending', 'closed', 'shipped']
-order_search.schema[:status].multiple # => true
-order_search.schema[:status].default # => 'closed'
-```
-
-## Coercing values
-
-Param definitions take an optional `:coerce` option with a symbol or proc to coerce resulting values.
-
-```ruby
-class UsersSearch
-  include Parametric::Params
-  param :age, 'User age', coerce: :to_i
-  param :name, 'User name', coerce: lambda{|name| "Mr. #{name}"}
-end
-
-search = UsersSearch.new(age: '36', name: 'Ismael')
-
-search.available_params[:age] # => 36
-search.available_params[:name] # => 'Mr. Ismael'
-```
-
-### Parametric::TypedParams
-
-The `Parametric::TypedParams` module includes extra DSL methods to coerce values to standard Ruby types.
-
-```ruby
-class UsersSearch
-  include Parametric::TypedParams
-  integer :age, 'User age'
-  array :accounts
-  string :country_code
-  # you can still use :coerce
-  param :name, 'User name', coerce: lambda{|name| "Mr. #{name}"}
-end
-```
-
-## Parametric::Hash
-
-The alternative `Parametric::Hash` class makes your objects quack like a hash, instead of exposing the `#params` object directly.
-
-```ruby
-class OrdersParams < Parametric::Hash
-  param :q, 'Full text search query'
-  integer :page, 'Page number', default: 1
-  integer :per_page, 'Items per page', default: 30
-  array :status, 'Order status', options: ['checkout', 'pending', 'closed', 'shipped']
-end
-```
-
-```ruby
-order_params = OrdersParams.new(page: 2, q: 'foobar')
-order_params[:page] # => 2
-order_params[:per_page] # => 30
-order_params.each{|key, value| ... }
-```
-
-## Nested structures
-
-You can also nest parameter definitions. This is useful if you need to model POST payloads, for example.
-
-```ruby
-class AccountPayload
-  include Parametric::Params
-  param :status, 'Account status', default: 'pending', options: ['pending', 'active', 'cancelled']
-  param :users, 'Users in this account', multiple: true do
-    param :name, 'User name'
-    param :title, 'Job title', default: 'Employee'
-    param :email, 'User email', match: /\w+@\w+\.\w+/
-  end
-  param :owner, 'Owner user' do
-    param :name, 'User name'
-    param :email, 'User email', match: /\w+@\w+\.\w+/
+friends_schema = Parametric::Schema.new do
+  field(:friends).type(:array).schema do
+    field(:name).type(:string).required
+    field(:email).policy(:email)
   end
 end
+
+person_schema = Parametric::Schema.new do
+  field(:name).type(:string).required
+  field(:age).type(:integer)
+  # Nest friends_schema
+  field(:friends).type(:array).schema(friends_schema)
+end
 ```
 
-The example above expects a data structure like the following:
+## Built-in policies
+
+Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.
+
+Parametric ships with a number of built-in policies.
+
+### :string
+
+Calls `:to_s` on the value
 
 ```ruby
+field(:title).type(:string)
+```
+
+### :integer
+
+Calls `:to_i` on the value
+
+```ruby
+field(:age).type(:integer)
+```
+
+### :number
+
+Calls `:to_f` on the value
+
+```ruby
+field(:price).type(:number)
+```
+
+### :boolean
+
+Returns `true` or `false` (`nil` is converted to `false`).
+
+```ruby
+field(:published).type(:boolean)
+```
+
+### :datetime
+
+Attempts parsing value with [Datetime.parse](http://ruby-doc.org/stdlib-2.3.1/libdoc/date/rdoc/DateTime.html#method-c-parse). If invalid, the error will be added to the output's `errors` object.
+
+```ruby
+field(:expires_on).type(:datetime)
+```
+
+### :format
+
+Check value against custom regexp
+
+```ruby
+field(:salutation).policy(:format, /^Mr\/s/)
+# optional custom error message
+field(:salutation).policy(:format, /^Mr\/s\./, "must start with Mr/s.")
+```
+
+### :email
+
+```ruby
+field(:business_email).policy(:email)
+```
+
+### :required
+
+Check that the key exists in the input.
+
+```ruby
+field(:name).required
+
+# same as
+field(:name).policy(:required)
+```
+
+Note that _required_ does not validate that the value is not empty. Use _present_ for that.
+
+### :present
+
+Check that the key exists and the value is not blank.
+
+```ruby
+field(:name).present
+
+# same as
+field(:name).policy(:present)
+```
+
+If the value is a `String`, it validates that it's not blank. If an `Array`, it checks that it's not empty. Otherwise it checks that the value is not `nil`.
+
+### :declared
+
+Check that a key exists in the input, or stop any further validations otherwise.
+This is useful when chained to other validations. For example:
+
+```ruby
+field(:name).declared.present
+```
+
+The example above will check that the value is not empty, but only if the key exists. If the key doesn't exist no validations will run.
+
+### :gt
+
+Validate that the value is greater than a number
+
+```ruby
+field(:age).policy(:gt, 21)
+```
+
+### :lt
+
+Validate that the value is less than a number
+
+```ruby
+field(:age).policy(:lt, 21)
+```
+
+### :options
+
+Pass allowed values for a field
+
+```ruby
+field(:status).options(["draft", "published"])
+
+# Same as
+field(:status).policy(:options, ["draft", "published"])
+```
+
+### :split
+
+Split comma-separated string values into an array.
+Useful for parsing comma-separated query-string parameters.
+
+```ruby
+field(:status).policy(:split) # turns "pending,confirmed" into ["pending", "confirmed"]
+```
+
+## Custom policies
+
+You can also register your own custom policy objects. A policy must implement the following methods:
+
+```ruby
+class MyPolicy
+  # Validation error message, if invalid
+  def message
+    'is invalid'
+  end
+
+  # Whether or not to validate and coerce this value
+  # if false, no other policies will be run on the field
+  def eligible?(value, key, payload)
+    true
+  end
+
+  # Transform the value
+  def coerce(value, key, context)
+    value
+  end
+
+  # Is the value valid?
+  def valid?(value, key, payload)
+    true
+  end
+end
+```
+
+You can register your policy with:
+
+```ruby
+Parametric.policy :my_policy, MyPolicy
+```
+
+And then refer to it by name when declaring your schema fields
+
+```ruby
+field(:title).policy(:my_policy)
+```
+
+You can chain custom policies with other policies.
+
+```ruby
+field(:title).required.policy(:my_policy)
+```
+
+Note that you can also register instances.
+
+```ruby
+Parametric.policy :my_policy, MyPolicy.new
+```
+
+For example, a policy that can be configured on a field-by-field basis:
+
+```ruby
+class AddJobTitle
+  def initialize(job_title)
+    @job_title = job_title
+  end
+
+  def message
+    'is invalid'
+  end
+
+  # Noop
+  def eligible?(value, key, payload)
+    true
+  end
+
+  # Add job title to value
+  def coerce(value, key, context)
+    "#{value}, #{@job_title}"
+  end
+
+  # Noop
+  def valid?(value, key, payload)
+    true
+  end
+end
+
+# Register it
+Parametric.policy :job_title, AddJobTitle
+```
+
+Now you can reuse the same policy with different configuration
+
+```ruby
+manager_schema = Parametric::Schema.new do
+  field(:name).type(:string).policy(:job_title, "manager")
+end
+
+cto_schema = Parametric::Schema.new do
+  field(:name).type(:string).policy(:job_title, "CTO")
+end
+
+manager_schema.resolve(name: "Joe Bloggs").output # => {name: "Joe Bloggs, manager"}
+cto_schema.resolve(name: "Joe Bloggs").output # => {name: "Joe Bloggs, CTO"}
+```
+
+## Custom policies, short version
+
+For simple policies that don't need all policy methods, you can:
+
+```ruby
+Parametric.policy :cto_job_title do
+  coerce do |value, key, context|
+    "#{value}, CTO"
+  end
+end
+
+# use it
+cto_schema = Parametric::Schema.new do
+  field(:name).type(:string).policy(:cto_job_title)
+end
+```
+
+```ruby
+Parametric.policy :over_21_and_under_25 do
+  coerce do |age, key, context|
+    age.to_i
+  end
+
+  validate do |age, key, context|
+    age > 21 && age < 25
+  end
+end
+```
+
+## Cloning schemas
+
+The `#clone` method returns a new instance of a schema with all field definitions copied over.
+
+```ruby
+new_schema = original_schema.clone
+```
+
+New copies can be further manipulated without affecting the original.
+
+```ruby
+# See below for #policy and #ignore
+new_schema = original_schema.clone.policy(:declared).ignore(:id) do |sc|
+  field(:another_field).present
+end
+```
+
+## Merging schemas
+
+The `#merge` method will merge field definitions in two schemas and produce a new schema instance.
+
+```ruby
+basic_user_schema = Parametric::Schema.new do
+  field(:name).type(:string).required
+  field(:age).type(:integer)
+end
+
+friends_schema = Parametric::Schema.new do
+  field(:friends).type(:array).schema do
+    field(:name).required
+    field(:email).policy(:email)
+  end
+end
+
+user_with_friends_schema = basic_user_schema.merge(friends_schema)
+
+results = user_with_friends_schema.resolve(input)
+```
+
+Fields defined in the merged schema will override fields with the same name in the original schema.
+
+```ruby
+required_name_schema = Parametric::Schema.new do
+  field(:name).required
+  field(:age)
+end
+
+optional_name_schema = Parametric::Schema.new do
+  field(:name)
+end
+
+# This schema now has :name and :age fields.
+# :name has been redefined to not be required.
+new_schema = required_name_schema.merge(optional_name_schema)
+```
+
+## #meta
+
+The `#meta` field method can be used to add custom meta data to field definitions.
+These meta data can be used later when instrospecting schemas (ie. to generate documentation or error notices).
+
+```ruby
+create_user_schema = Parametric::Schema.do
+  field(:name).required.type(:string).meta(label: "User's full name")
+  field(:status).options(["published", "unpublished"]).default("published")
+  field(:age).type(:integer).meta(label: "User's age")
+  field(:friends).type(:array).meta(label: "User friends").schema do
+    field(:name).type(:string).present.meta(label: "Friend full name")
+    field(:email).policy(:email).meta(label: "Friend's email")
+  end
+end
+```
+
+## #structure
+
+A `Schema` instance has a `#structure` method that allows instrospecting schema meta data.
+
+```ruby
+create_user_schema.structure[:name][:label] # => "User's full name"
+create_user_schema.structure[:age][:label] # => "User's age"
+create_user_schema.structure[:friends][:label] # => "User friends"
+# Recursive schema structures
+create_user_schema.structure[:friends].structure[:name].label # => "Friend full name"
+```
+
+Note that many field policies add field meta data.
+
+```ruby
+create_user_schema.schema[:name][:type] # => :string
+create_user_schema.schema[:name][:required] # => true
+create_user_schema.schema[:status][:options] # => ["published", "unpublished"]
+create_user_schema.schema[:status][:default] # => "published"
+```
+
+## #walk
+
+The `#walk` method can recursively walk a schema definition and extract meta data or field attributes.
+
+```ruby
+schema_documentation = create_user_schema.walk do |field|
+  {type: field.meta_data[:type], label: field.meta_data[:label]}
+end
+
+# Returns
+
 {
-  status: 'active',
-  users: [
-    {name: 'Joe Bloggs', email: 'joe@bloggs.com'},
-    {name: 'jane Bloggs', email: 'jane@bloggs.com', title: 'CEO'}
-  ],
-  owner: {
-    name: 'Olivia Owner',
-    email: 'olivia@owner.com'
-  }
+  name: {type: :string, label: "User's full name"},
+  age: {type: :integer, label: "User's age"},
+  status: {type: :string, label: nil},
+  friends: [
+    {
+      name: {type: :string, label: "Friend full name"},
+      email: {type: nil, label: "Friend email"}
+    }
+  ]
 }
 ```
 
-## Use cases
-
-### In Rails
-
-You can use one-level param definitions in GET actions
+When passed a _symbol_, it will collect that key from field meta data.
 
 ```ruby
-def index
-  @search = OrdersSearch.new(params)
-  @results = @search.results
-end
+schema_labels = create_user_schema.walk(:label)
+
+# returns
+
+{
+  name: "User's full name",
+  age: "User's age",
+  status: nil,
+  friends: [
+    {name: "Friend full name", email: "Friend email"}
+  ]
+}
 ```
 
-I use this along with [Oat](https://github.com/ismasan/oat) in API projects:
+Potential uses for this are generating documentation (HTML, or [JSON Schema](http://json-schema.org/), [Swagger](http://swagger.io/), or maybe even mock API endpoints with example data.
+
+## Form objects DSL
+
+You can use schemas and fields on their own, or include the `DSL` module in your own classes to define form objects.
 
 ```ruby
-def index
-  search = OrdersSearch.new(params)
-  render json: OrdersSerializer.new(search)
-end
-```
+require "parametric/dsl"
 
-You can use nested definitions on POST/PUT actions, for example as part of your own strategy objects.
+class CreateUserForm
+  include Parametric::DSL
 
-```ruby
-def create
-  @payload = AccountPayload.new(params)
-  if @payload.save
-    render json: AccountSerializer.new(@payload.order)
-  else
-    render json: ErrorSerializer.new(@payload.errors), status: 422
+  schema do
+    field(:name).type(:string).required
+    field(:email).policy(:email).required
+    field(:age).type(:integer)
+  end
+
+  attr_reader :params, :errors
+
+  def initialize(input_data)
+    results = self.class.schema.resolve(input_data)
+    @params = results.output
+    @errors = results.errors
+  end
+
+  def run!
+    if !valid?
+      raise InvalidFormError.new(errors)
+    end
+
+    run
+  end
+
+  def valid?
+    !errors.any?
+  end
+
+  private
+
+  def run
+    User.create!(params)
   end
 end
 ```
 
-You can also use the `#schema` metadata to build Hypermedia "actions" or forms.
+### Form object inheritance
+
+Sub classes of classes using the DSL will inherit schemas defined on the parent class.
 
 ```ruby
-# /accounts/new.json
-def new
-  @payload = AccountPayload.new
-  render json: JsonSchemaSerializer.new(@payload.schema)
+class UpdateUserForm < CreateUserForm
+  # All field definitions in the parent are conserved.
+  # New fields can be defined
+  # or existing fields overriden
+  schema do
+    # make this field optional
+    field(:name).declared.present
+  end
+
+  def initialize(user, input_data)
+    super input_data
+    @user = user
+  end
+
+  private
+  def run
+    @user.update params
+  end
+end
+```
+
+### Schema-wide policies
+
+Sometimes it's useful to apply the same policy to all fields in a schema.
+
+For example, fields that are _required_ when creating a record might be optional when updating the same record (ie. _PATCH_ operations in APIs).
+
+```ruby
+class UpdateUserForm < CreateUserForm
+  schema.policy(:declared)
+end
+```
+
+This will prefix the `:declared` policy to all fields inherited from the parent class.
+This means that only fields whose keys are present in the input will be validated.
+
+Schemas with default policies can still define or re-define fields.
+
+```ruby
+class UpdateUserForm < CreateUserForm
+  schema.policy(:declared) do
+    # Validation will only run if key exists
+    field(:age).type(:integer).present
+  end
+end
+```
+
+### Ignoring fields defined in the parent class
+
+Sometimes you'll want a child class to inherit most fields from the parent, but ignoring some.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema do
+    field(:uuid).present
+    field(:status).required.options(["inactive", "active"])
+    field(:name)
+  end
+end
+```
+
+The child class can use `ignore(*fields)` to ignore fields defined in the parent.
+
+```ruby
+class UpdateUserForm < CreateUserForm
+  schema.ignore(:uuid, :status) do
+    # optionally add new fields here
+  end
+end
+```
+
+## Schema options
+
+Another way of modifying inherited schemas is by passing options.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema(default_policy: :noop) do |opts|
+    field(:name).policy(opts[:default_policy]).type(:string).required
+    field(:email).policy(opts[:default_policy).policy(:email).required
+    field(:age).type(:integer)
+  end
+
+  # etc
+end
+```
+
+The `:noop` policy does nothing. The sub-class can pass its own _default_policy_.
+
+```ruby
+class UpdateUserForm < CreateUserForm
+  # this will only run validations keys existing in the input
+  schema(default_policy: :declared)
+end
+```
+
+## A pattern: changing schema policy on the fly.
+
+You can use a combination of `#clone` and `#policy` to change schema-wide field policies on the fly.
+
+For example, you might have a form object that supports creating a new user and defining mandatory fields.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema do
+    field(:name).present
+    field(:age).present
+  end
+
+  attr_reader :errors, :params
+
+  def initialize(payload: {})
+    @payload = payload
+    results = self.class.schema.resolve(params)
+    @errors = results.errors
+    @params = results.output
+  end
+
+  def run!
+    User.create(params)
+  end
+end
+```
+
+Now you might want to use the same form object to _update_ and existing user supporting partial updates.
+In this case, however, attributes should only be validated if the attributes exist in the payload. We need to apply the `:declared` policy to all schema fields, only if a user exists.
+
+We can do this by producing a clone of the class-level schema and applying any necessary policies on the fly.
+
+```ruby
+class CreateUserForm
+  include Parametric::DSL
+
+  schema do
+    field(:name).present
+    field(:age).present
+  end
+
+  attr_reader :errors, :params
+
+  def initialize(payload: {}, user: nil)
+    @payload = payload
+    @user = user
+
+    # pick a policy based on user
+    policy = user ? :declared : :noop
+    # clone original schema and apply policy
+    schema = self.class.schema.clone.policy(policy)
+
+    # resolve params
+    results = schema.resolve(params)
+    @errors = results.errors
+    @params = results.output
+  end
+
+  def run!
+    if @user
+      @user.update_attributes(params)
+    else
+      User.create(params)
+    end
+  end
 end
 ```
 
