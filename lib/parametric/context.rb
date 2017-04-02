@@ -35,7 +35,7 @@ module Parametric
 
     def string_path
       path.reduce(['$']) do |m, segment|
-        m << (segment.is_a?(Fixnum) ? "[#{segment}]" : ".#{segment}")
+        m << (segment.is_a?(Integer) ? "[#{segment}]" : ".#{segment}")
         m
       end.join
     end
