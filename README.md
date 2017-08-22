@@ -274,6 +274,11 @@ class MyPolicy
   def valid?(value, key, payload)
     true
   end
+
+  # merge this object into the field's meta data
+  def meta_data
+    {type: :string}
+  end
 end
 ```
 
@@ -326,6 +331,10 @@ class AddJobTitle
   # Noop
   def valid?(value, key, payload)
     true
+  end
+
+  def meta_data
+    {}
   end
 end
 
