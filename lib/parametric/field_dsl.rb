@@ -13,6 +13,10 @@ module Parametric
       required.policy :present
     end
 
+    def declared
+      required.policy :declared
+    end
+
     def options(opts)
       policy :options, opts
     end

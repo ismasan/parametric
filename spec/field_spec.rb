@@ -251,6 +251,14 @@ describe Parametric::Field do
       end
     end
 
+    it "is available as method" do
+      resolve(subject.declared.present, a_key: "").tap do |r|
+        expect(r.eligible?).to be true
+        has_errors
+        expect(r.value).to eq ""
+      end
+    end
+
     it "is not eligible if key does not exist" do
       resolve(subject.policy(:declared).present, foo: "").tap do |r|
         expect(r.eligible?).to be false

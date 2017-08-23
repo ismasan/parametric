@@ -43,6 +43,15 @@ describe 'default validators' do
     }
   end
 
+  describe ':declared' do
+    it {
+      test_validator({key: 'foo'}, :key, :declared, true, true)
+      test_validator({key: ''}, :key, :declared, true, true)
+      test_validator({key: nil}, :key, :declared, true, true)
+      test_validator({foo: 'foo'}, :key, :declared, false, true)
+    }
+  end
+
   describe ':gt' do
     it {
       test_validator({key: 10}, :key, :gt, true, true, 9)
