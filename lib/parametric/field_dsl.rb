@@ -14,7 +14,7 @@ module Parametric
     end
 
     def declared
-      required.policy :declared
+      policy :declared
     end
 
     def options(opts)

@@ -96,6 +96,17 @@ describe Parametric::Schema do
     end
   end
 
+  it "ignores nil fields if using :declared policy" do
+    schema = described_class.new do
+      field(:id).type(:integer)
+      field(:title).declared.type(:string)
+    end
+
+    resolve(schema, {id: 123}) do |results|
+      expect(results.output.keys).to eq [:id]
+    end
+  end
+
   describe "#policy" do
     it "applies policy to all fields" do
       subject.policy(:declared)
