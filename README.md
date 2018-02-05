@@ -690,8 +690,7 @@ class CreateUserForm
   attr_reader :errors, :params
 
   def initialize(payload: {})
-    @payload = payload
-    results = self.class.schema.resolve(params)
+    results = self.class.schema.resolve(payload)
     @errors = results.errors
     @params = results.output
   end
