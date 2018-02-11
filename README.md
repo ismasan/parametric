@@ -474,10 +474,10 @@ create_user_schema.structure[:friends].structure[:name].label # => "Friend full 
 Note that many field policies add field meta data.
 
 ```ruby
-create_user_schema.schema[:name][:type] # => :string
-create_user_schema.schema[:name][:required] # => true
-create_user_schema.schema[:status][:options] # => ["published", "unpublished"]
-create_user_schema.schema[:status][:default] # => "published"
+create_user_schema.structure[:name][:type] # => :string
+create_user_schema.structure[:name][:required] # => true
+create_user_schema.structure[:status][:options] # => ["published", "unpublished"]
+create_user_schema.structure[:status][:default] # => "published"
 ```
 
 ## #walk
@@ -487,7 +487,7 @@ The `#walk` method can recursively walk a schema definition and extract meta dat
 ```ruby
 schema_documentation = create_user_schema.walk do |field|
   {type: field.meta_data[:type], label: field.meta_data[:label]}
-end
+end.output
 
 # Returns
 
@@ -507,7 +507,7 @@ end
 When passed a _symbol_, it will collect that key from field meta data.
 
 ```ruby
-schema_labels = create_user_schema.walk(:label)
+schema_labels = create_user_schema.walk(:label).output
 
 # returns
 
