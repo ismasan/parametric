@@ -39,6 +39,18 @@ describe Parametric::Struct do
     expect(instance.friends.size).to eq 2
     expect(instance.friends.first.name).to eq 'Ismael'
     expect(instance.friends.first).to be_a friend_class
+
+    invalid_instance = klass.new({
+      friends: [
+        {name: 'Ismael', age: 40},
+        {age: 39},
+      ]
+    })
+
+    expect(invalid_instance.valid?).to be false
+    expect(invalid_instance.errors['$.title']).not_to be_nil
+    expect(invalid_instance.errors['$.friends[1].name']).not_to be_nil
+    expect(invalid_instance.friends[1].errors['$.name']).not_to be_nil
   end
 
   it "is inmutable by default" do
