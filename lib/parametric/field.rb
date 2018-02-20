@@ -40,7 +40,7 @@ module Parametric
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
       meta schema: sc
-      policy sc
+      policy sc.schema
     end
 
     def visit(meta_key = nil, &visitor)

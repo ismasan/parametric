@@ -14,6 +14,10 @@ module Parametric
       @expansions = {}
     end
 
+    def schema
+      self
+    end
+
     def fields
       apply!
       @fields

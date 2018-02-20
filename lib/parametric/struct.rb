@@ -1,3 +1,5 @@
+require 'parametric'
+
 module Parametric
   module Struct
     def self.included(base)
@@ -38,7 +40,15 @@ module Parametric
       case value
       when Hash
         # find constructor for field
-        cons = field.meta_data[:_of]
+        cons = field.meta_data[:schema]
+        if cons.kind_of?(Parametric::Schema)
+          klass = Class.new do
+            include Struct
+          end
+          klass.schema = cons
+          klass.setup
+          cons = klass
+        end
         cons ? cons.new(value) : value.freeze
       when Array
         value.map{|v| wrap(key, v) }.freeze
@@ -52,39 +62,22 @@ module Parametric
         @schema = sc
       end
 
-      def schema
-        @schema ||= Parametric::Schema.new
-      end
-
       def inherited(subclass)
         subclass.schema = schema.merge(Parametric::Schema.new)
       end
 
-      def property(key, type = nil, of: nil, &block)
-        default = case type
-                  when :array
-                    []
-                  when :object
-                    {}
-                  else
-                    nil
-                  end
+      def schema(options = {}, &block)
+        return @schema unless options.any? || block_given?
+        new_schema = Parametric::Schema.new(options, &block)
+        @schema = @schema.merge(new_schema)
+        setup
+      end
 
-        define_method key do
-          _graph[key]
-        end
-
-        if block_given?
-          of = Class.new do
-            include Parametric::Struct
-            instance_exec &block
+      def setup
+        schema.fields.keys.each do |key|
+          define_method key do
+            _graph[key]
           end
-        end
-
-        schema.field(key).meta(_of: of).tap do |f|
-          f.type(type) if type
-          f.schema(of.schema) if of
-          f.default(default) if default
         end
       end
     end

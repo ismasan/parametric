@@ -6,15 +6,19 @@ describe Parametric::Struct do
     friend_class = Class.new do
       include Parametric::Struct
 
-      property(:name, :string).present
-      property :age, :integer
+      schema do
+        field(:name).type(:string).present
+        field(:age).type(:integer)
+      end
     end
 
     klass = Class.new do
       include Parametric::Struct
 
-      property(:title, :string).present
-      property :friends, :array, of: friend_class
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).default([]).schema friend_class
+      end
     end
 
     new_instance = klass.new
@@ -41,9 +45,11 @@ describe Parametric::Struct do
     klass = Class.new do
       include Parametric::Struct
 
-      property(:title, :string).present
-      property :friends, :array
-      property :friend, :object
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).default([])
+        field(:friend).type(:object)
+      end
     end
 
     instance = klass.new
@@ -60,9 +66,11 @@ describe Parametric::Struct do
     klass = Class.new do
       include Parametric::Struct
 
-      property(:title, :string).present
-      property :friends, :array do
-        property :age, :integer
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).schema do
+          field(:age).type(:integer)
+        end
       end
     end
 
@@ -83,10 +91,12 @@ describe Parametric::Struct do
     klass = Class.new do
       include Parametric::Struct
 
-      property(:title, :string).present
-      property :friends, :array do
-        property :name, :string
-        property(:age, :integer).default(20)
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).schema do
+          field(:name).type(:string)
+          field(:age).type(:integer).default(20)
+        end
       end
     end
 
@@ -108,5 +118,38 @@ describe Parametric::Struct do
 
     new_instance = klass.new(instance.to_h)
     expect(new_instance.title).to eq 'foo'
+  end
+
+  it "works with inheritance" do
+    klass = Class.new do
+      include Parametric::Struct
+
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).schema do
+          field(:name).type(:string)
+          field(:age).type(:integer).default(20)
+        end
+      end
+    end
+
+    subclass = Class.new(klass) do
+      schema do
+        field(:email)
+      end
+    end
+
+    instance = subclass.new(
+      title: 'foo',
+      email: 'email@me.com',
+      friends: [
+        {name: 'Jane', age: 20},
+        {name: 'Joe', age: 39},
+      ]
+    )
+
+    expect(instance.title).to eq 'foo'
+    expect(instance.email).to eq 'email@me.com'
+    expect(instance.friends.size).to eq 2
   end
 end
