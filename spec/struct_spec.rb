@@ -99,6 +99,28 @@ describe Parametric::Struct do
     expect(instance.friends.first.age).to eq 10
   end
 
+  it "wraps regular schemas in structs" do
+    friend_schema = Parametric::Schema.new do
+      field(:name)
+    end
+
+    klass = Class.new do
+      include Parametric::Struct
+
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).schema friend_schema
+      end
+    end
+
+    instance = klass.new({
+      title: 'foo',
+      friends: [{name: 'Ismael'}]
+    })
+
+    expect(instance.friends.first.name).to eq 'Ismael'
+  end
+
   it "#to_h" do
     klass = Class.new do
       include Parametric::Struct
