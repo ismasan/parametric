@@ -1,10 +1,10 @@
-require 'parametric'
+require 'parametric/dsl'
 
 module Parametric
   module Struct
     def self.included(base)
+      base.send(:include, Parametric::DSL)
       base.extend ClassMethods
-      base.schema = Parametric::Schema.new
     end
 
     def initialize(attrs = {})
@@ -28,22 +28,8 @@ module Parametric
     attr_reader :_graph, :_results
 
     module ClassMethods
-      def schema=(sc)
-        @schema = sc
-      end
-
-      def inherited(subclass)
-        subclass.schema = schema.merge(Parametric::Schema.new)
-      end
-
-      def schema(options = {}, &block)
-        return @schema unless options.any? || block_given?
-        new_schema = Parametric::Schema.new(options, &block)
-        @schema = @schema.merge(new_schema)
-        setup
-      end
-
-      def setup
+      # this hook is called after schema definition in DSL module
+      def after_define_schema(schema)
         schema.fields.keys.each do |key|
           define_method key do
             _graph[key]
@@ -70,7 +56,7 @@ module Parametric
               include Struct
             end
             klass.schema = cons
-            klass.setup
+            klass.after_define_schema(cons)
             cons = klass
           end
           cons ? cons.new(value) : value.freeze
