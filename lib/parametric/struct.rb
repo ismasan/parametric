@@ -24,6 +24,10 @@ module Parametric
       _results.output
     end
 
+    def ==(other)
+      other.respond_to?(:to_h) && other.to_h.eql?(to_h)
+    end
+
     private
     attr_reader :_graph, :_results
 

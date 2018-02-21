@@ -186,4 +186,54 @@ describe Parametric::Struct do
     expect(instance.email).to eq 'email@me.com'
     expect(instance.friends.size).to eq 2
   end
+
+  it "implements deep struct equality" do
+    klass = Class.new do
+      include Parametric::Struct
+
+      schema do
+        field(:title).type(:string).present
+        field(:friends).type(:array).schema do
+          field(:age).type(:integer)
+        end
+      end
+    end
+
+    s1 = klass.new({
+      title: 'foo',
+      friends: [
+        {age: 10},
+        {age: 39},
+      ]
+    })
+
+
+    s2 = klass.new({
+      title: 'foo',
+      friends: [
+        {age: 10},
+        {age: 39},
+      ]
+    })
+
+    s3 = klass.new({
+      title: 'foo',
+      friends: [
+        {age: 11},
+        {age: 39},
+      ]
+    })
+
+    s4 = klass.new({
+      title: 'bar',
+      friends: [
+        {age: 10},
+        {age: 39},
+      ]
+    })
+
+    expect(s1 == s2).to be true
+    expect(s1 == s3).to be false
+    expect(s1 == s4).to be false
+  end
 end
