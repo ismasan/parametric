@@ -28,6 +28,10 @@ module Parametric
       other.respond_to?(:to_h) && other.to_h.eql?(to_h)
     end
 
+    def merge(attrs = {})
+      self.class.new(to_h.merge(attrs))
+    end
+
     private
     attr_reader :_graph, :_results
 

@@ -236,4 +236,37 @@ describe Parametric::Struct do
     expect(s1 == s3).to be false
     expect(s1 == s4).to be false
   end
+
+  it "#update returns a new instance" do
+    klass = Class.new do
+      include Parametric::Struct
+
+      schema do
+        field(:title).type(:string).present
+        field(:desc)
+        field(:friends).type(:array).schema do
+          field(:name).type(:string)
+        end
+      end
+    end
+
+    original = klass.new(
+      title: 'foo',
+      desc: 'no change',
+      friends: [{name: 'joe'}]
+    )
+
+    copy = original.merge(
+      title: 'bar',
+      friends: [{name: 'jane'}]
+    )
+
+    expect(original.title).to eq 'foo'
+    expect(original.desc).to eq 'no change'
+    expect(original.friends.first.name).to eq 'joe'
+
+    expect(copy.title).to eq 'bar'
+    expect(copy.desc).to eq 'no change'
+    expect(copy.friends.first.name).to eq 'jane'
+  end
 end
