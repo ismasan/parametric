@@ -152,6 +152,11 @@ describe Parametric::Struct do
 
     new_instance = klass.new(instance.to_h)
     expect(new_instance.title).to eq 'foo'
+
+    # it returns a copy so we can't break things!
+    data = new_instance.to_h
+    data[:title] = 'nope'
+    expect(new_instance.to_h[:title]).to eq 'foo'
   end
 
   it "works with inheritance" do

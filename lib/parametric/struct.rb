@@ -20,8 +20,9 @@ module Parametric
       _results.errors
     end
 
+    # returns a shallow copy.
     def to_h
-      _results.output
+      _results.output.clone
     end
 
     def ==(other)
