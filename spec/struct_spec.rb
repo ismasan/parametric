@@ -242,7 +242,7 @@ describe Parametric::Struct do
     expect(s1 == s4).to be false
   end
 
-  it "#update returns a new instance" do
+  it "#merge returns a new instance" do
     klass = Class.new do
       include Parametric::Struct
 
