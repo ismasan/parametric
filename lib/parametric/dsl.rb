@@ -41,6 +41,11 @@ module Parametric
 
         new_schema = Parametric::Schema.new(options, &block)
         @schema = @schema.merge(new_schema)
+        after_define_schema(@schema)
+      end
+
+      def after_define_schema(sc)
+        # noop hook
       end
     end
   end
