@@ -44,8 +44,9 @@ module Parametric
         end
       end
 
-      def schema(options = {}, &block)
-        key = DEFAULT_SCHEMA_NAME
+      def schema(*args, &block)
+        options = args.last.is_a?(Hash) ? args.last : {}
+        key = args.first.is_a?(Symbol) ? args.first : DEFAULT_SCHEMA_NAME
         current_schema = @schemas[key]
         unless options.any? || block_given?
           raise ArgumentError, "No schema with name #{key}" unless current_schema
