@@ -11,6 +11,7 @@ module Parametric
       @definitions << block if block_given?
       @default_field_policies = []
       @ignored_field_keys = []
+      @expansions = {}
     end
 
     def fields
@@ -80,6 +81,11 @@ module Parametric
       end
     end
 
+    def expand(exp, &block)
+      expansions[exp] = block
+      self
+    end
+
     def resolve(payload)
       context = Context.new
       output = coerce(payload, nil, context)
@@ -112,10 +118,13 @@ module Parametric
     def coerce(val, _, context)
       if val.is_a?(Array)
         val.map.with_index{|v, idx|
-          coerce_one(v, context.sub(idx))
+          subcontext = context.sub(idx)
+          out = coerce_one(v, subcontext)
+          resolve_expansions(v, out, subcontext)
         }
       else
-        coerce_one val, context
+        out = coerce_one(val, context)
+        resolve_expansions(val, out, context)
       end
     end
 
@@ -125,15 +134,36 @@ module Parametric
 
     private
 
-    attr_reader :default_field_policies, :ignored_field_keys
+    attr_reader :default_field_policies, :ignored_field_keys, :expansions
 
-    def coerce_one(val, context)
-      fields.each_with_object({}) do |(_, field), m|
+    def coerce_one(val, context, flds: fields)
+      flds.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
         if r.eligible?
           m[field.key] = r.value
         end
       end
+    end
+
+    class MatchContext
+      def field(key)
+        Field.new(key.to_sym)
+      end
+    end
+
+    def resolve_expansions(payload, into, context)
+      expansions.each do |exp, block|
+        payload.each do |key, value|
+          if match = exp.match(key.to_s)
+            fld = MatchContext.new.instance_exec(match, &block)
+            if fld
+              into.update(coerce_one({fld.key => value}, context, flds: {fld.key => apply_default_field_policies_to(fld)}))
+            end
+          end
+        end
+      end
+
+      into
     end
 
     def apply_default_field_policies_to(field)

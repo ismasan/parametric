@@ -742,6 +742,43 @@ class CreateUserForm
 end
 ```
 
+## Expanding fields dynamically
+
+Sometimes you don't know the exact field names but you want to allow arbitrary fields depending on a given pattern.
+
+```ruby
+# with this payload:
+# {
+#   title: "A title",
+#   :"custom_attr_Color" => "red",
+#   :"custom_attr_Material" => "leather"
+# }
+
+schema = Parametric::Schema.new do
+  field(:title).type(:string).present
+  # here we allow any field starting with /^custom_attr/
+  # this yields a MatchData object to the block
+  # where you can define a Field and validations on the fly
+  # https://ruby-doc.org/core-2.2.0/MatchData.html
+  expand(/^custom_attr_(.+)/) do |match|
+    field(match[1]).type(:string).present
+  end
+end
+
+results = schema.resolve({
+  title: "A title",
+  :"custom_attr_Color" => "red",
+  :"custom_attr_Material" => "leather",
+  :"custom_attr_Weight" => "",
+})
+
+results.ouput[:Color] # => "red"
+results.ouput[:Material] # => "leather"
+results.errors["$.Weight"] # => ["is required and value must be present"]
+```
+
+NOTES: dynamically expanded field names are not included in `Schema#structure` metadata, and they are only processes if fields with the given expressions are present in the payload. This means that validations applied to those fields only run if keys are present in the first place.
+
 ## Installation
 
 Add this line to your application's Gemfile:
