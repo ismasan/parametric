@@ -48,10 +48,7 @@ module Parametric
         options = args.last.is_a?(Hash) ? args.last : {}
         key = args.first.is_a?(Symbol) ? args.first : DEFAULT_SCHEMA_NAME
         current_schema = @schemas[key]
-        unless options.any? || block_given?
-          raise ArgumentError, "No schema with name #{key}" unless current_schema
-          return current_schema
-        end
+        return current_schema unless options.any? || block_given?
 
         new_schema = Parametric::Schema.new(options, &block)
         @schemas[key] = current_schema ? current_schema.merge(new_schema) : new_schema
