@@ -742,6 +742,34 @@ class CreateUserForm
 end
 ```
 
+## Multiple schema definitions
+
+Form objects can optionally define more than one schema by giving them names:
+
+```ruby
+class UpdateUserForm
+  include Parametric::DSL
+
+  # a schema named :query
+  # for example for query parameters
+  schema(:query) do
+    field(:user_id).type(:integer).present
+  end
+
+  # a schema for PUT body parameters
+  schema(:payload) do
+    field(:name).present
+    field(:age).present
+  end
+end
+```
+
+Named schemas are inherited and can be extended and given options in the same way as the nameless version.
+
+Named schemas can be retrieved by name, ie. `UpdateUserForm.schema(:query)`.
+
+If no name given, `.schema` uses `:schema` as default schema name.
+
 ## Expanding fields dynamically
 
 Sometimes you don't know the exact field names but you want to allow arbitrary fields depending on a given pattern.
