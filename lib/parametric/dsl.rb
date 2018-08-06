@@ -47,7 +47,7 @@ module Parametric
       def schema(*args, &block)
         options = args.last.is_a?(Hash) ? args.last : {}
         key = args.first.is_a?(Symbol) ? args.first : DEFAULT_SCHEMA_NAME
-        current_schema = @schemas[key]
+        current_schema = @schemas.fetch(key) { Parametric::Schema.new }
         return current_schema unless options.any? || block_given?
 
         new_schema = Parametric::Schema.new(options, &block)
