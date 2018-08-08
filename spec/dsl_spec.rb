@@ -5,6 +5,10 @@ describe "classes including DSL module" do
   class Parent
     include Parametric::DSL
 
+    schema :extras, search_type: :string do |opts|
+      field(:search).policy(opts[:search_type])
+    end
+
     schema(age_type: :integer) do |opts|
       field(:title).policy(:string)
       field(:age).policy(opts[:age_type])
@@ -12,12 +16,18 @@ describe "classes including DSL module" do
   end
 
   class Child < Parent
+    schema :extras do
+      field(:query).type(:string)
+    end
+
     schema(age_type: :string) do
       field(:description).policy(:string)
     end
   end
 
   class GrandChild < Child
+    schema :extras, search_type: :integer
+
     schema(age_type: :integer)
   end
 
@@ -42,6 +52,16 @@ describe "classes including DSL module" do
       expect(child_output[:title]).to eq "A title"
       expect(child_output[:age]).to eq "38"
       expect(child_output[:description]).to eq "A description"
+
+      # named schema
+      parent_output = Parent.schema(:extras).resolve(search: 10, query: 'foo').output
+      child_output = Child.schema(:extras).resolve(search: 10, query: 'foo').output
+
+      expect(parent_output.keys).to match_array([:search])
+      expect(parent_output[:search]).to eq "10"
+      expect(child_output.keys).to match_array([:search, :query])
+      expect(child_output[:search]).to eq "10"
+      expect(child_output[:query]).to eq "foo"
     end
 
     it "inherits options" do
@@ -51,6 +71,11 @@ describe "classes including DSL module" do
       expect(grand_child_output[:title]).to eq "A title"
       expect(grand_child_output[:age]).to eq 38
       expect(grand_child_output[:description]).to eq "A description"
+
+      # named schema
+      grand_child_output = GrandChild.schema(:extras).resolve(search: "100", query: "bar").output
+      expect(grand_child_output.keys).to match_array([:search, :query])
+      expect(grand_child_output[:search]).to eq 100
     end
   end
 

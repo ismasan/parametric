@@ -22,26 +22,37 @@ module Parametric
     #
     #   foo.params # => {title: "A title", age: 20}
     #
+    DEFAULT_SCHEMA_NAME = :schema
+
     def self.included(base)
       base.extend(ClassMethods)
-      base.schema = Parametric::Schema.new
+      base.schemas = {DEFAULT_SCHEMA_NAME => Parametric::Schema.new}
     end
 
     module ClassMethods
       def schema=(sc)
-        @schema = sc
+        @schemas[DEFAULT_SCHEMA_NAME] = sc
+      end
+
+      def schemas=(sc)
+        @schemas = sc
       end
 
       def inherited(subclass)
-        subclass.schema = @schema.merge(Parametric::Schema.new)
+        subclass.schemas = @schemas.each_with_object({}) do |(key, sc), hash|
+          hash[key] = sc.merge(Parametric::Schema.new)
+        end
       end
 
-      def schema(options = {}, &block)
-        return @schema unless options.any? || block_given?
+      def schema(*args, &block)
+        options = args.last.is_a?(Hash) ? args.last : {}
+        key = args.first.is_a?(Symbol) ? args.first : DEFAULT_SCHEMA_NAME
+        current_schema = @schemas.fetch(key) { Parametric::Schema.new }
+        return current_schema unless options.any? || block_given?
 
         new_schema = Parametric::Schema.new(options, &block)
-        @schema = @schema.merge(new_schema)
-        after_define_schema(@schema)
+        @schemas[key] = current_schema ? current_schema.merge(new_schema) : new_schema
+        after_define_schema(@schemas[key])
       end
 
       def after_define_schema(sc)
