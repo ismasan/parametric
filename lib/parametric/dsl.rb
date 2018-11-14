@@ -48,9 +48,14 @@ module Parametric
         options = args.last.is_a?(Hash) ? args.last : {}
         key = args.first.is_a?(Symbol) ? args.first : DEFAULT_SCHEMA_NAME
         current_schema = @schemas.fetch(key) { Parametric::Schema.new }
-        return current_schema unless options.any? || block_given?
+        new_schema = if block_given? || options.any?
+          Parametric::Schema.new(options, &block)
+        elsif args.first.respond_to?(:schema)
+          args.first
+        end
 
-        new_schema = Parametric::Schema.new(options, &block)
+        return current_schema unless new_schema
+
         @schemas[key] = current_schema ? current_schema.merge(new_schema) : new_schema
         after_define_schema(@schemas[key])
       end
