@@ -39,7 +39,7 @@ module Parametric
       @validate_block = self.class.validate || ->(*args) { true }
       @coerce_block = self.class.coerce || ->(v, *_) { v }
       @eligible_block = self.class.eligible || ->(*args) { true }
-      @meta_data_block = self.class.meta_data || ->() { {} }
+      @meta_data_block = self.class.meta_data || ->(*args) { {} }
     end
 
     def eligible?(value, key, payload)
