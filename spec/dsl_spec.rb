@@ -156,5 +156,21 @@ describe "classes including DSL module" do
       expect(results.output).to eq({age: 20})
     end
   end
+
+  describe "passing other schema or form in definition" do
+    it 'applies schema' do
+      a = Parametric::Schema.new do
+        field(:name).policy(:string)
+        field(:age).policy(:integer).default(40)
+      end
+      b = Class.new do
+        include Parametric::DSL
+        schema a
+      end
+
+      results = b.schema.resolve(name: 'Neil')
+      expect(results.output).to eq({name: 'Neil', age: 40})
+    end
+  end
 end
 

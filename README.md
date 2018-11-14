@@ -567,6 +567,21 @@ class CreateUserForm
 end
 ```
 
+Form schemas can also be defined by passing another form or schema instance. This can be useful when building form classes in runtime.
+
+```ruby
+UserSchema = Parametric::Schema.new do
+  field(:name).type(:string).present
+  field(:age).type(:integer)
+end
+
+class CreateUserForm
+  include Parametric::DSL
+  # copy from UserSchema
+  schema UserSchema
+end
+```
+
 ### Form object inheritance
 
 Sub classes of classes using the DSL will inherit schemas defined on the parent class.
