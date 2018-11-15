@@ -1,6 +1,17 @@
 require 'parametric/dsl'
 
 module Parametric
+  class InvalidStructError < ArgumentError
+    attr_reader :errors
+    def initialize(struct)
+      @errors = struct.errors
+      msg = @errors.map do |k, strings|
+        "#{k} #{strings.join(', ')}"
+      end.join('. ')
+      super "#{struct.class} is not a valid struct: #{msg}"
+    end
+  end
+
   module Struct
     def self.included(base)
       base.send(:include, Parametric::DSL)
@@ -37,6 +48,12 @@ module Parametric
     attr_reader :_graph, :_results
 
     module ClassMethods
+      def new!(attrs = {})
+        st = new(attrs)
+        raise InvalidStructError.new(st) unless st.valid?
+        st
+      end
+
       # this hook is called after schema definition in DSL module
       def after_define_schema(schema)
         schema.fields.keys.each do |key|
