@@ -274,4 +274,25 @@ describe Parametric::Struct do
     expect(copy.desc).to eq 'no change'
     expect(copy.friends.first.name).to eq 'jane'
   end
+
+  describe '.new!' do
+    it 'raises a useful exception if invalid data' do
+      klass = Class.new do
+        include Parametric::Struct
+
+        schema do
+          field(:title).type(:string).present
+        end
+      end
+
+      begin
+        klass.new!(title: '')
+      rescue Parametric::InvalidStructError => e
+        expect(e.errors['$.title']).not_to be nil
+      end
+
+      valid = klass.new!(title: 'foo')
+      expect(valid.title).to eq 'foo'
+    end
+  end
 end

@@ -883,6 +883,20 @@ user.friends.first.valid? # false
 user.friends.first.errors['$.name'] # "is required and must be valid"
 ```
 
+### .new!(hash)
+
+Instantiating structs with `.new!(hash)` will raise a `Parametric::InvalidStructError` exception if the data is validations fail. It will return the struct instance otherwise.
+
+`Parametric::InvalidStructError` includes an `#errors` property to inspect the errors raised.
+
+```ruby
+begin
+  user = User.new!(name: '')
+rescue Parametric::InvalidStructError => e
+  e.errors['$.name'] # "is required and must be present"
+end
+```
+
 ### Nested structs
 
 You can also pass separate struct classes in a nested schema definition.
