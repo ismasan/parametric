@@ -55,7 +55,7 @@ module Parametric
       end
 
       # this hook is called after schema definition in DSL module
-      def after_define_schema(schema)
+      def parametric_after_define_schema(schema)
         schema.fields.keys.each do |key|
           define_method key do
             _graph[key]
@@ -69,6 +69,14 @@ module Parametric
         end
       end
 
+      def parametric_build_class_for_child(key, child_schema)
+        klass = Class.new do
+          include Struct
+        end
+        klass.schema = child_schema
+        klass
+      end
+
       def wrap(key, value)
         field = schema.fields[key]
         return value unless field
@@ -78,11 +86,8 @@ module Parametric
           # find constructor for field
           cons = field.meta_data[:schema]
           if cons.kind_of?(Parametric::Schema)
-            klass = Class.new do
-              include Struct
-            end
-            klass.schema = cons
-            klass.after_define_schema(cons)
+            klass = parametric_build_class_for_child(key, cons)
+            klass.parametric_after_define_schema(cons)
             cons = klass
           end
           cons ? cons.new(value) : value.freeze
