@@ -57,10 +57,10 @@ module Parametric
         return current_schema unless new_schema
 
         @schemas[key] = current_schema ? current_schema.merge(new_schema) : new_schema
-        after_define_schema(@schemas[key])
+        parametric_after_define_schema(@schemas[key])
       end
 
-      def after_define_schema(sc)
+      def parametric_after_define_schema(sc)
         # noop hook
       end
     end
