@@ -1,6 +1,6 @@
-# Parametric
-[![Build Status](https://travis-ci.org/ismasan/parametric.png)](https://travis-ci.org/ismasan/parametric)
-[![Gem Version](https://badge.fury.io/rb/parametric.png)](http://badge.fury.io/rb/parametric)
+# Paradocs: Extended Parametric gem + Documentation Generation
+
+> [original](https://github.com/ismasan/parametric) gem
 
 Declaratively define data schemas in your Ruby objects, and use them to whitelist, validate or transform inputs to your programs.
 
@@ -957,25 +957,3 @@ user.to_h # {name: "Joe", age: 30}
 `Parametric::Struct` implements `#==()` to compare two structs Hash representation (same as `struct1.to_h.eql?(struct2.to_h)`.
 
 Users can override `#==()` in their own classes to do whatever they need.
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-    gem 'parametric'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install parametric
-
-## Contributing
-
-1. Fork it ( http://github.com/ismasan/parametric/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
