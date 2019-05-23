@@ -61,7 +61,6 @@ module Parametric
         value = default_block.call(key, payload, context)
         return Result.new(eligible, value)
       end
-
       policies.each do |policy|
         if !policy.eligible?(value, key, payload)
           eligible = false
@@ -89,6 +88,8 @@ module Parametric
     def resolve_one(policy, value, context)
       begin
         policy.coerce(value, key, context)
+      rescue *Parametric.config.custom_errors => e
+        raise e
       rescue StandardError => e
         context.add_error e.message
         value

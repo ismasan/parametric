@@ -50,7 +50,7 @@ module Parametric
     end
 
     validate do |value, key, payload|
-      payload.key? key
+      payload.try(:key?, key)
     end
 
     meta_data do
