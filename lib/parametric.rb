@@ -4,6 +4,7 @@ require "parametric/field"
 require "parametric/results"
 require "parametric/schema"
 require "parametric/context"
+require "parametric/base_policy"
 
 module Parametric
 

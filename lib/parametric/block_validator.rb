@@ -32,6 +32,7 @@ module Parametric
     end
 
     attr_reader :message
+    attr_accessor :global_dependencies
 
     def initialize(*args)
       @args = args
