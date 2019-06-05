@@ -64,7 +64,6 @@ module Parametric
       end
       policies.each do |policy|
         # pass schema additional data to the each policy
-        # binding.pry if policy.is_a?(Schema)
         policy.global_dependencies = context.global_dependencies
         if !policy.eligible?(value, key, payload)
           eligible = false
