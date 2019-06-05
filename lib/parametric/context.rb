@@ -13,9 +13,11 @@ module Parametric
   end
 
   class Context
-    def initialize(path = nil, top = Top.new)
+    attr_reader :global_dependencies
+    def initialize(path = nil, top = Top.new, global_dependencies = {})
       @top = top
       @path = Array(path).compact
+      @global_dependencies = global_dependencies
     end
 
     def errors
@@ -27,7 +29,7 @@ module Parametric
     end
 
     def sub(key)
-      self.class.new(path + [key], top)
+      self.class.new(path + [key], top, global_dependencies)
     end
 
     protected

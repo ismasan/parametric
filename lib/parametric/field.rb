@@ -36,6 +36,7 @@ module Parametric
       self
     end
     alias_method :type, :policy
+    alias_method :rule, :policy
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
@@ -62,6 +63,9 @@ module Parametric
         return Result.new(eligible, value)
       end
       policies.each do |policy|
+        # pass schema additional data to the each policy
+        # binding.pry if policy.is_a?(Schema)
+        policy.global_dependencies = context.global_dependencies
         if !policy.eligible?(value, key, payload)
           eligible = false
           if has_default?
@@ -104,7 +108,6 @@ module Parametric
       obj = key.is_a?(Symbol) ? registry.policies[key] : key
 
       raise ConfigurationError, "No policies defined for #{key.inspect}" unless obj
-
       obj.respond_to?(:new) ? obj.new(*args) : obj
     end
   end
