@@ -5,7 +5,7 @@
 # 4) #coerce: if #eligible? returned true given value will be transformed to the one you specify inside this method
 # 5) #valid?: should return boolean or call #raise_error
 class Parametric::BasePolicy
-  attr_accessor :global_dependencies
+  attr_accessor :environment
   # Enrich this object with {name: error_class} in your policy class and use #raise_error method
   # It is used for documentation generation and is a single resource for defining available errors
   # of your policy. If ERRORS in your policy class is empty then policy name will be without bang!

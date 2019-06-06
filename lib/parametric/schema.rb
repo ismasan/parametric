@@ -4,7 +4,7 @@ require "parametric/field"
 
 module Parametric
   class Schema
-    attr_accessor :global_dependencies
+    attr_accessor :environment
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
@@ -91,9 +91,9 @@ module Parametric
       self
     end
 
-    def resolve(payload, global_data={})
-      @global_dependencies ||= global_data
-      context = Context.new(nil, Top.new, @global_dependencies)
+    def resolve(payload, environment={})
+      @environment = environment
+      context = Context.new(nil, Top.new, @environment)
       output = coerce(payload, nil, context)
       Results.new(output, context.errors)
     end
