@@ -1,6 +1,8 @@
+require_relative './base_policy'
+
 module Parametric
   module Policies
-    class Format
+    class Format < Parametric::BasePolicy
       attr_reader :message
 
       def initialize(fmt, msg = "invalid format")
