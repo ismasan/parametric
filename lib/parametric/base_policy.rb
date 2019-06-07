@@ -30,6 +30,11 @@ class Parametric::BasePolicy
     value
   end
 
+  # TODO: merge with meta_data
+  def for_docs
+    {_errors: self.class::ERRORS}
+  end
+
   # Overwrite this method to identify whether to proceed with validation(#valid?) or not
   def eligible?(value, key, context)
     save_env(value, key, context)
