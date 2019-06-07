@@ -10,20 +10,8 @@ module Parametric
         @fmt = fmt
       end
 
-      def eligible?(value, key, payload)
-        payload.key?(key)
-      end
-
-      def coerce(value, key, context)
-        value
-      end
-
       def valid?(value, key, payload)
         !payload.key?(key) || !!(value.to_s =~ @fmt)
-      end
-
-      def meta_data
-        {}
       end
     end
   end
