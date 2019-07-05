@@ -169,6 +169,17 @@ describe Parametric::Schema do
         expect(new_schema.fields[:title].meta_data[:type]).to eq :string
         expect(new_schema.fields[:price].meta_data[:type]).to eq :string
       end
+
+      it 'can merge from a block' do
+        new_schema = schema1.merge do
+          field(:price).policy(:string)
+          field(:description).policy(:string)
+        end
+
+        expect(schema1.fields[:price].meta_data[:type]).to eq :integer
+        expect(new_schema.fields[:title].meta_data[:type]).to eq :string
+        expect(new_schema.fields[:price].meta_data[:type]).to eq :string
+      end
     end
 
     context "with options" do

@@ -44,11 +44,16 @@ module Parametric
       copy_into instance
     end
 
-    def merge(other_schema)
-      instance = self.class.new(options.merge(other_schema.options))
+    def merge(other_schema = nil, &block)
+      raise ArgumentError, '#merge takes either a schema instance or a block' if other_schema.nil? && !block_given?
 
-      copy_into(instance)
-      other_schema.copy_into(instance)
+      if other_schema
+        instance = self.class.new(options.merge(other_schema.options))
+        copy_into(instance)
+        other_schema.copy_into(instance)
+      else
+        merge(self.class.new(&block))
+      end
     end
 
     def copy_into(instance)
