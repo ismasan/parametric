@@ -96,7 +96,7 @@ module Parametric
     end
 
     def has_default?
-      !!default_block
+      !!default_block && !meta_data[:skip_default]
     end
 
     def lookup(key, args)

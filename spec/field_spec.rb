@@ -266,6 +266,24 @@ describe Parametric::Field do
         expect(r.value).to eq nil
       end
     end
+
+    it "returns default" do
+      resolve(subject.policy(:declared).default('aa'), foo: "").tap do |r|
+        expect(r.eligible?).to be true
+        no_errors
+        expect(r.value).to eq 'aa'
+      end
+    end
+  end
+
+  describe ':declared_no_default' do
+    it "does not return default" do
+      resolve(subject.policy(:declared_no_default).default('aa'), lala: "").tap do |r|
+        expect(r.eligible?).to be false
+        no_errors
+        expect(r.value).to eq nil
+      end
+    end
   end
 
   describe ":noop policy" do

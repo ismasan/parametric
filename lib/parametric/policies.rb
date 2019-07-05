@@ -44,6 +44,16 @@ module Parametric
     end
   end
 
+  Parametric.policy :declared_no_default do
+    eligible do |value, key, payload|
+      payload.key? key
+    end
+
+    meta_data do
+      {skip_default: true}
+    end
+  end
+
   Parametric.policy :required do
     message do |*|
       "is required"
