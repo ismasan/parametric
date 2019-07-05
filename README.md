@@ -211,6 +211,19 @@ field(:name).declared.present
 ```
 
 The example above will check that the value is not empty, but only if the key exists. If the key doesn't exist no validations will run.
+Note that any defaults will still be returned.
+
+```ruby
+field(:name).declared.present.default('return this')
+```
+
+### :declared_no_default
+
+Like `:declared`, it stops the policy chain if a key is not in input, but it also skips any default value.
+
+```ruby
+field(:name).policy(:declared_no_default).present
+```
 
 ### :gt
 
