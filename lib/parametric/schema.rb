@@ -182,7 +182,11 @@ module Parametric
     def apply!
       return if @applied
       definitions.each do |d|
-        self.instance_exec(options, &d)
+        if d.arity == 2 # pass schema instance and options, preserve block context
+          d.call(self, options)
+        else # run block in context of current instance
+          self.instance_exec(options, &d)
+        end
       end
       @applied = true
     end

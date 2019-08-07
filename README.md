@@ -98,7 +98,7 @@ results.errors # => {"$.friends[0].name" => "is required"}
 You can optionally use an existing schema instance as a nested schema:
 
 ```ruby
-friends_schema = Parametric::Schema.new do
+FRIENDS_SCHEMA = Parametric::Schema.new do
   field(:friends).type(:array).schema do
     field(:name).type(:string).required
     field(:email).policy(:email)
@@ -109,10 +109,24 @@ person_schema = Parametric::Schema.new do
   field(:name).type(:string).required
   field(:age).type(:integer)
   # Nest friends_schema
-  field(:friends).type(:array).schema(friends_schema)
+  field(:friends).type(:array).schema(FRIENDS_SCHEMA)
 end
 ```
 
+Note that _person_schema_'s definition has access to `FRIENDS_SCHEMA` because it's a constant.
+Definition blocks are run in the context of the defining schema instance by default.
+
+To preserve the original block's context, declare two arguments in your block, the defining schema `sc` and options has.
+
+```ruby
+person_schema = Parametric::Schema.new do |sc, options|
+  # this block now preserves its context. Call `sc.field` to add fields to the current schema.
+  sc.field(:name).type(:string).required
+  sc.field(:age).type(:integer)
+  # We now have access to local variables
+  sc.field(:friends).type(:array).schema(friends_schema)
+end
+```
 ## Built-in policies
 
 Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.

@@ -237,6 +237,20 @@ describe Parametric::Schema do
     end
   end
 
+  context 'yielding schema to definition, to preserve outer context' do
+    it 'yields schema instance and options to definition block, can access outer context' do
+      schema1 = described_class.new do
+        field(:name).type(:string)
+      end
+      schema2 = described_class.new do |sc, _opts|
+        sc.field(:user).schema schema1
+      end
+
+      out = schema2.resolve(user: { name: 'Joe' }).output
+      expect(out[:user][:name]).to eq 'Joe'
+    end
+  end
+
   describe "#ignore" do
     it "ignores fields" do
       s1 = described_class.new.ignore(:title, :status) do
