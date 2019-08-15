@@ -58,6 +58,13 @@ module Parametric
 
         @schemas[key] = current_schema ? current_schema.merge(new_schema) : new_schema
         parametric_after_define_schema(@schemas[key])
+        @schemas[key]
+      end
+
+      def subschema_for(main_schema, name:, **kwargs, &block)
+        subschema = schema(name, kwargs, &block)
+        @schemas[main_schema].subschemes[name] = subschema
+        subschema
       end
 
       def parametric_after_define_schema(sc)
