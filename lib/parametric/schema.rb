@@ -4,7 +4,7 @@ require "parametric/field"
 
 module Parametric
   class Schema
-    attr_accessor :environment, :subschemes
+    attr_accessor :environment, :subschemes, :subschemes_identifiers
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
