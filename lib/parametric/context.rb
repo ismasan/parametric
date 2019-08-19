@@ -13,11 +13,20 @@ module Parametric
   end
 
   class Context
-    attr_reader :environment
-    def initialize(path = nil, top = Top.new, environment = {})
+    attr_reader :environment, :subschemes
+    def initialize(path=nil, top=Top.new, environment={}, subschemes={})
       @top = top
       @path = Array(path).compact
       @environment = environment
+      @subschemes = subschemes
+    end
+
+    def subschema_reduce!(subschema_name)
+      reduced = @subschemes.clone
+      subschema = reduced.delete(subschema_name)
+      return self unless subschema
+      reduced.merge!(subschema.subschemes)
+      self.class.new(@path, @top, @environment, reduced)
     end
 
     def errors
@@ -29,7 +38,7 @@ module Parametric
     end
 
     def sub(key)
-      self.class.new(path + [key], top, environment)
+      self.class.new(path + [key], top, environment, subschemes)
     end
 
     protected

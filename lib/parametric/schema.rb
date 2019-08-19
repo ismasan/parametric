@@ -4,10 +4,12 @@ require "parametric/field"
 
 module Parametric
   class Schema
-    attr_accessor :environment
+    attr_accessor :environment, :subschemes
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
+      @subschemes = {}
+      @subschemes_identifiers = {}
       @definitions = []
       @definitions << block if block_given?
       @default_field_policies = []
@@ -86,6 +88,10 @@ module Parametric
       end
     end
 
+    def subschema_by(key, &block)
+      @subschemes_identifiers[key] = block
+    end
+
     def expand(exp, &block)
       expansions[exp] = block
       self
@@ -93,7 +99,7 @@ module Parametric
 
     def resolve(payload, environment={})
       @environment = environment
-      context = Context.new(nil, Top.new, @environment)
+      context = Context.new(nil, Top.new, @environment, @subschemes)
       output = coerce(payload, nil, context)
       Results.new(output, context.errors)
     end
@@ -123,15 +129,28 @@ module Parametric
 
     def coerce(val, _, context)
       if val.is_a?(Array)
-        val.map.with_index{|v, idx|
+        val.map.with_index do |v, idx|
           subcontext = context.sub(idx)
           out = coerce_one(v, subcontext)
           resolve_expansions(v, out, subcontext)
-        }
+        end
       else
         out = coerce_one(val, context)
         resolve_expansions(val, out, context)
       end
+    end
+
+    def schema_with_subschemes(val, context)
+      apply!
+      instance = self.clone
+      @subschemes_identifiers.each do |dependency, subschema|
+        new_schema_name = subschema.call(val[dependency])
+        next unless new_schema_name
+        new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
+        context = context.subschema_reduce!(new_schema_name)
+        new_schema&.copy_into instance
+      end
+      [instance, context]
     end
 
     protected
@@ -142,7 +161,9 @@ module Parametric
 
     attr_reader :default_field_policies, :ignored_field_keys, :expansions
 
-    def coerce_one(val, context, flds: fields)
+    def coerce_one(val, context, flds: nil)
+      new_schema, context = schema_with_subschemes(val, context)
+      flds ||= new_schema.fields
       flds.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
         if r.eligible?
