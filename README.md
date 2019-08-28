@@ -884,6 +884,7 @@ schema = Parametric::Schema.new do
     end
 
     field(:name).type(:string)
+    field(:title).type(:string)
   end
 end
 ```
