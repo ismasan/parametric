@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe Parametric::Schema do
-  subject(:schema) do
-    described_class.new do
+  it 'passes payload through prepare block, if defined' do
+    schema = described_class.new do
       prepare do |payload, context|
         payload[:slug] = payload[:name].to_s.downcase.gsub(/\s+/, '-') unless payload[:slug]
         payload
@@ -19,12 +19,26 @@ describe Parametric::Schema do
         field(:slug).type(:string).present
       end
     end
-  end
 
-  it 'passes payload through prepare block, if defined' do
     result = schema.resolve({ name: 'A name', variants: [{ name: 'A variant' }] })
     expect(result.valid?).to be true
     expect(result.output[:slug]).to eq 'a-name'
     expect(result.output[:variants].first[:slug]).to eq 'v: a variant'
+  end
+
+  it 'collects errors added in pre-resolvers' do
+    schema = described_class.new do
+      field(:variants).type(:array).schema do
+        prepare do |payload, context|
+          context.add_error 'nope!' if payload[:name] == 'with errors'
+          payload
+        end
+        field(:name).type(:string)
+      end
+    end
+
+    results = schema.resolve({ variants: [ {name: 'no errors'}, {name: 'with errors'}]})
+    expect(results.valid?).to be false
+    expect(results.errors['$.variants[1]']).to eq ['nope!']
   end
 end
