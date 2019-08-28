@@ -12,6 +12,7 @@ module Parametric
       @default_field_policies = []
       @ignored_field_keys = []
       @expansions = {}
+      @pre_resolvers = []
     end
 
     def schema
@@ -90,6 +91,13 @@ module Parametric
       end
     end
 
+    def prepare(klass = nil, &block)
+      raise ArgumentError, '#prepare expects a callable object, or a block' if !klass && !block_given?
+      callable = klass || block
+      pre_resolvers << callable
+      self
+    end
+
     def expand(exp, &block)
       expansions[exp] = block
       self
@@ -139,18 +147,26 @@ module Parametric
 
     protected
 
-    attr_reader :definitions, :options
+    attr_reader :definitions, :options, :pre_resolvers
 
     private
 
     attr_reader :default_field_policies, :ignored_field_keys, :expansions
 
     def coerce_one(val, context, flds: fields)
+      val = run_pre_resolvers(val, context)
+
       flds.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
         if r.eligible?
           m[field.key] = r.value
         end
+      end
+    end
+
+    def run_pre_resolvers(val, context)
+      pre_resolvers.reduce(val) do |value, callable|
+        callable.call(value, context)
       end
     end
 
