@@ -880,7 +880,7 @@ Prepare blocks can be added to nested schemas, too:
 schema = Parametric::Schema.new do
   field(:friends).type(:array).schema do
     prepare do |friend_payload, context|
-      friend_payload.merge(title: "Mr/Ms #{payload[:name]}")
+      friend_payload.merge(title: "Mr/Ms #{friend_payload[:name]}")
     end
 
     field(:name).type(:string)
@@ -912,7 +912,7 @@ schema = Parametric::Schema.new do
 end
 ```
 
-The `context` argument can be used to custom validation errors in a prepare block.
+The `context` argument can be used to add custom validation errors in a prepare block.
 
 ```ruby
 schema = Parametric::Schema.new do
