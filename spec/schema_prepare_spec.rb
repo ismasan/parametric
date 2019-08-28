@@ -66,4 +66,28 @@ describe Parametric::Schema do
     results = schema3.resolve({ name: 'Ismael Celis', age: 41 })
     expect(results.output[:slug]).to eq 'slug-ismael-celis'
   end
+
+  it 'works with any callable' do
+    slug_maker = Class.new do
+      def initialize(slug_field, from:)
+        @slug_field, @from = slug_field, from
+      end
+
+      def call(payload, _context)
+        payload.merge(
+          @slug_field => payload[@from].to_s.downcase.gsub(/\s+/, '-')
+        )
+      end
+    end
+
+    schema = described_class.new do |sc, _opts|
+      sc.prepare slug_maker.new(:slug, from: :name)
+
+      sc.field(:name).type(:string)
+      sc.field(:slug).type(:string)
+    end
+
+    results = schema.resolve(name: 'Ismael Celis')
+    expect(results.output[:slug]).to eq 'ismael-celis'
+  end
 end
