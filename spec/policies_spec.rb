@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'default coercions' do
   def test_coercion(key, value, expected)
-    coercion = Parametric.registry.coercions[key]
+    coercion = Parametric.registry.policies[key]
     expect(coercion.new.coerce(value, nil, nil)).to eq expected
   end
 
