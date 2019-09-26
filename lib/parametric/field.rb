@@ -1,4 +1,5 @@
 require "parametric/field_dsl"
+require "parametric/maybe_policy"
 
 module Parametric
   class ConfigurationError < StandardError; end
@@ -36,6 +37,11 @@ module Parametric
       self
     end
     alias_method :type, :policy
+
+    def maybe(key, *args)
+      pol = MaybePolicy.new(lookup(key, args))
+      policy pol
+    end
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
