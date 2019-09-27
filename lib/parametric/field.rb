@@ -60,7 +60,7 @@ module Parametric
       if !eligible && has_default?
         eligible = true
         value = default_block.call(key, payload, context)
-        return Result.new(eligible, value)
+        payload[key] = value
       end
       policies.each do |policy|
         # pass schema additional data to the each policy
