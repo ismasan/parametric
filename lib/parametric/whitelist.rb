@@ -14,7 +14,7 @@ module Parametric
     #   foo    = Foo.new
     #   schema = foo.class.schema(:test)
     #   params = {title: "title", age: 25}
-    #   foo.filter!(params, schema) # => {title: "A title", age: "[FILTERED]"}
+    #   foo.filter!(params, schema) # => {title: "title", age: "[FILTERED]"}
     #
     FILTERED = "[FILTERED]"
     EMPTY    = "[EMPTY]"
@@ -42,7 +42,6 @@ module Parametric
               end
             end
           else
-            # empty = value.try(:blank?) || value.try(:empty?)
             value = if value.nil? || value.try(:blank?) || value.try(:empty?)
               EMPTY
             elsif whitelisted?(schema, key)
@@ -50,7 +49,6 @@ module Parametric
             else
               FILTERED
             end
-            # value = FILTERED unless whitelisted?(schema, key)
             value
           end
 
@@ -61,20 +59,20 @@ module Parametric
       end
 
       def find_schema_by(schema, value, key)
-
-        return nil unless schema.respond_to?(:fields)
-        return nil unless schema.fields[key]
-        return nil unless schema.fields[key].respond_to?(:meta_data)
-        meta_data = schema.fields[key].meta_data || {}
+        meta_data = get_meta_data(schema, key)
         meta_data[:schema]
       end
 
       def whitelisted?(schema, key)
-        return false unless schema.respond_to?(:fields)
-        return false unless schema.fields[key]
-        return false unless schema.fields[key].respond_to?(:meta_data)
-        meta_data = schema.fields[key].meta_data || {}
+        meta_data = get_meta_data(schema, key)
         meta_data[:whitelisted]
+      end
+
+      def get_meta_data(schema, key)
+        return {} unless schema.respond_to?(:fields)
+        return {} unless schema.fields[key]
+        return {} unless schema.fields[key].respond_to?(:meta_data)
+        meta_data = schema.fields[key].meta_data || {}
       end
     end
   end
