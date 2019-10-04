@@ -64,7 +64,7 @@ module Parametric
       end
       policies.each do |policy|
         # pass schema additional data to the each policy
-        policy.environment = context.environment
+        policy.environment = context.environment if policy.respond_to?(:environment)
         if !policy.eligible?(value, key, payload)
           eligible = false
           if has_default?
@@ -111,4 +111,3 @@ module Parametric
     end
   end
 end
-
