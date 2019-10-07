@@ -30,14 +30,14 @@ describe "classes including Whitelist module" do
     let(:schema) { TestWhitelist.schema(:request) }
     let(:input) {
       {
-        unexpected: "test",
+        "unexpected" => "test",
         data: [
-          id: 5,
+          "id" => 5,
           name: nil,
           unexpected: nil,
           empty_array: [],
           empty_hash: {},
-          extra: {
+          "extra" => {
             id: 6,
             name: "name",
             unexpected: "unexpected",
@@ -46,7 +46,7 @@ describe "classes including Whitelist module" do
         ]
       }
     }
-    it "should filter not whitelisted attributes" do
+    it "should filter not whitelisted attributes with indifferent key's type" do
       whitelisted = TestWhitelist.new.filter!(input, schema)
 
       expect(whitelisted).to eq(

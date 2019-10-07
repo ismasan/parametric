@@ -25,9 +25,11 @@ module Parametric
 
     module ClassMethods
       def filter!(payload, schema)
-        filtered_payload = payload.dup
+        filtered_payload = {}
 
-        payload.each do |key, value|
+        payload.dup.each do |key, value|
+          key = key.to_sym
+
           if value.is_a?(Hash)
             field_schema = find_schema_by(schema, value, key)
             value = filter!(value, field_schema)
@@ -57,6 +59,8 @@ module Parametric
 
         filtered_payload
       end
+
+      private
 
       def find_schema_by(schema, value, key)
         meta_data = get_meta_data(schema, key)
