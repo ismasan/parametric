@@ -173,4 +173,3 @@ describe "classes including DSL module" do
     end
   end
 end
-

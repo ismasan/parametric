@@ -34,6 +34,12 @@ module Parametric
     end
   end
 
+  Parametric.policy :whitelisted do
+    meta_data do
+      {whitelisted: true}
+    end
+  end
+
   Parametric.policy :required do
     message do |*|
       "is required"

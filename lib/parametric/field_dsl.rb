@@ -20,5 +20,9 @@ module Parametric
     def options(opts)
       policy :options, opts
     end
+
+    def whitelisted
+      policy :whitelisted
+    end
   end
 end
