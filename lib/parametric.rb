@@ -1,13 +1,14 @@
 require "parametric/version"
+require "parametric/support"
 require "parametric/registry"
 require "parametric/field"
 require "parametric/results"
 require "parametric/schema"
 require "parametric/context"
 require "parametric/base_policy"
+require 'ostruct'
 
 module Parametric
-
   def self.registry
     @registry ||= Registry.new
   end

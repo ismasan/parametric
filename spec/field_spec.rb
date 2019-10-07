@@ -203,7 +203,7 @@ describe Parametric::Field do
       subject.default("Foobar")
       resolve(subject, foobar: ["b", "c"]).tap do |r|
         expect(r.eligible?).to be true
-        no_errors
+        has_errors
         expect(r.value).to eq "Foobar"
       end
     end
