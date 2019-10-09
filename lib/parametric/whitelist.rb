@@ -24,20 +24,30 @@ module Parametric
     end
 
     module ClassMethods
-      def filter!(payload, schema)
+      def filter!(payload, source_schema)
+        schema  = source_schema.clone
+        context = Context.new(nil, Top.new, @environment, source_schema.subschemes.clone)
+        # after source_schema.clone the cloned instanse is losing parent's proprietes.
+        # in this case after clone is losing #subschemes
+        # TODO: Investigate and fix!
+        resolve(payload, schema, context)
+      end
+
+      def resolve(payload, schema, context)
         filtered_payload = {}
 
         payload.dup.each do |key, value|
           key = key.to_sym
+          update_schema_fields(schema, context, key, payload[key]) if schema.subschemes_identifiers[key]
 
           if value.is_a?(Hash)
-            field_schema = find_schema_by(schema, value, key)
-            value = filter!(value, field_schema)
+            field_schema = find_schema_by(schema, key)
+            value        = resolve(value, field_schema, context)
           elsif value.is_a?(Array)
             value = value.map do |v|
               if v.is_a?(Hash)
-                field_schema = find_schema_by(schema, value, key)
-                filter!(v, field_schema)
+                field_schema = find_schema_by(schema, key)
+                resolve(v, field_schema, context)
               else
                 v = FILTERED unless whitelisted?(schema, key)
                 v
@@ -62,14 +72,29 @@ module Parametric
 
       private
 
-      def find_schema_by(schema, value, key)
+      def update_schema_fields(schema, context, key, value)
+        new_schema_name = schema.subschemes_identifiers[key].call(value)
+        return schema unless new_schema_name
+
+        new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
+        return unless new_schema
+        context = context.subschema_reduce!(new_schema_name)
+
+        new_schema.fields.each do |key, field|
+          schema.fields[key] = field
+        end
+
+        schema.subschemes_identifiers.merge!(new_schema.subschemes_identifiers)
+      end
+
+      def find_schema_by(schema, key)
         meta_data = get_meta_data(schema, key)
         meta_data[:schema]
       end
 
       def whitelisted?(schema, key)
         meta_data = get_meta_data(schema, key)
-        meta_data[:whitelisted]
+        meta_data[:whitelisted] || whitelisted_keys.include?(key)
       end
 
       def get_meta_data(schema, key)
@@ -77,6 +102,10 @@ module Parametric
         return {} unless schema.fields[key]
         return {} unless schema.fields[key].respond_to?(:meta_data)
         meta_data = schema.fields[key].meta_data || {}
+      end
+
+      def whitelisted_keys
+        Parametric.config.whitelisted_keys || []
       end
     end
   end
