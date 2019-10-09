@@ -37,8 +37,13 @@ module Parametric
         filtered_payload = {}
 
         payload.dup.each do |key, value|
-          key = key.to_sym
-          update_schema_fields(schema, context, key, payload[key]) if schema.subschemes_identifiers[key]
+          key        = key.to_sym
+          identifier = schema.subschemes_identifiers.inject({}) do |result, (identifiers, value)|
+            result[key] = value if identifiers.include?(key)
+            result
+          end
+
+          update_schema_fields(schema, context, identifier[key], payload[key]) unless identifier.empty?
 
           if value.is_a?(Hash)
             field_schema = find_schema_by(schema, key)
@@ -72,8 +77,8 @@ module Parametric
 
       private
 
-      def update_schema_fields(schema, context, key, value)
-        new_schema_name = schema.subschemes_identifiers[key].call(value)
+      def update_schema_fields(schema, context, identifier, value)
+        new_schema_name = identifier.call(value)
         return unless new_schema_name
 
         new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
