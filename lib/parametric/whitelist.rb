@@ -74,16 +74,14 @@ module Parametric
 
       def update_schema_fields(schema, context, key, value)
         new_schema_name = schema.subschemes_identifiers[key].call(value)
-        return schema unless new_schema_name
+        return unless new_schema_name
 
         new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
         return unless new_schema
+
         context = context.subschema_reduce!(new_schema_name)
 
-        new_schema.fields.each do |key, field|
-          schema.fields[key] = field
-        end
-
+        schema.fields.merge!(new_schema.fields)
         schema.subschemes_identifiers.merge!(new_schema.subschemes_identifiers)
       end
 
