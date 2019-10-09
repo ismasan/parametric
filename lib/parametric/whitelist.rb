@@ -27,7 +27,7 @@ module Parametric
       def filter!(payload, source_schema)
         schema  = source_schema.clone
         context = Context.new(nil, Top.new, @environment, source_schema.subschemes.clone)
-        # after source_schema.clone the cloned instanse is losing parent's proprietes.
+        # after source_schema.clone the cloned instance is losing parent's proprietes.
         # in this case after clone is losing #subschemes
         # TODO: Investigate and fix!
         resolve(payload, schema, context)
