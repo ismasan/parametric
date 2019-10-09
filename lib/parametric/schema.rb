@@ -88,8 +88,8 @@ module Parametric
       end
     end
 
-    def subschema_by(key, &block)
-      @subschemes_identifiers[key] = block
+    def subschema_by(*keys, &block)
+      @subschemes_identifiers[keys] = block
     end
 
     def expand(exp, &block)
@@ -143,8 +143,8 @@ module Parametric
     def schema_with_subschemes(val, context)
       apply!
       instance = self.clone
-      @subschemes_identifiers.each do |dependency, subschema|
-        new_schema_name = subschema.call(val[dependency])
+      @subschemes_identifiers.each do |dependencies, subschema|
+        new_schema_name = subschema.call(*val.values_at(*dependencies))
         next unless new_schema_name
         new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
         context = context.subschema_reduce!(new_schema_name)
