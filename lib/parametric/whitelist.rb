@@ -37,13 +37,11 @@ module Parametric
         filtered_payload = {}
 
         payload.dup.each do |key, value|
-          key        = key.to_sym
-          identifier = schema.subschemes_identifiers.inject({}) do |result, (identifiers, value)|
-            result[key] = value if identifiers.include?(key)
-            result
-          end
+          key    = key.to_sym
+          schema = Schema.new if schema.nil?
+          schema.send(:apply!)
 
-          update_schema_fields(schema, context, identifier[key], payload[key]) unless identifier.empty?
+          schema, context = schema.schema_with_subschemes(payload, context) unless schema.subschemes_identifiers.empty?
 
           if value.is_a?(Hash)
             field_schema = find_schema_by(schema, key)
@@ -59,10 +57,10 @@ module Parametric
               end
             end
           else
-            value = if value.nil? || value.try(:blank?) || value.try(:empty?)
-              EMPTY
-            elsif whitelisted?(schema, key)
+            value = if whitelisted?(schema, key)
               value
+            elsif value.nil? || value.try(:blank?) || value.try(:empty?)
+              !!value == value ? value : EMPTY
             else
               FILTERED
             end
@@ -76,19 +74,6 @@ module Parametric
       end
 
       private
-
-      def update_schema_fields(schema, context, identifier, value)
-        new_schema_name = identifier.call(value)
-        return unless new_schema_name
-
-        new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
-        return unless new_schema
-
-        context = context.subschema_reduce!(new_schema_name)
-
-        schema.fields.merge!(new_schema.fields)
-        schema.subschemes_identifiers.merge!(new_schema.subschemes_identifiers)
-      end
 
       def find_schema_by(schema, key)
         meta_data = get_meta_data(schema, key)
