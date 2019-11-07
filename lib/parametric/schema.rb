@@ -163,7 +163,6 @@ module Parametric
 
     def coerce_one(val, context, flds: nil)
       new_schema, context = schema_with_subschemes(val, context)
-      # binding.pry
       val = reorder_by_schema(val, new_schema)
 
       flds ||= new_schema.fields
