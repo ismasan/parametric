@@ -163,6 +163,7 @@ module Parametric
 
     def coerce_one(val, context, flds: nil)
       new_schema, context = schema_with_subschemes(val, context)
+      # binding.pry
       val = reorder_by_schema(val, new_schema)
 
       flds ||= new_schema.fields
@@ -176,9 +177,13 @@ module Parametric
 
     def reorder_by_schema(payload, new_schema)
       return payload unless payload.is_a?(Hash)
-      payload.sort_by do |k, _|
+      sorted = payload.sort_by do |k, _|
         new_schema.fields.keys.index(k) || payload.keys.count
       end.to_h
+
+      return payload.class.new(sorted) if payload.class.name.try(:demodulize) == "HashWithIndifferentAccess"
+
+      sorted
     end
 
     class MatchContext
