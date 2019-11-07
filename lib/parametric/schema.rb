@@ -163,6 +163,8 @@ module Parametric
 
     def coerce_one(val, context, flds: nil)
       new_schema, context = schema_with_subschemes(val, context)
+      val = reorder_by_schema(val, new_schema)
+
       flds ||= new_schema.fields
       flds.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
@@ -170,6 +172,13 @@ module Parametric
           m[field.key] = r.value
         end
       end
+    end
+
+    def reorder_by_schema(payload, new_schema)
+      return payload unless payload.is_a?(Hash)
+      payload.sort_by do |k, _|
+        new_schema.fields.keys.index(k) || payload.keys.count
+      end.to_h
     end
 
     class MatchContext

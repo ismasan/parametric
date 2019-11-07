@@ -56,6 +56,41 @@ describe Parametric::Schema do
     end
   end
 
+  it "order input by schema fields' keys order" do
+    payload = {
+      tags: 'tag',
+      status: 'visible',
+      extra_field: "extra",
+      price: "100",
+      title: "title",
+      variants: [
+        {
+          stock: '10',
+          available_if_no_stock: true,
+          extra_field: "extra",
+          name: 'v1',
+          sku: 'ABC'
+        }
+      ]
+    }
+
+    output = subject.resolve(payload).output
+    expect(output).to eq({
+      title: "title",
+      price: 100,
+      status: "visible",
+      tags: ["tag"],
+      variants: [
+        {
+          name: "v1",
+          sku: "ABC",
+          stock: 10,
+          available_if_no_stock: true
+        }
+      ]
+    })
+  end
+
   it 'works' do
     test_schema(subject, {
       title: 'iPhone 6 Plus',
