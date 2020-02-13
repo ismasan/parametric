@@ -1,3 +1,5 @@
+require 'forwardable'
+
 module Parametric
   class MaybePolicy
     extend Forwardable
