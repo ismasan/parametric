@@ -7,7 +7,7 @@ module Parametric
     end
 
     def coerce(value, key, context)
-      value ? policy.coerce(value, key, context) : nil
+      value.nil? ? nil : policy.coerce(value, key, context)
     end
 
     def_delegators :policy, :eligible?, :valid?, :meta_data
