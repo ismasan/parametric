@@ -10,7 +10,11 @@ module Parametric
       value.nil? ? nil : policy.coerce(value, key, context)
     end
 
-    def_delegators :policy, :eligible?, :valid?, :meta_data
+    def valid?(value, key, payload)
+      value.nil? ? true : policy.valid?(value, key, payload)
+    end
+
+    def_delegators :policy, :eligible?, :meta_data, :message
 
     private
 
