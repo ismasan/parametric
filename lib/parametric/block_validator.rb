@@ -1,8 +1,9 @@
 module Parametric
   class BlockValidator
-    def self.build(meth, &block)
+    def self.build(name, meth, &block)
       klass = Class.new(self)
       klass.public_send(meth, &block)
+      klass.policy_name = name
       klass
     end
 
@@ -31,35 +32,74 @@ module Parametric
       @meta_data_block
     end
 
-    attr_reader :message
+    %w(error silent_error).each do |name|
+      getter = "#{name}s"
+      define_singleton_method(getter) { instance_variable_get("@#{getter}") || instance_variable_set("@#{getter}", []) }
+
+      define_singleton_method("register_#{name}") do |*exceptions|
+        instance_variable_set("@#{getter}",
+                              ((self.public_send(getter) || []) + exceptions).uniq)
+      end
+    end
+
+    def self.policy_name=(name)
+      @policy_name = name
+    end
+
+    def self.policy_name
+      @policy_name
+    end
+
+    attr_reader :errors, :silent_errors, :value, :key
     attr_accessor :environment
 
     def initialize(*args)
-      @args = args
-      @message = 'is invalid'
-      @validate_block = self.class.validate || ->(*args) { true }
-      @coerce_block = self.class.coerce || ->(v, *_) { v }
-      @eligible_block = self.class.eligible || ->(*args) { true }
-      @meta_data_block = self.class.meta_data || ->(*args) { {} }
+      @init_params = args
+      @errors = self.class.register_error || []
+      @silent_errors = self.class.register_silent_error || []
     end
 
     def eligible?(value, key, payload)
-      args = (@args + [value, key, payload])
-      @eligible_block.call(*args)
+      args = (init_params + [value, key, payload])
+      (self.class.eligible || ->(*) { true }).call(*args)
     end
 
     def coerce(value, key, context)
-      @coerce_block.call(value, key, context)
+      (self.class.coerce || ->(v, *_) { v }).call(value, key, context)
     end
 
-    def valid?(value, key, payload)
-      args = (@args + [value, key, payload])
+    def valid?(value, key, payload) # Do not overwrite this method unless you know what to do. Overwrite #validate instead
+      args = (init_params + [value, key, payload])
       @message = self.class.message.call(*args) if self.class.message
-      @validate_block.call(*args)
+      validate(*args)
     end
 
     def meta_data
-      @meta_data_block.call *@args
+      (self.class.meta_data || ->(*) { {name: self.class.policy_name} }).call(*init_params)
+    end
+
+    def validate(*args)
+      (self.class.validate || ->(*) { true }).call(*args)
+    end
+
+    def policy_name
+      (self.class.policy_name || self.to_s.demodulize.underscore).to_sym
+    end
+
+    def message
+      @message ||= 'is invalid'
+    end
+
+protected
+
+    def validate(*args) # This method is free to overwrite
+      (self.class.validate || ->(*args) { true }).call(*args)
+    end
+
+private
+
+    def init_params
+      @init_params ||= [] # safe default if #initialize was overwritten
     end
   end
 end

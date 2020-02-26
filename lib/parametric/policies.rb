@@ -10,7 +10,11 @@ module Parametric
         @fmt = fmt
       end
 
-      def valid?(value, key, payload)
+      def eligible?(value, key, payload)
+        payload.key?(key)
+      end
+
+      def validate(value, key, payload)
         !payload.key?(key) || !!(value.to_s =~ @fmt)
       end
     end

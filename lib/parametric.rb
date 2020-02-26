@@ -18,7 +18,9 @@ module Parametric
   end
 
   def self.config
-    @config ||= OpenStruct.new
+    @config ||= OpenStruct.new(
+      explicit_errors: false
+    )
   end
 
   def self.configure

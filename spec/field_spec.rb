@@ -2,7 +2,8 @@ require "spec_helper"
 
 describe Parametric::Field do
   let(:registry) { Parametric.registry }
-  let(:context) { Parametric::Context.new}
+  let(:context)  { Parametric::Context.new }
+
   subject { described_class.new(:a_key, registry) }
 
   def register_coercion(name, block)
@@ -326,6 +327,10 @@ describe Parametric::Field do
         def meta_data
           {foo: "bar"}
         end
+
+        def policy_name
+          :custom_policy
+        end
       end
     end
 
@@ -397,14 +402,14 @@ describe Parametric::Field do
       end
     end
 
-    it 'add policy exceptions to #errors' do
-      register_coercion :error, ->(v, k, c){ raise "This is an error" }
+    it 'add policy message to #errors if validation fails' do
+      register_coercion :error, ->(v, k, c) { raise "This is an error" }
 
       subject.policy(:error)
 
       resolve(subject, a_key: "b").tap do |r|
         expect(r.eligible?).to be true
-        has_error("$", "This is an error")
+        has_error("$", "is invalid")
         expect(r.value).to eq "b"
       end
     end

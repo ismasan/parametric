@@ -1,8 +1,6 @@
 require "parametric/field_dsl"
 
 module Parametric
-  class ConfigurationError < StandardError; end
-
   class Field
     include FieldDSL
 
@@ -73,10 +71,10 @@ module Parametric
           end
           break
         else
-          value = resolve_one(policy, value, context)
-          if !policy.valid?(value, key, payload)
+          value, valid = resolve_one(policy, value, payload, context)
+
+          unless valid
             eligible = true # eligible, but has errors
-            context.add_error policy.message
             break # only one error at a time
           end
         end
@@ -88,14 +86,23 @@ module Parametric
     private
     attr_reader :policies, :registry, :default_block
 
-    def resolve_one(policy, value, context)
+    def resolve_one(policy, value, payload, context)
       begin
-        policy.coerce(value, key, context)
-      rescue *Parametric.config.custom_errors => e
+        value = policy.coerce(value, key, context)
+        valid = policy.valid?(value, key, payload)
+
+        context.add_error(policy.message) unless valid
+        [value, valid]
+      rescue *(policy.try(:errors) || []) => e
+        # context.add_error e.message # NOTE: do we need it?
         raise e
-      rescue StandardError => e
+      rescue *(policy.try(:silent_errors) || []) => e
         context.add_error e.message
-        value
+      rescue StandardError => e
+        raise e if policy.is_a? Parametric::Schema # from the inner level, just reraise
+        raise ConfigurationError.new("#{e.class} should be registered in the policy") if Parametric.config.explicit_errors
+        context.add_error policy.message unless Parametric.config.explicit_errors
+        [value, false]
       end
     end
 
