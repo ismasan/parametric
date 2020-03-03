@@ -6,6 +6,7 @@ require "parametric/results"
 require "parametric/schema"
 require "parametric/context"
 require "parametric/base_policy"
+require "parametric/documentation"
 require 'ostruct'
 
 module Parametric
@@ -19,7 +20,8 @@ module Parametric
 
   def self.config
     @config ||= OpenStruct.new(
-      explicit_errors: false
+      explicit_errors:  false,
+      whitelisted_keys: []
     )
   end
 

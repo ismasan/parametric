@@ -37,8 +37,11 @@ module Parametric
       define_singleton_method(getter) { instance_variable_get("@#{getter}") || instance_variable_set("@#{getter}", []) }
 
       define_singleton_method("register_#{name}") do |*exceptions|
-        instance_variable_set("@#{getter}",
-                              ((self.public_send(getter) || []) + exceptions).uniq)
+        instance_variable_set("@#{getter}", ((self.public_send(getter) || []) + exceptions).uniq)
+      end
+
+      define_method(getter) do
+        instance_variable_set("@#{getter}", self.class.send("register_#{name}") || [])
       end
     end
 
@@ -50,13 +53,9 @@ module Parametric
       @policy_name
     end
 
-    attr_reader :errors, :silent_errors, :value, :key
     attr_accessor :environment
-
     def initialize(*args)
       @init_params = args
-      @errors = self.class.register_error || []
-      @silent_errors = self.class.register_silent_error || []
     end
 
     def eligible?(value, key, payload)
@@ -68,14 +67,14 @@ module Parametric
       (self.class.coerce || ->(v, *_) { v }).call(value, key, context)
     end
 
-    def valid?(value, key, payload) # Do not overwrite this method unless you know what to do. Overwrite #validate instead
+    def valid?(value, key, payload)
       args = (init_params + [value, key, payload])
       @message = self.class.message.call(*args) if self.class.message
       validate(*args)
     end
 
     def meta_data
-      (self.class.meta_data || ->(*) { {name: self.class.policy_name} }).call(*init_params)
+      meta.merge((self.class.meta_data || -> (*) { {} }).call(*init_params))
     end
 
     def validate(*args)
@@ -90,13 +89,17 @@ module Parametric
       @message ||= 'is invalid'
     end
 
-protected
+    protected
 
-    def validate(*args) # This method is free to overwrite
+    def validate(*args)
       (self.class.validate || ->(*args) { true }).call(*args)
     end
 
-private
+    private
+
+    def meta #maybe call this guy instead of meta_data
+      @meta = errors.empty? ? {} : {self.class.policy_name => {errors: self.class.errors}}
+    end
 
     def init_params
       @init_params ||= [] # safe default if #initialize was overwritten

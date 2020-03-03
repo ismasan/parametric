@@ -66,11 +66,32 @@ module Parametric
     end
 
     def structure
-      fields.each_with_object({}) do |(_, field), obj|
+      fields.each_with_object({_errors: []}) do |(_, field), obj|
         meta = field.meta_data.dup
         sc = meta.delete(:schema)
-        meta[:structure] = sc.structure if sc
+        if sc
+          meta[:structure] = sc.structure
+          obj[:_errors] += meta[:structure].delete(:_errors)
+        else
+          obj[:_errors] += field.possible_errors
+        end
         obj[field.key] = meta
+      end
+    end
+
+    def flatten_structure(root="")
+      fields.each_with_object({_errors: []}) do |(name, field), obj|
+        json_path = root.empty? ? "$.#{name}" : "#{root}.#{name}"
+        meta = field.meta_data.merge(json_path: json_path)
+        sc = meta.delete(:schema)
+        obj[json_path.gsub("[]", "")[2..-1]] = meta
+        if sc
+          deep_result = sc.flatten_structure(json_path)
+          obj[:_errors] += deep_result.delete(:_errors)
+          obj.merge!(deep_result)
+        else
+          obj[:_errors] += field.possible_errors
+        end
       end
     end
 
@@ -179,7 +200,7 @@ module Parametric
       sorted = payload.sort_by do |k, _|
         new_schema.fields.keys.index(k) || payload.keys.count
       end.to_h
-
+      # TODO: remove hard-code
       return payload.class.new(sorted) if payload.class.name.try(:demodulize) == "HashWithIndifferentAccess"
 
       sorted

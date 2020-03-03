@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'pry'
 
 describe 'custom block validator' do
   Parametric.policy :validate_if do

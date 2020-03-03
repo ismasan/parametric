@@ -21,6 +21,10 @@ module Parametric
       self
     end
 
+    def possible_errors
+      meta_data.map { |_, v| v[:errors] if v.is_a?(Hash) }.flatten.compact
+    end
+
     def default(value)
       meta default: value
       @default_block = (value.respond_to?(:call) ? value : ->(key, payload, context) { value })

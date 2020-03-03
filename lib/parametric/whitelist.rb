@@ -82,7 +82,7 @@ module Parametric
 
       def whitelisted?(schema, key)
         meta_data = get_meta_data(schema, key)
-        meta_data[:whitelisted] || whitelisted_keys.include?(key)
+        meta_data[:whitelisted] || Parametric.config.whitelisted_keys.include?(key)
       end
 
       def get_meta_data(schema, key)
@@ -90,10 +90,6 @@ module Parametric
         return {} unless schema.fields[key]
         return {} unless schema.fields[key].respond_to?(:meta_data)
         meta_data = schema.fields[key].meta_data || {}
-      end
-
-      def whitelisted_keys
-        Parametric.config.whitelisted_keys || []
       end
     end
   end
