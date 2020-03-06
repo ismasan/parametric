@@ -23,7 +23,7 @@ describe "Schema structures generation" do
           field(:extra).declared.default(false).policy(:policy_with_silent_error)
         end
 
-        subschema_by(:role) { :chlen }
+        subschema_by(:role) { :subschema }
       end
     end
   end
@@ -34,11 +34,12 @@ describe "Schema structures generation" do
   end
 
   before do
-    schema.subschemes[:chlen] = subschema1
+    schema.subschemes[:subschema] = subschema1
   end
 
   it "generates nested data for documentation generation" do
     expect(schema.structure).to eq({
+      _subschemes: {},
       data: {
         type: :object,
         required: true,
@@ -63,7 +64,16 @@ describe "Schema structures generation" do
             type: :object,
             required: true,
             structure: {
-              extra: {default: false}
+              extra: {default: false},
+              _subschemes: {}
+            }
+          },
+          _identifiers: [:role],
+          _subschemes: {
+            subschema: {
+              _errors: [],
+              _subschemes: {},
+              test1: {required: true, present: true}
             }
           }
         }
@@ -109,6 +119,18 @@ describe "Schema structures generation" do
         json_path: "$.data.role"
       },
       _errors: [ArgumentError],
+      _identifiers: ["data.role"],
+      _subschemes: {
+        subschema: {
+          _errors: [],
+          _subschemes: {},
+          "data.test1"=>{
+            required: true,
+            present: true,
+            json_path: "$.data.test1"
+          }
+        }
+      }
     })
   end
 end

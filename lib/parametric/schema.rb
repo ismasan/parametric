@@ -65,26 +65,37 @@ module Parametric
       instance
     end
 
-    def structure
-      fields.each_with_object({_errors: []}) do |(_, field), obj|
+    def structure(parent_subschemes=subschemes)
+      fields.each_with_object({_errors: [], _subschemes: {}}) do |(_, field), obj|
         meta = field.meta_data.dup
         sc = meta.delete(:schema)
         if sc
-          meta[:structure] = sc.structure
+          meta[:structure] = sc.structure(parent_subschemes)
           obj[:_errors] += meta[:structure].delete(:_errors)
         else
           obj[:_errors] += field.possible_errors
         end
         obj[field.key] = meta
+
+        next if subschemes_identifiers.empty?
+        obj[:_identifiers] = subschemes_identifiers.keys.first
+        if (obj[:_identifiers] - obj.keys).empty?
+          parent_subschemes.each do |name, subschema|
+            obj[:_subschemes][name] = subschema.structure
+            obj[:_errors] += obj[:_subschemes][name][:_errors]
+          end
+        end
       end
     end
 
     def flatten_structure(root="")
-      fields.each_with_object({_errors: []}) do |(name, field), obj|
+      fields.each_with_object({_errors: [], _subschemes: {}}) do |(name, field), obj|
         json_path = root.empty? ? "$.#{name}" : "#{root}.#{name}"
         meta = field.meta_data.merge(json_path: json_path)
         sc = meta.delete(:schema)
-        obj[json_path.gsub("[]", "")[2..-1]] = meta
+
+        humanize = Proc.new { |path| path.gsub("[]", "")[2..-1] }
+        obj[humanize.call(json_path)] = meta
         if sc
           deep_result = sc.flatten_structure(json_path)
           obj[:_errors] += deep_result.delete(:_errors)
@@ -92,6 +103,13 @@ module Parametric
         else
           obj[:_errors] += field.possible_errors
         end
+
+        subschemes.each do |name, subschema|
+          obj[:_subschemes][name] = subschema.flatten_structure(json_path)
+          obj[:_errors] += obj[:_subschemes][name][:_errors]
+        end
+        next if subschemes_identifiers.empty?
+        obj[:_identifiers] = subschemes_identifiers.keys.first.map { |id| "#{humanize.call(root)}.#{id}" }
       end
     end
 
