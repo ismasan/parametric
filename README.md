@@ -1,6 +1,5 @@
-# Paradocs: Extended Parametric gem + Documentation Generation
+# Paradocs: Extended [Parametric gem](https://github.com/ismasan/parametric) + Documentation Generation
 
-> [original](https://github.com/ismasan/parametric) gem
 
 Declaratively define data schemas in your Ruby objects, and use them to whitelist, validate or transform inputs to your programs.
 
@@ -91,6 +90,31 @@ results = person_schema.resolve(
 )
 
 results.errors # => {"$.friends[0].name" => "is required"}
+```
+
+### Subschemas
+```ruby
+person_schema = Paradocs::Schema.new do
+  field(:name).type(:string).required
+  field(:age).type(:integer)
+  field(:role).type(:string).options(["admin", "user"])
+  subschema_by(:role) { |role| role == :admin ? :admin_schema : :user_schema }
+end
+admin_schema = Paradocs::Schema.new do
+  field(:permissions).present.type(:string).options(["superuser"])
+end
+user_schema = Paradocs::Schema.new do
+  field(:permissions).present.type(:string).options(["readonly"])
+end
+person_schema.subschemes = {
+    admin_schema: admin_schema,
+    user_schema: user_schema
+}
+# subschemes are resolved dynamically depending on the logic specified in #subschema_by
+results = person_schema.resolve(name: "John", age: 20, role: :admin, permissions: "superuser")
+results.output # => {name: "John", age: 20, role: :admin, permissions: "superuser"}
+results = person_schema.resolve(name: "John", age: 20, role: :admin, permissions: "readonly")
+results.errors => {"$.permissions"=>["must be one of superuser, but got readonly"]}
 ```
 
 ### Reusing nested schemas
@@ -250,10 +274,10 @@ field(:status).policy(:split) # turns "pending,confirmed" into ["pending", "conf
 
 ## Custom policies
 
-You can also register your own custom policy objects. A policy must implement the following methods:
+You can also register your own custom policy objects. A policy can be not inherited from `Paradocs::BasePolicy`, in this case it must implement the following methods: `#valid?`, `#coerce`, `#message`, `#meta_data`, `#policy_name`
 
 ```ruby
-class MyPolicy
+class MyPolicy < Paradocs::BasePolicy
   # Validation error message, if invalid
   def message
     'is invalid'
@@ -271,7 +295,7 @@ class MyPolicy
   end
 
   # Is the value valid?
-  def valid?(value, key, payload)
+  def validate(value, key, payload)
     true
   end
 
@@ -281,6 +305,7 @@ class MyPolicy
   end
 end
 ```
+
 
 You can register your policy with:
 
@@ -329,7 +354,7 @@ class AddJobTitle
   end
 
   # Noop
-  def valid?(value, key, payload)
+  def validate(value, key, payload)
     true
   end
 
@@ -448,7 +473,7 @@ The `#meta` field method can be used to add custom meta data to field definition
 These meta data can be used later when instrospecting schemas (ie. to generate documentation or error notices).
 
 ```ruby
-create_user_schema = Paradocs::Schema.do
+create_user_schema = Paradocs::Schema.new do
   field(:name).required.type(:string).meta(label: "User's full name")
   field(:status).options(["published", "unpublished"]).default("published")
   field(:age).type(:integer).meta(label: "User's age")
@@ -458,8 +483,8 @@ create_user_schema = Paradocs::Schema.do
   end
 end
 ```
-
-## #structure
+## Structures
+### #structure
 
 A `Schema` instance has a `#structure` method that allows instrospecting schema meta data.
 
@@ -468,7 +493,37 @@ create_user_schema.structure[:name][:label] # => "User's full name"
 create_user_schema.structure[:age][:label] # => "User's age"
 create_user_schema.structure[:friends][:label] # => "User friends"
 # Recursive schema structures
-create_user_schema.structure[:friends].structure[:name].label # => "Friend full name"
+create_user_schema.structure => {
+  _errors: [],
+  _subschemes: {},
+  name: {
+    required: true,
+    type: :string,
+    label: "User's full name"
+  },
+  status: {
+    options: ["published", "unpublished"],
+    default: "published"
+  },
+  age: {
+    type: :integer,
+    label: "User's age"
+  },
+  friends: {
+    type: :array,
+    label: "User friends",
+    structure: {
+      _subschemes: {},
+      name: {
+        type: :string,
+        required: true,
+        present: true,
+        label: "Friend full name"
+      },
+      email: {label: "Friend's email"}
+    }
+  }
+}
 ```
 
 Note that many field policies add field meta data.
@@ -478,6 +533,45 @@ create_user_schema.structure[:name][:type] # => :string
 create_user_schema.structure[:name][:required] # => true
 create_user_schema.structure[:status][:options] # => ["published", "unpublished"]
 create_user_schema.structure[:status][:default] # => "published"
+```
+## #flatten_structure
+ A `Schema` instance also has a `#flatten_structure` method that allows instrospecting schema meta data without deep nesting.
+```rb
+{
+  _errors: [],
+  _subschemes: {},
+  "name"=>{
+    required: true,
+    type: :string,
+    label: "User's full name",
+    json_path: "$.name"
+  },
+  "status"=>{
+    options: ["published", "unpublished"],
+    default: "published",
+    json_path: "$.status"
+  },
+  "age"=>{
+    type: :integer,
+    label: "User's age", :json_path=>"$.age"
+  },
+  "friends"=>{
+    type: :array,
+    label: "User friends",
+    json_path: "$.friends"
+  },
+  "friends.name"=>{
+    type: :string,
+    required: true,
+    present: true,
+    label: "Friend full name",
+    json_path: "$.friends.name"
+  },
+  "friends.email"=>{
+    label: "Friend's email",
+    json_path: "$.friends.email"
+  }
+}
 ```
 
 ## #walk
@@ -533,11 +627,15 @@ require "parametric/dsl"
 class CreateUserForm
   include Paradocs::DSL
 
-  schema do
+  schema(:test) do
     field(:name).type(:string).required
     field(:email).policy(:email).required
     field(:age).type(:integer)
+    subschema_by(:age) { |age| age > 18 ? :allow : :deny }
   end
+
+  subschema_for(:test, name: :allow) { field(:role).options(["sign_in"]) }
+  subschema_for(:test, name: :deny) { field(:role).options([]) }
 
   attr_reader :params, :errors
 
