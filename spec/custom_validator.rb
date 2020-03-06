@@ -2,7 +2,7 @@ require "spec_helper"
 
 describe "custom validator" do
   let(:validator) do
-    class PresentIf < Parametric::BlockValidator
+    class PresentIf < Parametric::BasePolicy
       def initialize(condition)
         @condition = @condition
       end
@@ -33,7 +33,7 @@ describe "custom validator" do
       expect do
         Parametric.policy(
           :bad_validator,
-          Class.new(Parametric::BlockValidator) do
+          Class.new(Parametric::BasePolicy) do
             define_method(:valid?) { true }
           end
         )

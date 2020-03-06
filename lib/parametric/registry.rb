@@ -1,4 +1,4 @@
-require 'parametric/block_validator'
+require 'parametric/base_policy'
 
 module Parametric
   class ConfigurationError < StandardError; end
@@ -17,7 +17,7 @@ module Parametric
     def policy(name, plcy = nil, &block)
       validate_policy_class(plcy) if plcy
 
-      policies[name] = (plcy || BlockValidator.build(name, :instance_eval, &block))
+      policies[name] = (plcy || BasePolicy.build(name, :instance_eval, &block))
       self
     end
 
@@ -25,8 +25,8 @@ module Parametric
 
     def validate_policy_class(plcy)
       plcy_cls = plcy.is_a?(Class) ? plcy : plcy.class
-      if plcy_cls < Parametric::BlockValidator
-        valid_overriden = plcy_cls.instance_method(:valid?).source_location != Parametric::BlockValidator.instance_method(:valid?).source_location
+      if plcy_cls < Parametric::BasePolicy
+        valid_overriden = plcy_cls.instance_method(:valid?).source_location != Parametric::BasePolicy.instance_method(:valid?).source_location
         raise ConfigurationError.new("Overriding #valid? in #{plcy_cls} is forbidden. Override #validate instead") if valid_overriden
       else
         required_methods = [:valid?, :coerce, :eligible?, :meta_data, :policy_name] - plcy_cls.instance_methods
