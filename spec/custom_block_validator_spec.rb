@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'custom block validator' do
-  Parametric.policy :validate_if do
+  Paradocs.policy :validate_if do
     eligible do |options, value, key, payload|
       options.all? do |key, value|
         payload[key] == value
@@ -10,7 +10,7 @@ describe 'custom block validator' do
   end
 
   it 'works if I just define an :eligible block' do
-    schema = Parametric::Schema.new do
+    schema = Paradocs::Schema.new do
       field(:name).policy(:validate_if, age: 40).present
       field(:age).type(:integer)
     end
@@ -20,7 +20,7 @@ describe 'custom block validator' do
   end
 
   describe "error handling" do
-    Parametric.policy :strict_validation do
+    Paradocs.policy :strict_validation do
         register_error ArgumentError
         register_silent_error RuntimeError
 
@@ -37,7 +37,7 @@ describe 'custom block validator' do
       end
 
       let(:schema) do
-        Parametric::Schema.new do
+        Paradocs::Schema.new do
           field(:age).type(:integer).policy(:strict_validation)
         end
       end
@@ -61,7 +61,7 @@ describe 'custom block validator' do
     end
 
     context "with enabled explicit errors" do
-      before { allow(Parametric.config).to receive(:explicit_errors) { true } }
+      before { allow(Paradocs.config).to receive(:explicit_errors) { true } }
 
       it "works fine if value is valid" do
         expect(schema.resolve(age: 20).errors.any?).to be false
@@ -76,7 +76,7 @@ describe 'custom block validator' do
       end
 
       it "catches unregistered error and raises Configuration error" do
-        expect { schema.resolve(age: 101).errors }.to raise_error(Parametric::ConfigurationError)
+        expect { schema.resolve(age: 101).errors }.to raise_error(Paradocs::ConfigurationError)
           .with_message("ZeroDivisionError should be registered in the policy")
       end
     end

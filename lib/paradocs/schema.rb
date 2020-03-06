@@ -1,8 +1,8 @@
-require "parametric/context"
-require "parametric/results"
-require "parametric/field"
+require "paradocs/context"
+require "paradocs/results"
+require "paradocs/field"
 
-module Parametric
+module Paradocs
   class Schema
     attr_accessor :environment, :subschemes, :subschemes_identifiers
     def initialize(options = {}, &block)

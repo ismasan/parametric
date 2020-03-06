@@ -11,7 +11,7 @@ Useful for building self-documeting APIs, search or form objects. Or possibly as
 Define a schema
 
 ```ruby
-schema = Parametric::Schema.new do
+schema = Paradocs::Schema.new do
   field(:title).type(:string).present
   field(:status).options(["draft", "published"]).default("draft")
   field(:tags).type(:array)
@@ -55,7 +55,7 @@ form.errors # => {"$.status" => ["expected one of draft, published but got fooba
 A schema can have nested schemas, for example for defining complex forms.
 
 ```ruby
-person_schema = Parametric::Schema.new do
+person_schema = Paradocs::Schema.new do
   field(:name).type(:string).required
   field(:age).type(:integer)
   field(:friends).type(:array).schema do
@@ -98,14 +98,14 @@ results.errors # => {"$.friends[0].name" => "is required"}
 You can optionally use an existing schema instance as a nested schema:
 
 ```ruby
-friends_schema = Parametric::Schema.new do
+friends_schema = Paradocs::Schema.new do
   field(:friends).type(:array).schema do
     field(:name).type(:string).required
     field(:email).policy(:email)
   end
 end
 
-person_schema = Parametric::Schema.new do
+person_schema = Paradocs::Schema.new do
   field(:name).type(:string).required
   field(:age).type(:integer)
   # Nest friends_schema
@@ -117,7 +117,7 @@ end
 
 Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.
 
-Parametric ships with a number of built-in policies.
+Paradocs ships with a number of built-in policies.
 
 ### :string
 
@@ -285,7 +285,7 @@ end
 You can register your policy with:
 
 ```ruby
-Parametric.policy :my_policy, MyPolicy
+Paradocs.policy :my_policy, MyPolicy
 ```
 
 And then refer to it by name when declaring your schema fields
@@ -303,7 +303,7 @@ field(:title).required.policy(:my_policy)
 Note that you can also register instances.
 
 ```ruby
-Parametric.policy :my_policy, MyPolicy.new
+Paradocs.policy :my_policy, MyPolicy.new
 ```
 
 For example, a policy that can be configured on a field-by-field basis:
@@ -339,17 +339,17 @@ class AddJobTitle
 end
 
 # Register it
-Parametric.policy :job_title, AddJobTitle
+Paradocs.policy :job_title, AddJobTitle
 ```
 
 Now you can reuse the same policy with different configuration
 
 ```ruby
-manager_schema = Parametric::Schema.new do
+manager_schema = Paradocs::Schema.new do
   field(:name).type(:string).policy(:job_title, "manager")
 end
 
-cto_schema = Parametric::Schema.new do
+cto_schema = Paradocs::Schema.new do
   field(:name).type(:string).policy(:job_title, "CTO")
 end
 
@@ -362,20 +362,20 @@ cto_schema.resolve(name: "Joe Bloggs").output # => {name: "Joe Bloggs, CTO"}
 For simple policies that don't need all policy methods, you can:
 
 ```ruby
-Parametric.policy :cto_job_title do
+Paradocs.policy :cto_job_title do
   coerce do |value, key, context|
     "#{value}, CTO"
   end
 end
 
 # use it
-cto_schema = Parametric::Schema.new do
+cto_schema = Paradocs::Schema.new do
   field(:name).type(:string).policy(:cto_job_title)
 end
 ```
 
 ```ruby
-Parametric.policy :over_21_and_under_25 do
+Paradocs.policy :over_21_and_under_25 do
   coerce do |age, key, context|
     age.to_i
   end
@@ -408,12 +408,12 @@ end
 The `#merge` method will merge field definitions in two schemas and produce a new schema instance.
 
 ```ruby
-basic_user_schema = Parametric::Schema.new do
+basic_user_schema = Paradocs::Schema.new do
   field(:name).type(:string).required
   field(:age).type(:integer)
 end
 
-friends_schema = Parametric::Schema.new do
+friends_schema = Paradocs::Schema.new do
   field(:friends).type(:array).schema do
     field(:name).required
     field(:email).policy(:email)
@@ -428,12 +428,12 @@ results = user_with_friends_schema.resolve(input)
 Fields defined in the merged schema will override fields with the same name in the original schema.
 
 ```ruby
-required_name_schema = Parametric::Schema.new do
+required_name_schema = Paradocs::Schema.new do
   field(:name).required
   field(:age)
 end
 
-optional_name_schema = Parametric::Schema.new do
+optional_name_schema = Paradocs::Schema.new do
   field(:name)
 end
 
@@ -448,7 +448,7 @@ The `#meta` field method can be used to add custom meta data to field definition
 These meta data can be used later when instrospecting schemas (ie. to generate documentation or error notices).
 
 ```ruby
-create_user_schema = Parametric::Schema.do
+create_user_schema = Paradocs::Schema.do
   field(:name).required.type(:string).meta(label: "User's full name")
   field(:status).options(["published", "unpublished"]).default("published")
   field(:age).type(:integer).meta(label: "User's age")
@@ -531,7 +531,7 @@ You can use schemas and fields on their own, or include the `DSL` module in your
 require "parametric/dsl"
 
 class CreateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
 
   schema do
     field(:name).type(:string).required
@@ -570,13 +570,13 @@ end
 Form schemas can also be defined by passing another form or schema instance. This can be useful when building form classes in runtime.
 
 ```ruby
-UserSchema = Parametric::Schema.new do
+UserSchema = Paradocs::Schema.new do
   field(:name).type(:string).present
   field(:age).type(:integer)
 end
 
 class CreateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
   # copy from UserSchema
   schema UserSchema
 end
@@ -640,7 +640,7 @@ Sometimes you'll want a child class to inherit most fields from the parent, but 
 
 ```ruby
 class CreateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
 
   schema do
     field(:uuid).present
@@ -666,7 +666,7 @@ Another way of modifying inherited schemas is by passing options.
 
 ```ruby
 class CreateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
 
   schema(default_policy: :noop) do |opts|
     field(:name).policy(opts[:default_policy]).type(:string).required
@@ -695,7 +695,7 @@ For example, you might have a form object that supports creating a new user and 
 
 ```ruby
 class CreateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
 
   schema do
     field(:name).present
@@ -723,7 +723,7 @@ We can do this by producing a clone of the class-level schema and applying any n
 
 ```ruby
 class CreateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
 
   schema do
     field(:name).present
@@ -763,7 +763,7 @@ Form objects can optionally define more than one schema by giving them names:
 
 ```ruby
 class UpdateUserForm
-  include Parametric::DSL
+  include Paradocs::DSL
 
   # a schema named :query
   # for example for query parameters
@@ -797,7 +797,7 @@ Sometimes you don't know the exact field names but you want to allow arbitrary f
 #   :"custom_attr_Material" => "leather"
 # }
 
-schema = Parametric::Schema.new do
+schema = Paradocs::Schema.new do
   field(:title).type(:string).present
   # here we allow any field starting with /^custom_attr/
   # this yields a MatchData object to the block
@@ -826,13 +826,13 @@ NOTES: dynamically expanded field names are not included in `Schema#structure` m
 
 Structs turn schema definitions into objects graphs with attribute readers.
 
-Add optional `Parametrict::Struct` module to define struct-like objects with schema definitions.
+Add optional `Paradocs::Struct` module to define struct-like objects with schema definitions.
 
 ```ruby
 require 'parametric/struct'
 
 class User
-  include Parametric::Struct
+  include Paradocs::Struct
 
   schema do
     field(:name).type(:string).present
@@ -885,14 +885,14 @@ user.friends.first.errors['$.name'] # "is required and must be valid"
 
 ### .new!(hash)
 
-Instantiating structs with `.new!(hash)` will raise a `Parametric::InvalidStructError` exception if the data is validations fail. It will return the struct instance otherwise.
+Instantiating structs with `.new!(hash)` will raise a `Paradocs::InvalidStructError` exception if the data is validations fail. It will return the struct instance otherwise.
 
-`Parametric::InvalidStructError` includes an `#errors` property to inspect the errors raised.
+`Paradocs::InvalidStructError` includes an `#errors` property to inspect the errors raised.
 
 ```ruby
 begin
   user = User.new!(name: '')
-rescue Parametric::InvalidStructError => e
+rescue Paradocs::InvalidStructError => e
   e.errors['$.name'] # "is required and must be present"
 end
 ```
@@ -903,7 +903,7 @@ You can also pass separate struct classes in a nested schema definition.
 
 ```ruby
 class Friend
-  include Parametric::Struct
+  include Paradocs::Struct
 
   schema do
     field(:name).type(:string).present
@@ -912,7 +912,7 @@ class Friend
 end
 
 class User
-  include Parametric::Struct
+  include Paradocs::Struct
 
   schema do
     field(:name).type(:string).present
@@ -941,7 +941,7 @@ end
 
 ```ruby
 class User
-  include Parametrict::Struct
+  include Paradocs::Struct
   schema do
     field(:name).type(:string)
     field(:age).type(:integer).default(30)
@@ -954,6 +954,6 @@ user.to_h # {name: "Joe", age: 30}
 
 ### Struct equality
 
-`Parametric::Struct` implements `#==()` to compare two structs Hash representation (same as `struct1.to_h.eql?(struct2.to_h)`.
+`Paradocs::Struct` implements `#==()` to compare two structs Hash representation (same as `struct1.to_h.eql?(struct2.to_h)`.
 
 Users can override `#==()` in their own classes to do whatever they need.

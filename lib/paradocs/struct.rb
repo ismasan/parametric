@@ -1,6 +1,6 @@
-require 'parametric/dsl'
+require 'paradocs/dsl'
 
-module Parametric
+module Paradocs
   class InvalidStructError < ArgumentError
     attr_reader :errors
     def initialize(struct)
@@ -14,7 +14,7 @@ module Parametric
 
   module Struct
     def self.included(base)
-      base.send(:include, Parametric::DSL)
+      base.send(:include, Paradocs::DSL)
       base.extend ClassMethods
     end
 
@@ -55,7 +55,7 @@ module Parametric
       end
 
       # this hook is called after schema definition in DSL module
-      def parametric_after_define_schema(schema)
+      def paradocs_after_define_schema(schema)
         schema.fields.keys.each do |key|
           define_method key do
             _graph[key]
@@ -69,7 +69,7 @@ module Parametric
         end
       end
 
-      def parametric_build_class_for_child(key, child_schema)
+      def paradocs_build_class_for_child(key, child_schema)
         klass = Class.new do
           include Struct
         end
@@ -85,9 +85,9 @@ module Parametric
         when Hash
           # find constructor for field
           cons = field.meta_data[:schema]
-          if cons.kind_of?(Parametric::Schema)
-            klass = parametric_build_class_for_child(key, cons)
-            klass.parametric_after_define_schema(cons)
+          if cons.kind_of?(Paradocs::Schema)
+            klass = paradocs_build_class_for_child(key, cons)
+            klass.paradocs_after_define_schema(cons)
             cons = klass
           end
           cons ? cons.new(value) : value.freeze

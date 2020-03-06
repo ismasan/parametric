@@ -1,10 +1,10 @@
-require "parametric"
+require "paradocs"
 
-module Parametric
+module Paradocs
   module DSL
     # Example
     #   class Foo
-    #     include Parametric::DSL
+    #     include Paradocs::DSL
     #
     #     schema do
     #       field(:title).type(:string).present
@@ -26,7 +26,7 @@ module Parametric
 
     def self.included(base)
       base.extend(ClassMethods)
-      base.schemas = {DEFAULT_SCHEMA_NAME => Parametric::Schema.new}
+      base.schemas = {DEFAULT_SCHEMA_NAME => Paradocs::Schema.new}
     end
 
     module ClassMethods
@@ -40,16 +40,16 @@ module Parametric
 
       def inherited(subclass)
         subclass.schemas = @schemas.each_with_object({}) do |(key, sc), hash|
-          hash[key] = sc.merge(Parametric::Schema.new)
+          hash[key] = sc.merge(Paradocs::Schema.new)
         end
       end
 
       def schema(*args, &block)
         options = args.last.is_a?(Hash) ? args.last : {}
         key = args.first.is_a?(Symbol) ? args.first : DEFAULT_SCHEMA_NAME
-        current_schema = @schemas.fetch(key) { Parametric::Schema.new }
+        current_schema = @schemas.fetch(key) { Paradocs::Schema.new }
         new_schema = if block_given? || options.any?
-          Parametric::Schema.new(options, &block)
+          Paradocs::Schema.new(options, &block)
         elsif args.first.respond_to?(:schema)
           args.first
         end
@@ -57,7 +57,7 @@ module Parametric
         return current_schema unless new_schema
 
         @schemas[key] = current_schema ? current_schema.merge(new_schema) : new_schema
-        parametric_after_define_schema(@schemas[key])
+        paradocs_after_define_schema(@schemas[key])
         @schemas[key]
       end
 
@@ -67,7 +67,7 @@ module Parametric
         subschema
       end
 
-      def parametric_after_define_schema(sc)
+      def paradocs_after_define_schema(sc)
         # noop hook
       end
     end

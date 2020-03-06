@@ -1,8 +1,8 @@
 require "date"
 
-module Parametric
+module Paradocs
   # type coercions
-  Parametric.policy :integer do
+  Paradocs.policy :integer do
     coerce do |v, k, c|
       v.to_i
     end
@@ -12,7 +12,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :number do
+  Paradocs.policy :number do
     coerce do |v, k, c|
       v.to_f
     end
@@ -22,7 +22,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :string do
+  Paradocs.policy :string do
     coerce do |v, k, c|
       v.to_s
     end
@@ -32,7 +32,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :boolean do
+  Paradocs.policy :boolean do
     coerce do |v, k, c|
       !!v
     end
@@ -43,7 +43,7 @@ module Parametric
   end
 
   # type validations
-  Parametric.policy :array do
+  Paradocs.policy :array do
     message do |actual|
       "expects an array, but got #{actual.inspect}"
     end
@@ -57,7 +57,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :object do
+  Paradocs.policy :object do
     message do |actual|
       "expects a hash, but got #{actual.inspect}"
     end
@@ -73,7 +73,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :split do
+  Paradocs.policy :split do
     coerce do |v, k, c|
       v.kind_of?(Array) ? v : v.to_s.split(/\s*,\s*/)
     end
@@ -83,7 +83,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :datetime do
+  Paradocs.policy :datetime do
     coerce do |v, k, c|
       DateTime.parse(v.to_s)
     end

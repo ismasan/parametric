@@ -1,10 +1,10 @@
 require 'spec_helper'
-require 'parametric/struct'
+require 'paradocs/struct'
 
-describe Parametric::Struct do
+describe Paradocs::Struct do
   it "works" do
     friend_class = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:name).type(:string).present
@@ -13,7 +13,7 @@ describe Parametric::Struct do
     end
 
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -55,7 +55,7 @@ describe Parametric::Struct do
 
   it "is inmutable by default" do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -76,7 +76,7 @@ describe Parametric::Struct do
 
   it "works with anonymous nested schemas" do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -101,11 +101,11 @@ describe Parametric::Struct do
 
   it 'wraps nested schemas in custom class' do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
-      def self.parametric_build_class_for_child(key, child_schema)
+      def self.paradocs_build_class_for_child(key, child_schema)
         Class.new do
-          include Parametric::Struct
+          include Paradocs::Struct
           schema child_schema
           def salutation
             "my age is #{age}"
@@ -126,12 +126,12 @@ describe Parametric::Struct do
   end
 
   it "wraps regular schemas in structs" do
-    friend_schema = Parametric::Schema.new do
+    friend_schema = Paradocs::Schema.new do
       field(:name)
     end
 
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -149,7 +149,7 @@ describe Parametric::Struct do
 
   it "#to_h" do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -187,7 +187,7 @@ describe Parametric::Struct do
 
   it "works with inheritance" do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -220,7 +220,7 @@ describe Parametric::Struct do
 
   it "implements deep struct equality" do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -270,7 +270,7 @@ describe Parametric::Struct do
 
   it "#merge returns a new instance" do
     klass = Class.new do
-      include Parametric::Struct
+      include Paradocs::Struct
 
       schema do
         field(:title).type(:string).present
@@ -304,7 +304,7 @@ describe Parametric::Struct do
   describe '.new!' do
     it 'raises a useful exception if invalid data' do
       klass = Class.new do
-        include Parametric::Struct
+        include Paradocs::Struct
 
         schema do
           field(:title).type(:string).present
@@ -313,7 +313,7 @@ describe Parametric::Struct do
 
       begin
         klass.new!(title: '')
-      rescue Parametric::InvalidStructError => e
+      rescue Paradocs::InvalidStructError => e
         expect(e.errors['$.title']).not_to be nil
       end
 

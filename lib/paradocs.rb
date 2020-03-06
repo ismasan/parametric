@@ -1,14 +1,14 @@
-require "parametric/version"
-require "parametric/support"
-require "parametric/registry"
-require "parametric/field"
-require "parametric/results"
-require "parametric/schema"
-require "parametric/context"
-require "parametric/base_policy"
+require "paradocs/version"
+require "paradocs/support"
+require "paradocs/registry"
+require "paradocs/field"
+require "paradocs/results"
+require "paradocs/schema"
+require "paradocs/context"
+require "paradocs/base_policy"
 require 'ostruct'
 
-module Parametric
+module Paradocs
   def self.registry
     @registry ||= Registry.new
   end
@@ -30,5 +30,5 @@ module Parametric
   end
 end
 
-require 'parametric/default_types'
-require 'parametric/policies'
+require 'paradocs/default_types'
+require 'paradocs/policies'

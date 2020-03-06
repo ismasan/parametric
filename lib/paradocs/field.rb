@@ -1,13 +1,13 @@
-require "parametric/field_dsl"
+require "paradocs/field_dsl"
 
-module Parametric
+module Paradocs
   class Field
     include FieldDSL
 
     attr_reader :key, :meta_data
     Result = Struct.new(:eligible?, :value)
 
-    def initialize(key, registry = Parametric.registry)
+    def initialize(key, registry = Paradocs.registry)
       @key = key
       @policies = []
       @registry = registry
@@ -103,9 +103,9 @@ module Parametric
       rescue *(policy.try(:silent_errors) || []) => e
         context.add_error e.message
       rescue StandardError => e
-        raise e if policy.is_a? Parametric::Schema # from the inner level, just reraise
-        raise ConfigurationError.new("#{e.class} should be registered in the policy") if Parametric.config.explicit_errors
-        context.add_error policy.message unless Parametric.config.explicit_errors
+        raise e if policy.is_a? Paradocs::Schema # from the inner level, just reraise
+        raise ConfigurationError.new("#{e.class} should be registered in the policy") if Paradocs.config.explicit_errors
+        context.add_error policy.message unless Paradocs.config.explicit_errors
         [value, false]
       end
     end

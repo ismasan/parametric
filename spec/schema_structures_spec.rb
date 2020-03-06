@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe "Schema structures generation" do
-  Parametric.policy :policy_with_error do
+  Paradocs.policy :policy_with_error do
     register_error ArgumentError
 
     validate do |*|
@@ -9,12 +9,12 @@ describe "Schema structures generation" do
     end
   end
 
-  Parametric.policy :policy_with_silent_error do
+  Paradocs.policy :policy_with_silent_error do
     register_silent_error RuntimeError
   end
 
   let(:schema) do
-    Parametric::Schema.new do
+    Paradocs::Schema.new do
       field(:data).type(:object).present.schema do
         field(:id).type(:integer).present.policy(:policy_with_error)
         field(:name).type(:string).meta(label: "very important staff")
@@ -28,7 +28,7 @@ describe "Schema structures generation" do
     end
   end
   let(:subschema1) do
-    Parametric::Schema.new do
+    Paradocs::Schema.new do
       field(:test1).present
     end
   end

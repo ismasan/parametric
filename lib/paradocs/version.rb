@@ -1,3 +1,3 @@
-module Parametric
+module Paradocs
   VERSION = "1.0.12"
 end

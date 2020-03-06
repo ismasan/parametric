@@ -1,4 +1,4 @@
-module Parametric
+module Paradocs
   class Top
     attr_reader :errors
 

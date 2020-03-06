@@ -1,4 +1,4 @@
-module Parametric
+module Paradocs
   # Field DSL
   # host instance must implement:
   # #meta(options Hash)

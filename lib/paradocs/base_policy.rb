@@ -1,4 +1,4 @@
-module Parametric
+module Paradocs
   class BasePolicy
     def self.build(name, meth, &block)
       klass = Class.new(self)

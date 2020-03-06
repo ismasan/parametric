@@ -1,10 +1,10 @@
 require 'spec_helper'
-require "parametric/dsl"
+require "paradocs/dsl"
 
 describe "schemes with subschemes" do
   let(:validation_class) do
     Class.new do
-      include Parametric::DSL
+      include Paradocs::DSL
 
       schema(:request) do
         field(:action).present.options([:update, :delete])

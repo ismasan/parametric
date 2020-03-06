@@ -1,11 +1,11 @@
 require 'spec_helper'
-require "parametric/whitelist"
-require "parametric/dsl"
+require "paradocs/whitelist"
+require "paradocs/dsl"
 
 describe "classes including Whitelist module" do
   class TestWhitelist
-    include Parametric::DSL
-    include Parametric::Whitelist
+    include Paradocs::DSL
+    include Paradocs::Whitelist
 
     schema(:request) do
       field(:data).present.type(:array).schema do
@@ -68,7 +68,7 @@ describe "classes including Whitelist module" do
       }
     }
 
-    before { Parametric.config.whitelisted_keys = [:from_config]}
+    before { Paradocs.config.whitelisted_keys = [:from_config]}
 
     it "should filter not whitelisted attributes with different key's type" do
       whitelisted = TestWhitelist.new.filter!(input, schema)

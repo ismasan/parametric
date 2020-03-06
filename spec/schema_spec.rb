@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Parametric::Schema do
+describe Paradocs::Schema do
   before do
-    Parametric.policy :flexible_bool do
+    Paradocs.policy :flexible_bool do
       coerce do |v, k, c|
         case v
         when '1', 'true', 'TRUE', true

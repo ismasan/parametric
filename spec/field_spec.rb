@@ -1,8 +1,8 @@
 require "spec_helper"
 
-describe Parametric::Field do
-  let(:registry) { Parametric.registry }
-  let(:context)  { Parametric::Context.new }
+describe Paradocs::Field do
+  let(:registry) { Paradocs.registry }
+  let(:context)  { Paradocs::Context.new }
 
   subject { described_class.new(:a_key, registry) }
 
@@ -347,7 +347,7 @@ describe Parametric::Field do
     it 'raises if policy not found' do
       expect{
         subject.policy(:foobar)
-      }.to raise_exception Parametric::ConfigurationError
+      }.to raise_exception Paradocs::ConfigurationError
     end
 
     it 'chains policies' do

@@ -1,9 +1,9 @@
-module Parametric
+module Paradocs
   module Whitelist
     # Example
     #   class Foo
-    #     include Parametric::DSL
-    #     include Parametric::Whitelist
+    #     include Paradocs::DSL
+    #     include Paradocs::Whitelist
     #
     #     schema(:test) do
     #       field(:title).type(:string).whitelisted
@@ -82,7 +82,7 @@ module Parametric
 
       def whitelisted?(schema, key)
         meta_data = get_meta_data(schema, key)
-        meta_data[:whitelisted] || Parametric.config.whitelisted_keys.include?(key)
+        meta_data[:whitelisted] || Paradocs.config.whitelisted_keys.include?(key)
       end
 
       def get_meta_data(schema, key)

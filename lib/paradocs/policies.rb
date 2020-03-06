@@ -1,8 +1,8 @@
 require_relative './base_policy'
 
-module Parametric
+module Paradocs
   module Policies
-    class Format < Parametric::BasePolicy
+    class Format < Paradocs::BasePolicy
       attr_reader :message
 
       def initialize(fmt, msg = "invalid format")
@@ -23,28 +23,28 @@ module Parametric
   # Default validators
   EMAIL_REGEXP = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i.freeze
 
-  Parametric.policy :format, Policies::Format
-  Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
+  Paradocs.policy :format, Policies::Format
+  Paradocs.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
 
-  Parametric.policy :noop do
+  Paradocs.policy :noop do
     eligible do |value, key, payload|
       true
     end
   end
 
-  Parametric.policy :declared do
+  Paradocs.policy :declared do
     eligible do |value, key, payload|
       payload.key? key
     end
   end
 
-  Parametric.policy :whitelisted do
+  Paradocs.policy :whitelisted do
     meta_data do
       {whitelisted: true}
     end
   end
 
-  Parametric.policy :required do
+  Paradocs.policy :required do
     message do |*|
       "is required"
     end
@@ -58,7 +58,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :present do
+  Paradocs.policy :present do
     message do |*|
       "is required and value must be present"
     end
@@ -79,7 +79,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :gt do
+  Paradocs.policy :gt do
     message do |num, actual|
       "must be greater than #{num}, but got #{actual}"
     end
@@ -89,7 +89,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :lt do
+  Paradocs.policy :lt do
     message do |num, actual|
       "must be less than #{num}, but got #{actual}"
     end
@@ -99,7 +99,7 @@ module Parametric
     end
   end
 
-  Parametric.policy :options do
+  Paradocs.policy :options do
     message do |options, actual|
       "must be one of #{options.join(', ')}, but got #{actual}"
     end
