@@ -1,4 +1,4 @@
-module Parametric
+module Paradocs
   # Field DSL
   # host instance must implement:
   # #meta(options Hash)
@@ -19,6 +19,10 @@ module Parametric
 
     def options(opts)
       policy :options, opts
+    end
+
+    def whitelisted
+      policy :whitelisted
     end
   end
 end

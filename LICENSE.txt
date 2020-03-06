@@ -1,4 +1,5 @@
-Copyright (c) 2014 Ismael Celis
+Original work Copyright (c) 2014 Ismael Celis
+Modified work Copyright (c) 2020 Maxim Tkachenko
 
 MIT License
 

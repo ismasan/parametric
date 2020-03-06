@@ -1,8 +1,9 @@
 require "spec_helper"
 
-describe Parametric::Field do
-  let(:registry) { Parametric.registry }
-  let(:context) { Parametric::Context.new}
+describe Paradocs::Field do
+  let(:registry) { Paradocs.registry }
+  let(:context)  { Paradocs::Context.new }
+
   subject { described_class.new(:a_key, registry) }
 
   def register_coercion(name, block)
@@ -203,7 +204,7 @@ describe Parametric::Field do
       subject.default("Foobar")
       resolve(subject, foobar: ["b", "c"]).tap do |r|
         expect(r.eligible?).to be true
-        no_errors
+        has_errors
         expect(r.value).to eq "Foobar"
       end
     end
@@ -326,6 +327,10 @@ describe Parametric::Field do
         def meta_data
           {foo: "bar"}
         end
+
+        def policy_name
+          :custom_policy
+        end
       end
     end
 
@@ -342,7 +347,7 @@ describe Parametric::Field do
     it 'raises if policy not found' do
       expect{
         subject.policy(:foobar)
-      }.to raise_exception Parametric::ConfigurationError
+      }.to raise_exception Paradocs::ConfigurationError
     end
 
     it 'chains policies' do
@@ -397,14 +402,14 @@ describe Parametric::Field do
       end
     end
 
-    it 'add policy exceptions to #errors' do
-      register_coercion :error, ->(v, k, c){ raise "This is an error" }
+    it 'add policy message to #errors if validation fails' do
+      register_coercion :error, ->(v, k, c) { raise "This is an error" }
 
       subject.policy(:error)
 
       resolve(subject, a_key: "b").tap do |r|
         expect(r.eligible?).to be true
-        has_error("$", "This is an error")
+        has_error("$", "is invalid")
         expect(r.value).to eq "b"
       end
     end

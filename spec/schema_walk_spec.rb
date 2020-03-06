@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'Schema#walk' do
   let(:schema) do
-    Parametric::Schema.new do
+    Paradocs::Schema.new do
       field(:title).meta(example: 'a title', label: 'custom title')
       field(:tags).policy(:array).meta(example: ['tag1', 'tag2'], label: 'comma-separated tags')
       field(:friends).policy(:array).schema do

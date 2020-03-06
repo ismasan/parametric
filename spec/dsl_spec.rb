@@ -1,9 +1,9 @@
 require 'spec_helper'
-require "parametric/dsl"
+require "paradocs/dsl"
 
 describe "classes including DSL module" do
   class Parent
-    include Parametric::DSL
+    include Paradocs::DSL
 
     schema :extras, search_type: :string do |opts|
       field(:search).policy(opts[:search_type])
@@ -82,7 +82,7 @@ describe "classes including DSL module" do
   describe "inheriting schema policy" do
     let!(:a) {
       Class.new do
-        include Parametric::DSL
+        include Paradocs::DSL
 
         schema.policy(:present) do
           field(:title).policy(:string)
@@ -106,7 +106,7 @@ describe "classes including DSL module" do
   describe "overriding schema policy" do
     let!(:a) {
       Class.new do
-        include Parametric::DSL
+        include Paradocs::DSL
 
         schema.policy(:present) do
           field(:title).policy(:string)
@@ -132,7 +132,7 @@ describe "classes including DSL module" do
   describe "removes fields defined in the parent class" do
     let!(:a) {
       Class.new do
-        include Parametric::DSL
+        include Paradocs::DSL
 
         schema do
           field(:title).policy(:string)
@@ -159,12 +159,12 @@ describe "classes including DSL module" do
 
   describe "passing other schema or form in definition" do
     it 'applies schema' do
-      a = Parametric::Schema.new do
+      a = Paradocs::Schema.new do
         field(:name).policy(:string)
         field(:age).policy(:integer).default(40)
       end
       b = Class.new do
-        include Parametric::DSL
+        include Paradocs::DSL
         schema a
       end
 
@@ -173,4 +173,3 @@ describe "classes including DSL module" do
     end
   end
 end
-

@@ -1,15 +1,13 @@
-require "parametric/field_dsl"
+require "paradocs/field_dsl"
 
-module Parametric
-  class ConfigurationError < StandardError; end
-
+module Paradocs
   class Field
     include FieldDSL
 
     attr_reader :key, :meta_data
     Result = Struct.new(:eligible?, :value)
 
-    def initialize(key, registry = Parametric.registry)
+    def initialize(key, registry = Paradocs.registry)
       @key = key
       @policies = []
       @registry = registry
@@ -21,6 +19,10 @@ module Parametric
     def meta(hash = nil)
       @meta_data = @meta_data.merge(hash) if hash.is_a?(Hash)
       self
+    end
+
+    def possible_errors
+      meta_data.map { |_, v| v[:errors] if v.is_a?(Hash) }.flatten.compact
     end
 
     def default(value)
@@ -36,6 +38,7 @@ module Parametric
       self
     end
     alias_method :type, :policy
+    alias_method :rule, :policy
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
@@ -59,10 +62,11 @@ module Parametric
       if !eligible && has_default?
         eligible = true
         value = default_block.call(key, payload, context)
-        return Result.new(eligible, value)
+        payload[key] = value
       end
-
       policies.each do |policy|
+        # pass schema additional data to the each policy
+        policy.environment = context.environment if policy.respond_to?(:environment=)
         if !policy.eligible?(value, key, payload)
           eligible = false
           if has_default?
@@ -71,10 +75,10 @@ module Parametric
           end
           break
         else
-          value = resolve_one(policy, value, context)
-          if !policy.valid?(value, key, payload)
+          value, valid = resolve_one(policy, value, payload, context)
+
+          unless valid
             eligible = true # eligible, but has errors
-            context.add_error policy.message
             break # only one error at a time
           end
         end
@@ -86,12 +90,23 @@ module Parametric
     private
     attr_reader :policies, :registry, :default_block
 
-    def resolve_one(policy, value, context)
+    def resolve_one(policy, value, payload, context)
       begin
-        policy.coerce(value, key, context)
-      rescue StandardError => e
+        value = policy.coerce(value, key, context)
+        valid = policy.valid?(value, key, payload)
+
+        context.add_error(policy.message) unless valid
+        [value, valid]
+      rescue *(policy.try(:errors) || []) => e
+        # context.add_error e.message # NOTE: do we need it?
+        raise e
+      rescue *(policy.try(:silent_errors) || []) => e
         context.add_error e.message
-        value
+      rescue StandardError => e
+        raise e if policy.is_a? Paradocs::Schema # from the inner level, just reraise
+        raise ConfigurationError.new("#{e.class} should be registered in the policy") if Paradocs.config.explicit_errors
+        context.add_error policy.message unless Paradocs.config.explicit_errors
+        [value, false]
       end
     end
 
@@ -103,9 +118,7 @@ module Parametric
       obj = key.is_a?(Symbol) ? registry.policies[key] : key
 
       raise ConfigurationError, "No policies defined for #{key.inspect}" unless obj
-
       obj.respond_to?(:new) ? obj.new(*args) : obj
     end
   end
 end
-

@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Parametric::Schema do
+describe Paradocs::Schema do
   before do
-    Parametric.policy :flexible_bool do
+    Paradocs.policy :flexible_bool do
       coerce do |v, k, c|
         case v
         when '1', 'true', 'TRUE', true
@@ -54,6 +54,41 @@ describe Parametric::Schema do
     resolve(schema, payload) do |results|
       expect(results.output).to eq result
     end
+  end
+
+  it "order input by schema fields' keys order" do
+    payload = {
+      tags: 'tag',
+      status: 'visible',
+      extra_field: "extra",
+      price: "100",
+      title: "title",
+      variants: [
+        {
+          stock: '10',
+          available_if_no_stock: true,
+          extra_field: "extra",
+          name: 'v1',
+          sku: 'ABC'
+        }
+      ]
+    }
+
+    output = subject.resolve(payload).output
+    expect(output).to eq({
+      title: "title",
+      price: 100,
+      status: "visible",
+      tags: ["tag"],
+      variants: [
+        {
+          name: "v1",
+          sku: "ABC",
+          stock: 10,
+          available_if_no_stock: true
+        }
+      ]
+    })
   end
 
   it 'works' do

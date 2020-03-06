@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Parametric::Schema do
+describe Paradocs::Schema do
   it "expands fields dynamically" do
     schema = described_class.new do
       field(:title).type(:string).present

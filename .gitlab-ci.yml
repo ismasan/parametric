@@ -1,0 +1,20 @@
+cache:
+  key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME-2.4"
+  paths:
+  - vendor/bundle
+
+image: ci.banksalt.com/debian9-ruby2.4-frontend
+
+variables:
+  ARCHFLAGS: "-arch x86_64"
+  BUNDLE_PATH: "vendor/bundle"
+
+before_script:
+  - bundle check || bundle install
+
+test:
+  tags:
+    - test
+  stage: test
+  script:
+    - bundle exec rspec --fail-fast

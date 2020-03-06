@@ -2,13 +2,13 @@ require 'spec_helper'
 
 describe 'default coercions' do
   def test_coercion(key, value, expected)
-    coercion = Parametric.registry.coercions[key]
+    coercion = Paradocs.registry.coercions[key]
     expect(coercion.new.coerce(value, nil, nil)).to eq expected
   end
 
   describe ':datetime' do
     it {
-      coercion = Parametric.registry.coercions[:datetime]
+      coercion = Paradocs.registry.coercions[:datetime]
       coercion.new.coerce("2016-11-05T14:23:34Z", nil, nil).tap do |d|
         expect(d).to be_a Date
         expect(d.year).to eq 2016

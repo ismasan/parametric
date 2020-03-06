@@ -1,4 +1,4 @@
-module Parametric
+module Paradocs
   class Results
     attr_reader :output, :errors
 
