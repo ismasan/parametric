@@ -27,21 +27,15 @@ module Paradocs
       def filter!(payload, source_schema)
         schema  = source_schema.clone
         context = Context.new(nil, Top.new, @environment, source_schema.subschemes.clone)
-        # after source_schema.clone the cloned instance is losing parent's proprietes.
-        # in this case after clone is losing #subschemes
-        # TODO: Investigate and fix!
         resolve(payload, schema, context)
       end
 
       def resolve(payload, schema, context)
         filtered_payload = {}
-
+        schema.send(:invoke_subschemes!, payload, context)
         payload.dup.each do |key, value|
           key    = key.to_sym
           schema = Schema.new if schema.nil?
-          schema.send(:apply!)
-
-          schema, context = schema.schema_with_subschemes(payload, context) unless schema.subschemes_identifiers.empty?
 
           if value.is_a?(Hash)
             field_schema = find_schema_by(schema, key)

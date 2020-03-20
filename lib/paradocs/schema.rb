@@ -4,12 +4,13 @@ require "paradocs/field"
 
 module Paradocs
   class Schema
-    attr_accessor :environment, :subschemes, :subschemes_identifiers
+    attr_accessor :environment
+    attr_reader :subschemes
     def initialize(options = {}, &block)
       @options = options
       @fields = {}
       @subschemes = {}
-      @subschemes_identifiers = {}
+      @subschemes_identifiers = {}  # needed for #subschema_by
       @definitions = []
       @definitions << block if block_given?
       @default_field_policies = []
@@ -19,6 +20,22 @@ module Paradocs
 
     def schema
       self
+    end
+
+    def subschema(*args, &block)
+      ptions = args.last.is_a?(Hash) ? args.last : {}
+      name = args.first.is_a?(Symbol) ? args.shift : Paradocs::DSL::DEFAULT_SCHEMA_NAME
+      current_schema = subschemes.fetch(name) { self.class.new }
+      new_schema = if block_given?
+        sc = self.class.new
+        sc.definitions << block
+        sc
+      elsif args.first.is_a?(self.class)
+        args.first
+      else
+        self.class.new
+      end
+      subschemes[name] = current_schema.merge(new_schema)
     end
 
     def fields
@@ -61,6 +78,8 @@ module Paradocs
         instance.definitions << d
       end
 
+      subschemes.each { |name, subsc| instance.subschema(name, subsc) }
+
       instance.ignore *ignored_field_keys
       instance
     end
@@ -77,8 +96,8 @@ module Paradocs
         end
         obj[field.key] = meta
 
-        next if subschemes_identifiers.empty?
-        obj[:_identifiers] = subschemes_identifiers.keys.first
+        next if @subschemes_identifiers.empty?
+        obj[:_identifiers] = @subschemes_identifiers.keys.first
         if (obj[:_identifiers] - obj.keys).empty?
           parent_subschemes.each do |name, subschema|
             obj[:_subschemes][name] = subschema.structure
@@ -108,8 +127,8 @@ module Paradocs
           obj[:_subschemes][name] = subschema.flatten_structure(json_path)
           obj[:_errors] += obj[:_subschemes][name][:_errors]
         end
-        next if subschemes_identifiers.empty?
-        obj[:_identifiers] = subschemes_identifiers.keys.first.map { |id| "#{humanize.call(root)}.#{id}" }
+        next if @subschemes_identifiers.empty?
+        obj[:_identifiers] = @subschemes_identifiers.keys.first.map { |id| "#{humanize.call(root)}.#{id}" }
       end
     end
 
@@ -137,8 +156,9 @@ module Paradocs
     end
 
     def resolve(payload, environment={})
+      flush! unless subschemes.empty?
       @environment = environment
-      context = Context.new(nil, Top.new, @environment, @subschemes)
+      context = Context.new(nil, Top.new, @environment, subschemes)
       output = coerce(payload, nil, context)
       Results.new(output, context.errors)
     end
@@ -179,19 +199,6 @@ module Paradocs
       end
     end
 
-    def schema_with_subschemes(val, context)
-      apply!
-      instance = self.clone
-      @subschemes_identifiers.each do |dependencies, subschema|
-        new_schema_name = subschema.call(*val.values_at(*dependencies))
-        next unless new_schema_name
-        new_schema = new_schema_name.is_a?(Schema) ? new_schema_name : context.subschemes[new_schema_name]
-        context = context.subschema_reduce!(new_schema_name)
-        new_schema&.copy_into instance
-      end
-      [instance, context]
-    end
-
     protected
 
     attr_reader :definitions, :options
@@ -200,11 +207,9 @@ module Paradocs
 
     attr_reader :default_field_policies, :ignored_field_keys, :expansions
 
-    def coerce_one(val, context, flds: nil)
-      new_schema, context = schema_with_subschemes(val, context)
-      val = reorder_by_schema(val, new_schema)
-
-      flds ||= new_schema.fields
+    def coerce_one(val, context, flds: fields)
+      # subschemes v2
+      invoke_subschemes!(val, context, flds: flds)
       flds.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
         if r.eligible?
@@ -213,15 +218,21 @@ module Paradocs
       end
     end
 
-    def reorder_by_schema(payload, new_schema)
-      return payload unless payload.is_a?(Hash)
-      sorted = payload.sort_by do |k, _|
-        new_schema.fields.keys.index(k) || payload.keys.count
-      end.to_h
-      # TODO: remove hard-code
-      return payload.class.new(sorted) if payload.class.name.try(:demodulize) == "HashWithIndifferentAccess"
-
-      sorted
+    def invoke_subschemes!(payload, context, flds: fields)
+      invoked_any = false
+      # recoursive definitions call depending on payload
+      flds.clone.each_pair do |_, field|
+        _, mutation_block = @subschemes_identifiers.detect { |ids, _| ids.include? field.key } # v1 compatibility
+        field.mutates_schema! &mutation_block if mutation_block
+        next unless field.expects_mutation?
+        subschema_name = field.subschema_for_mutation(payload, context.environment)
+        subschema = subschemes[subschema_name] || context.subschema(subschema_name)
+        next unless subschema # or may be raise error?
+        subschema.definitions.each { |block| self.instance_exec(&block) }
+        invoked_any = true
+      end
+      # if definitions are applied new subschemes may appear, apply them until they end
+      invoke_subschemes!(payload, context, flds: fields) if invoked_any
     end
 
     class MatchContext
@@ -255,6 +266,11 @@ module Paradocs
         self.instance_exec(options, &d)
       end
       @applied = true
+    end
+
+    def flush!
+      @fields = {}
+      @applied = false
     end
   end
 end

@@ -13,7 +13,7 @@ module Paradocs
   end
 
   class Context
-    attr_reader :environment, :subschemes
+    attr_reader :environment
     def initialize(path=nil, top=Top.new, environment={}, subschemes={})
       @top = top
       @path = Array(path).compact
@@ -21,12 +21,11 @@ module Paradocs
       @subschemes = subschemes
     end
 
-    def subschema_reduce!(subschema_name)
-      reduced = @subschemes.clone
-      subschema = reduced.delete(subschema_name)
-      return self unless subschema
-      reduced.merge!(subschema.subschemes)
-      self.class.new(@path, @top, @environment, reduced)
+    def subschema(subschema_name)
+      subschema = @subschemes[subschema_name]
+      return unless subschema
+      @subschemes.merge!(subschema.subschemes)
+      subschema
     end
 
     def errors
@@ -38,7 +37,7 @@ module Paradocs
     end
 
     def sub(key)
-      self.class.new(path + [key], top, environment, subschemes)
+      self.class.new(path + [key], top, environment, @subschemes)
     end
 
     protected

@@ -83,7 +83,6 @@ describe "Schema structures generation" do
   end
 
   it "generates flatten data for documentation generation" do
-    sisi = schema.structure
     expect(schema.flatten_structure).to eq({
       "data" => {
         type: :object,

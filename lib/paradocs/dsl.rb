@@ -50,7 +50,7 @@ module Paradocs
         current_schema = @schemas.fetch(key) { Paradocs::Schema.new }
         new_schema = if block_given? || options.any?
           Paradocs::Schema.new(options, &block)
-        elsif args.first.respond_to?(:schema)
+        elsif args.first.is_a?(Paradocs::Schema)
           args.first
         end
 
@@ -62,9 +62,10 @@ module Paradocs
       end
 
       def subschema_for(main_schema, name:, **kwargs, &block)
-        subschema = schema(name, kwargs, &block)
-        @schemas[main_schema].subschemes[name] = subschema
-        subschema
+        # subschema = schema(name, kwargs, &block)
+        @schemas[main_schema].subschema(name, kwargs, &block)
+        # @schemas[main_schema].subschemes[name] = subschema
+        @schemas[main_schema]
       end
 
       def paradocs_after_define_schema(sc)
