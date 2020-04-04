@@ -84,13 +84,10 @@ module Parametric
       end
 
       def wrap(key, value)
-        field = schema.fields[key]
-        return value unless field
-
         case value
         when Hash
           # find constructor for field
-          cons = self.const_get("Sub_#{field.key}")
+          cons = self.const_get("Sub_#{key}")
           cons ? cons.new(value) : value.freeze
         when Array
           value.map{|v| wrap(key, v) }.freeze
