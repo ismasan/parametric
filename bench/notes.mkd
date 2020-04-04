@@ -1,0 +1,14 @@
+## Before
+
+Warming up --------------------------------------
+              Struct    51.177k i/100ms
+  Parametric::Struct   656.000  i/100ms
+Calculating -------------------------------------
+              Struct    603.873k (± 5.7%) i/s -      3.019M in   5.020051s
+  Parametric::Struct      6.568k (±10.9%) i/s -     32.800k in   5.066417s
+
+Comparison:
+              Struct:   603873.1 i/s
+  Parametric::Struct:     6568.3 i/s - 91.94x  slower
+
+## After
