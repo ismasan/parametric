@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "parametric/field_dsl"
 
 module Parametric
