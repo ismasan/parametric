@@ -99,32 +99,6 @@ describe Parametric::Struct do
     expect(instance.friends.first.age).to eq 10
   end
 
-  it 'wraps nested schemas in custom class' do
-    klass = Class.new do
-      include Parametric::Struct
-
-      def self.parametric_build_class_for_child(key, child_schema)
-        Class.new do
-          include Parametric::Struct
-          schema child_schema
-          def salutation
-            "my age is #{age}"
-          end
-        end
-      end
-
-      schema do
-        field(:name).type(:string).present
-        field(:friends).type(:array).schema do
-          field(:age).type(:integer)
-        end
-      end
-    end
-
-    user = klass.new(name: 'Ismael', friends: [{age: 43}])
-    expect(user.friends.first.salutation).to eq 'my age is 43'
-  end
-
   it "wraps regular schemas in structs" do
     friend_schema = Parametric::Schema.new do
       field(:name)
