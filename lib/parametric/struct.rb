@@ -65,10 +65,10 @@ module Parametric
                 include Struct
               end
               klass.schema = field.meta_data[:schema]
-              self.const_set("Sub_#{field.key}", klass)
+              self.const_set(__class_name(field.key), klass)
               klass.parametric_after_define_schema(field.meta_data[:schema])
             else
-              self.const_set("Sub_#{field.key}", field.meta_data[:schema])
+              self.const_set(__class_name(field.key), field.meta_data[:schema])
             end
           end
           self.class_eval <<-RUBY, __FILE__, __LINE__ + 1
@@ -89,13 +89,19 @@ module Parametric
         case value
         when Hash
           # find constructor for field
-          cons = self.const_get("Sub_#{key}")
+          cons = self.const_get(__class_name(key))
           cons ? cons.new(value) : value.freeze
         when Array
           value.map{|v| wrap(key, v) }.freeze
         else
           value.freeze
         end
+      end
+
+      PLURAL_END = /s$/.freeze
+
+      def __class_name(key)
+        key.to_s.split('_').map(&:capitalize).join.sub(PLURAL_END, '')
       end
     end
   end
