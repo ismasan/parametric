@@ -91,6 +91,11 @@ RSpec.describe Types do
       [true, 'nope', false],
       false
     )
+    assert_result(
+      Types::Array.of(Types.Value('a') | Types.Value('b')).call(['a', 'b', 'a']),
+      %w[a b a],
+      true
+    )
   end
 
   specify Types::Any do
