@@ -56,7 +56,7 @@ module Parametric
     def call(value)
       return value.failure("expected #{value.value} to be a #{@type}") unless @type === value.value
 
-      value.success(@coercion.call(value.value))
+      value.success(@coercion.(value.value))
     end
   end
 
@@ -150,7 +150,7 @@ module Parametric
         # return value.failure("#{value.value.inspect} cannot be coerced into #{name}") unless matcher
       def match(value)
         matchers.each do |m|
-          v = m.call(Result.success(value.value))
+          v = m.(Result.success(value.value))
           return v if v.success?
         end
 
@@ -163,9 +163,9 @@ module Parametric
     end
 
     class ArrayClass < Type
-      def of(element_identity)
+      def of(element_type)
         copy.tap do |cp|
-          cp.matches ::Array, ->(v) { v.map { |e| element_identity.call(e) } }
+          cp.matches ::Array, ->(v) { v.map { |e| element_type.(e) } }
         end
       end
 
@@ -220,7 +220,7 @@ module Parametric
     end
 
     Array = ArrayClass.new('Array').tap do |i|
-      i.matches ::Array, ->(v) { v.map { |e| Any.call(e) } }
+      i.matches ::Array, ->(v) { v.map { |e| Any.(e) } }
     end
 
     module Lax
