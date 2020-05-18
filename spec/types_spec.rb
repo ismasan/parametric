@@ -83,6 +83,24 @@ RSpec.describe Types do
     )
   end
 
+  specify Types::Any do
+    obj = Struct.new(:name).new('Joe')
+
+    assert_result(Types::Any.call(1), 1, true)
+    assert_result(Types::Any.call('foobar'), 'foobar', true)
+    assert_result(Types::Any.call(obj), obj, true)
+  end
+
+  # specify Types::Default do
+  #   assert_result(Types::String.default('foo').call('bar'), 'bar', true)
+  #   assert_result(Types::String.default('foo').call(''), 'foo', true)
+  #   assert_result(Types::String.default('foo').call(11), 11, false)
+  #   assert_result(Types::String.default('foo').call(0), 0, false)
+  #   assert_result(Types::String.default('foo').call(nil), nil, false)
+  # end
+
+  # field(:name).type(:string).default('foo')
+
   private
 
   def assert_result(result, value, is_success, debug: false)

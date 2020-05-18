@@ -113,7 +113,8 @@ module Parametric
       end
 
       def call(value)
-        value = sub.call(Result.wrap(value))
+        # value = sub.call(Result.wrap(value))
+        value = Result.wrap(value)
         return value unless value.success?
 
         value = match(value)
@@ -170,16 +171,21 @@ module Parametric
       private
 
       def errors_for_coercion_output(list)
-        failure = list.find { |e| e.is_a?(Result) ? e.failure? : false }
+        failure = list.find(&:failure?)
         failure ? failure.error : nil
       end
 
       def value_for_coercion_output(list)
-        list.map { |v| v.is_a?(Result) ? v.value : v }
+        list.map &:value
       end
     end
 
     Union = Type.new('Union')
+
+    Any = Type.new('Any').tap do |i|
+      i.matches ::Object, ->(value) { value }
+    end
+
     String = Type.new('String').tap do |i|
       i.matches ::String, ->(value) { value }
       i.type ::String
@@ -206,7 +212,7 @@ module Parametric
     end
 
     Array = ArrayClass.new('Array').tap do |i|
-      i.matches ::Array, ->(v) { v }
+      i.matches ::Array, ->(v) { v.map { |e| Any.call(e) } }
       i.type ::Array
     end
 
