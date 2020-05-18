@@ -84,6 +84,10 @@ module Parametric
         @hash = name
       end
 
+      def to_s
+        %(<#{self.class.name} [#{name}]>)
+      end
+
       def matchers
         @matchers.values
       end
