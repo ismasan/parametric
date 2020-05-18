@@ -105,6 +105,10 @@ module Parametric
         end
       end
 
+      def |(other)
+        self[other]
+      end
+
       def call(value)
         # value = sub.call(Result.wrap(value))
         value = Result.wrap(value)
@@ -177,6 +181,10 @@ module Parametric
 
     Any = Type.new('Any').tap do |i|
       i.matches ::Object, ->(value) { value }
+    end
+
+    Nil = Type.new('Nil').tap do |i|
+      i.matches ::NilClass, ->(v) { v }
     end
 
     String = Type.new('String').tap do |i|

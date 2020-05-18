@@ -49,12 +49,22 @@ RSpec.describe Types do
   end
 
   specify Types::Union do
+    union = Types::String | Types::Boolean | Types::Integer
+    assert_result(union.call('foo'), 'foo', true)
+    assert_result(union.call(false), false, true)
+    assert_result(union.call(10), 10, true)
+    assert_result(union.call({}), {}, false)
     assert_result(Types::Union[Types::String, Types::Boolean].call('foo'), 'foo', true)
     assert_result(Types::Union[Types::String, Types::Boolean].call(true), true, true)
     assert_result(Types::Union[Types::String, Types::Boolean].call(11), 11, false)
   end
 
   specify Types::Maybe do
+    union = Types::Nil | Types::String
+    assert_result(union.call(nil), nil, true)
+    assert_result(union.call('foo'), 'foo', true)
+    assert_result(union.call(11), 11, false)
+
     assert_result(Types::Maybe[Types::String].call(nil), nil, true)
     assert_result(Types::Maybe[Types::String].call('foo'), 'foo', true)
     assert_result(Types::Maybe[Types::String].call(11), 11, false)
@@ -90,6 +100,10 @@ RSpec.describe Types do
     assert_result(Types::Any.call('foobar'), 'foobar', true)
     assert_result(Types::Any.call(obj), obj, true)
   end
+
+  # specify Types::Value do
+  #   assert_result(Types::Value.new
+  # end
 
   # specify Types::Default do
   #   assert_result(Types::String.default('foo').call('bar'), 'bar', true)
