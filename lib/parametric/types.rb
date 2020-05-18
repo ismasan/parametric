@@ -74,17 +74,10 @@ module Parametric
 
       attr_reader :name, :hash
 
-      def initialize(name, type: Undefined, sub: NoopValue.new)
+      def initialize(name)
         @name = name
         @matchers = {}
-        @sub = sub
-        @type = type
         @hash = name
-      end
-
-      def type(t = Undefined)
-        @type = t unless t == Undefined
-        @type
       end
 
       def matchers
@@ -128,8 +121,8 @@ module Parametric
         end
       end
 
-      def copy(sub: nil)
-        self.class.new(name, type: type, sub: sub || @sub).tap do |i|
+      def copy
+        self.class.new(name).tap do |i|
           matchers.each do |m|
             i.matches m
           end
@@ -188,18 +181,15 @@ module Parametric
 
     String = Type.new('String').tap do |i|
       i.matches ::String, ->(value) { value }
-      i.type ::String
     end
 
     Integer = Type.new('Integer').tap do |i|
       i.matches ::Numeric, ->(value) { value.to_i }
-      i.type ::Integer
     end
 
     Boolean = Type.new('Boolean').tap do |i|
       i.matches TrueClass, ->(v) { v }
       i.matches FalseClass, ->(v) { v }
-      # i.type [TrueClass, FalseClass]
     end
 
     Maybe = Type.new('Maybe').tap do |i|
@@ -208,12 +198,10 @@ module Parametric
 
     CSV = Type.new('CSV').tap do |i|
       i.matches ::String, ->(v) { v.split(/\s*,\s*/) }
-      i.type ::Array
     end
 
     Array = ArrayClass.new('Array').tap do |i|
       i.matches ::Array, ->(v) { v.map { |e| Any.call(e) } }
-      i.type ::Array
     end
 
     module Lax
