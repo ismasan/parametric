@@ -160,10 +160,6 @@ module Parametric
 
         return value.failure("#{value.value.inspect} (#{value.value.class}) cannot be coerced into #{name}. No matcher registered.")
       end
-
-      private
-
-      attr_reader :sub
     end
 
     class ArrayClass < Type
