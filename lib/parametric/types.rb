@@ -63,6 +63,10 @@ module Parametric
   module Types
     TypeError = Class.new(ArgumentError)
 
+    def self.Value(val)
+      Value.new(val)
+    end
+
     class NoopValue
       def call(value)
         Result.wrap(value)
@@ -174,6 +178,13 @@ module Parametric
 
       def value_for_coercion_output(list)
         list.map &:value
+      end
+    end
+
+    class Value < Type
+      def initialize(val)
+        super val
+        matches val, ->(v) { v }
       end
     end
 

@@ -101,9 +101,15 @@ RSpec.describe Types do
     assert_result(Types::Any.call(obj), obj, true)
   end
 
-  # specify Types::Value do
-  #   assert_result(Types::Value.new
-  # end
+  specify Types::Value do
+    assert_result(Types::Value.new(1).call(1), 1, true)
+    assert_result(Types::Value.new(1).call(10), 10, false)
+    assert_result(Types::Value.new('foo').call('foo'), 'foo', true)
+    assert_result(Types::Value.new('foo').call('bar'), 'bar', false)
+
+    assert_result(Types.Value('foo').call('foo'), 'foo', true)
+    assert_result(Types.Value('foo').call('bar'), 'bar', false)
+  end
 
   # specify Types::Default do
   #   assert_result(Types::String.default('foo').call('bar'), 'bar', true)
