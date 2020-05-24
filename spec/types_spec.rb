@@ -157,27 +157,32 @@ RSpec.describe Types do
     end
   end
 
-  specify 'traits' do
-    default = Types::Default.new(Types::String, 'nope')
-    assert_result(default.call('yes'), 'yes', true)
-    assert_result(default.call(''), 'nope', true)
-    assert_result(Types::String.default('aa').call(''), 'aa', true)
+  describe Types::Default do
+    it "relies on underlying type's :present trait" do
+      default = Types::Default.new(Types::String, 'nope')
+      assert_result(default.call('yes'), 'yes', true)
+      assert_result(default.call(''), 'nope', true)
 
-    assert_result(Types::TraitValidator.new(Types::String.default('aa'), :present).call(''), 'aa', true)
-    assert_result(Types::Default.new(Types::TraitValidator.new(Types::String, :present), 'aa').call(''), '', false)
+      default = Types::Default.new(Types::Array, [1])
+      assert_result(default.call([2,3]), [2,3], true)
+      assert_result(default.call([]), [1], true)
+    end
   end
 
-  # field(:name).type(:string).with_title('Mr.')
+  specify '#default' do
+    assert_result(Types::String.default('nope').call('yup'), 'yup', true)
+    assert_result(Types::String.default('nope').call(''), 'nope', true)
 
-  # specify Types::Default do
-  #   assert_result(Types::String.default('foo').call('bar'), 'bar', true)
-  #   assert_result(Types::String.default('foo').call(''), 'foo', true)
-  #   assert_result(Types::String.default('foo').call(11), 11, false)
-  #   assert_result(Types::String.default('foo').call(0), 0, false)
-  #   assert_result(Types::String.default('foo').call(nil), nil, false)
-  # end
+    assert_result(Types::Any.default(10).call(11), 11, true)
+    assert_result(Types::Any.default(10).call(nil), 10, true)
+  end
 
-  # field(:name).type(:string).default('foo')
+  describe Types::TraitValidator do
+    it 'validates that pre-defined trait is true' do
+      assert_result(Types::TraitValidator.new(Types::String.default('aa'), :present).call(''), 'aa', true)
+      assert_result(Types::Default.new(Types::TraitValidator.new(Types::String, :present), 'aa').call(''), '', false)
+    end
+  end
 
   private
 

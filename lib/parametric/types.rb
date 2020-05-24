@@ -287,6 +287,7 @@ module Parametric
 
     Array = ArrayClass.new('Array').tap do |i|
       i.matches ::Array, ->(v) { v.map { |e| Any.(e) } }
+      i.trait(:present) { |v| v.any? }
     end
 
     module Lax
