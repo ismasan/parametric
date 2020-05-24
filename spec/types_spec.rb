@@ -202,6 +202,15 @@ RSpec.describe Types do
     end
   end
 
+  specify '#options' do
+    type = Types::String.options(%w[one two three])
+
+    assert_result(type.call('one'), 'one', true)
+    assert_result(type.call('two'), 'two', true)
+    assert_result(type.call('three'), 'three', true)
+    assert_result(type.call('four'), 'four', false)
+  end
+
   private
 
   def assert_result(result, value, is_success, debug: false)

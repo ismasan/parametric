@@ -281,6 +281,25 @@ module Parametric
       end
     end
 
+    class Enum
+      include ChainableType
+
+      def initialize(sub, opts)
+        @sub, @opts = sub, Array(opts)
+      end
+
+      private
+
+      attr_reader :sub, :opts
+
+      def _call(result)
+        val = Array(result.value)
+        return result.failure("expected value to be included in #{opts.inspect}, but got #{result.value.inspect}") if (val - opts).any?
+
+        result
+      end
+    end
+
     Union = Type.new('Union')
 
     Any = Type.new('Any').tap do |i|
