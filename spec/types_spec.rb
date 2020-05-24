@@ -210,6 +210,11 @@ RSpec.describe Types do
     assert_result(type.call('three'), 'three', true)
     assert_result(type.call('four'), 'four', false)
 
+    # it works alongside Default
+    assert_result(Types::String.default('two').options(%w[one two]).call(''), 'two', true)
+    # options are validated first if defined first
+    assert_result(Types::String.options(%w[one two]).default('two').call(''), '', false)
+
     # it copies options
     type = type.copy
     assert_result(type.call('three'), 'three', true)
