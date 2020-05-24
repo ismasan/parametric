@@ -20,8 +20,16 @@ module Parametric
       new(value)
     end
 
-    def initialize(value, error: nil)
+    attr_reader :traits
+
+    def initialize(value, error: nil, traits: {})
       @value, @error = value, error
+      @traits = traits
+    end
+
+    def trait(key)
+      val = traits.fetch(key)
+      val.respond_to?(:call) ? @traits[key] = val.call(value) : val
     end
 
     def success?
@@ -61,14 +69,20 @@ module Parametric
   end
 
   module Types
-    TypeError = Class.new(ArgumentError)
-
-    def self.Value(val)
+    def self.value(val)
       Value.new(val)
     end
 
-    class NoopValue
-      def call(value)
+    def self.union(*types)
+      types.reduce(&:|)
+    end
+
+    def self.maybe(type)
+      Types::Nil | type
+    end
+
+    class BaseValue
+      def self.call(value)
         Result.wrap(value)
       end
     end
@@ -78,10 +92,12 @@ module Parametric
 
       attr_reader :name, :hash
 
-      def initialize(name)
+      def initialize(name, sub: BaseValue)
         @name = name
         @matchers = {}
         @hash = name
+        @sub = sub
+        @traits = {}
       end
 
       def to_s
@@ -105,21 +121,16 @@ module Parametric
         self
       end
 
-      def [](*children)
-        copy.tap do |i|
-          children.each do |ch|
-            i.matches ch
-          end
-        end
-      end
+      def trait(key, callable = nil, &block)
+        callable ||= block
+        raise ArgumentError, 'a trait needs a callable object or a block' unless callable
 
-      def |(other)
-        self[other]
+        @traits[key] = callable
+        self
       end
 
       def call(value)
-        # value = sub.call(Result.wrap(value))
-        value = Result.wrap(value)
+        value = @sub.call(Result.wrap(value))
         return value unless value.success?
 
         value = match(value)
@@ -129,16 +140,37 @@ module Parametric
         if err = errors_for_coercion_output(value.value)
           value.failure(err, value_for_coercion_output(value.value))
         else
+          @traits.each do |key, callable|
+            value.traits[key] = callable#.call(value.value)
+          end
           value.success(value_for_coercion_output(value.value))
         end
       end
 
-      def copy
-        self.class.new(name).tap do |i|
+      def sub(s)
+        copy(sub: s)
+      end
+
+      def [](child)
+        copy(sub: child)
+      end
+
+      def |(other)
+        copy.tap do |i|
+          i.matches other
+        end
+      end
+
+      def copy(sub: nil)
+        self.class.new(name, sub: sub || @sub).tap do |i|
           matchers.each do |m|
             i.matches m
           end
         end
+      end
+
+      def default(val)
+        Default.new(self, val)
       end
 
       protected
@@ -160,6 +192,10 @@ module Parametric
 
         return value.failure("#{value.value.inspect} (#{value.value.class}) cannot be coerced into #{name}. No matcher registered.")
       end
+
+      private
+
+      # attr_reader :sub
     end
 
     class ArrayClass < Type
@@ -182,9 +218,35 @@ module Parametric
     end
 
     class Value < Type
-      def initialize(val)
-        super val
+      def initialize(val, *_args)
+        super
         matches val, ->(v) { v }
+      end
+    end
+
+    class TraitValidator
+      def initialize(type, trait_key)
+        @type, @trait_key = type, trait_key
+      end
+
+      def call(result)
+        result = @type.call(result)
+        return result unless result.success?
+
+        result.trait(@trait_key) ? result : result.failure("expected value to be #{@trait_key}, but got #{result.value.inspect}")
+      end
+    end
+
+    class Default
+      def initialize(type, val)
+        @type, @val = type, val
+      end
+
+      def call(result)
+        result = @type.call(result)
+        return result unless result.success?
+
+        result.trait(:present) ? result : (result.traits[:present] = true;result.success(@val))
       end
     end
 
@@ -206,14 +268,15 @@ module Parametric
       i.matches ::Numeric, ->(value) { value.to_i }
     end
 
-    Boolean = Type.new('Boolean').tap do |i|
+    True = Type.new('True').tap do |i|
       i.matches TrueClass, ->(v) { v }
+    end
+
+    False = Type.new('False').tap do |i|
       i.matches FalseClass, ->(v) { v }
     end
 
-    Maybe = Type.new('Maybe').tap do |i|
-      i.matches NilClass, ->(v) { v }
-    end
+    Boolean = True | False
 
     CSV = Type.new('CSV').tap do |i|
       i.matches ::String, ->(v) { v.split(/\s*,\s*/) }
@@ -235,14 +298,19 @@ module Parametric
     end
 
     module Forms
-      Boolean = Types::Boolean.copy.tap do |i|
+      True = Types::True.copy.tap do |i|
         i.matches /^true$/i, ->(_) { true }
         i.matches '1', ->(_) { true }
         i.matches 1, ->(_) { true }
+      end
+
+      False = Types::False.copy.tap do |i|
         i.matches /^false$/i, ->(_) { false }
         i.matches '0', ->(_) { false }
         i.matches 0, ->(_) { false }
       end
+
+      Boolean = True | False
     end
   end
 end

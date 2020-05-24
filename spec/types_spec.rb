@@ -54,21 +54,21 @@ RSpec.describe Types do
     assert_result(union.call(false), false, true)
     assert_result(union.call(10), 10, true)
     assert_result(union.call({}), {}, false)
-    assert_result(Types::Union[Types::String, Types::Boolean].call('foo'), 'foo', true)
-    assert_result(Types::Union[Types::String, Types::Boolean].call(true), true, true)
-    assert_result(Types::Union[Types::String, Types::Boolean].call(11), 11, false)
+    assert_result(Types.union(Types::String, Types::Boolean).call('foo'), 'foo', true)
+    assert_result(Types.union(Types::String, Types::Boolean).call(true), true, true)
+    assert_result(Types.union(Types::String, Types::Boolean).call(11), 11, false)
   end
 
-  specify Types::Maybe do
+  specify '.maybe' do
     union = Types::Nil | Types::String
     assert_result(union.call(nil), nil, true)
     assert_result(union.call('foo'), 'foo', true)
     assert_result(union.call(11), 11, false)
 
-    assert_result(Types::Maybe[Types::String].call(nil), nil, true)
-    assert_result(Types::Maybe[Types::String].call('foo'), 'foo', true)
-    assert_result(Types::Maybe[Types::String].call(11), 11, false)
-    assert_result(Types::Maybe[Types::Lax::String].call(11), '11', true)
+    assert_result(Types.maybe(Types::String).call(nil), nil, true)
+    assert_result(Types.maybe(Types::String).call('foo'), 'foo', true)
+    assert_result(Types.maybe(Types::String).call(11), 11, false)
+    assert_result(Types.maybe(Types::Lax::String).call(11), '11', true)
   end
 
   specify Types::CSV do
@@ -92,7 +92,7 @@ RSpec.describe Types do
       false
     )
     assert_result(
-      Types::Array.of(Types.Value('a') | Types.Value('b')).call(['a', 'b', 'a']),
+      Types::Array.of(Types.value('a') | Types.value('b')).call(['a', 'b', 'a']),
       %w[a b a],
       true
     )
@@ -112,9 +112,34 @@ RSpec.describe Types do
     assert_result(Types::Value.new('foo').call('foo'), 'foo', true)
     assert_result(Types::Value.new('foo').call('bar'), 'bar', false)
 
-    assert_result(Types.Value('foo').call('foo'), 'foo', true)
-    assert_result(Types.Value('foo').call('bar'), 'bar', false)
+    assert_result(Types.value('foo').call('foo'), 'foo', true)
+    assert_result(Types.value('foo').call('bar'), 'bar', false)
   end
+
+  specify 'nested' do
+    type = Types::Lax::String[Types.value(1)]
+    assert_result(type.call(1), '1', true)
+    assert_result(type.call('11'), '11', false)
+  end
+
+  specify 'traits' do
+    type = Types::String.copy.tap do |i|
+      i.trait :present, ->(v) { v != '' }
+    end
+
+    expect(type.call('foo').trait(:present)).to be true
+    expect(type.call('').trait(:present)).to be false
+
+    default = Types::Default.new(type, 'nope')
+    assert_result(default.call('yes'), 'yes', true)
+    assert_result(default.call(''), 'nope', true)
+    assert_result(type.default('aa').call(''), 'aa', true)
+
+    assert_result(Types::TraitValidator.new(type.default('aa'), :present).call(''), 'aa', true)
+    assert_result(Types::Default.new(Types::TraitValidator.new(type, :present), 'aa').call(''), '', false)
+  end
+
+  # field(:name).type(:string).with_title('Mr.')
 
   # specify Types::Default do
   #   assert_result(Types::String.default('foo').call('bar'), 'bar', true)
