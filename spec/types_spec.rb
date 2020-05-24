@@ -122,21 +122,49 @@ RSpec.describe Types do
     assert_result(type.call('11'), '11', false)
   end
 
-  specify 'traits' do
-    type = Types::String.copy.tap do |i|
-      i.trait :present, ->(v) { v != '' }
+  describe 'traits' do
+    it 'includes a default :present trait for all types, checking on nil values' do
+      blank_slate = Types::Type.new('Blank').tap do |i|
+        i.matches(::Object) { |v| v }
+      end
+
+      expect(blank_slate.call('foo').trait(:present)).to be true
+      expect(blank_slate.call('').trait(:present)).to be true
+      expect(blank_slate.call(nil).trait(:present)).to be false
     end
 
-    expect(type.call('foo').trait(:present)).to be true
-    expect(type.call('').trait(:present)).to be false
+    it 'can register custom traits' do
+      type = Types::String.copy.tap do |i|
+        i.trait :polite, ->(v) { v.start_with?('Mr.') }
+      end
 
-    default = Types::Default.new(type, 'nope')
+      expect(type.call('Mr. Ismael').trait(:polite)).to be true
+      expect(type.call('Ismael').trait(:polite)).to be false
+    end
+
+    it 'copies traits' do
+      type1 = Types::String.copy.tap do |i|
+        i.trait :polite, ->(v) { v.start_with?('Mr.') }
+      end
+
+      type2 = type1.copy
+      expect(type2.call('Mr. Ismael').trait(:polite)).to be true
+    end
+
+    it 'registers :present for String' do
+      expect(Types::String.call('foo').trait(:present)).to be true
+      expect(Types::String.call('').trait(:present)).to be false
+    end
+  end
+
+  specify 'traits' do
+    default = Types::Default.new(Types::String, 'nope')
     assert_result(default.call('yes'), 'yes', true)
     assert_result(default.call(''), 'nope', true)
-    assert_result(type.default('aa').call(''), 'aa', true)
+    assert_result(Types::String.default('aa').call(''), 'aa', true)
 
-    assert_result(Types::TraitValidator.new(type.default('aa'), :present).call(''), 'aa', true)
-    assert_result(Types::Default.new(Types::TraitValidator.new(type, :present), 'aa').call(''), '', false)
+    assert_result(Types::TraitValidator.new(Types::String.default('aa'), :present).call(''), 'aa', true)
+    assert_result(Types::Default.new(Types::TraitValidator.new(Types::String, :present), 'aa').call(''), '', false)
   end
 
   # field(:name).type(:string).with_title('Mr.')

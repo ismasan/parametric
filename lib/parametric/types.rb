@@ -92,12 +92,14 @@ module Parametric
 
       attr_reader :name, :hash
 
-      def initialize(name, sub: BaseValue)
+      def initialize(name, sub: BaseValue, traits: {})
         @name = name
         @matchers = {}
         @hash = name
         @sub = sub
-        @traits = {}
+        @traits = traits
+        # Register a default :present trait
+        trait(:present) { |v| !v.nil? } unless @traits.key?(:present)
       end
 
       def to_s
@@ -161,8 +163,8 @@ module Parametric
         end
       end
 
-      def copy(sub: nil)
-        self.class.new(name, sub: sub || @sub).tap do |i|
+      def copy(sub: nil, traits: nil)
+        self.class.new(name, sub: sub || @sub, traits: traits || @traits).tap do |i|
           matchers.each do |m|
             i.matches m
           end
@@ -262,6 +264,7 @@ module Parametric
 
     String = Type.new('String').tap do |i|
       i.matches ::String, ->(value) { value }
+      i.trait(:present) { |v| v != '' }
     end
 
     Integer = Type.new('Integer').tap do |i|
