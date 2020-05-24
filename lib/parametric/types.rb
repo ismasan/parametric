@@ -87,7 +87,24 @@ module Parametric
       end
     end
 
+    module ChainableType
+      def call(value)
+        result = sub.call(Result.wrap(value))
+        return result unless result.success?
+
+        _call(result)
+      end
+
+      private
+
+      def _call(result)
+        result
+      end
+    end
+
     class Type
+      include ChainableType
+
       NOOP = ->(v) { v }
 
       attr_reader :name, :hash
@@ -131,28 +148,6 @@ module Parametric
         self
       end
 
-      def call(value)
-        value = @sub.call(Result.wrap(value))
-        return value unless value.success?
-
-        value = match(value)
-        return value unless value.success?
-        # return value.failure("expected #{type}, but got #{value.value.inspect}") unless coerced_value.is_a?(type)
-
-        if err = errors_for_coercion_output(value.value)
-          value.failure(err, value_for_coercion_output(value.value))
-        else
-          @traits.each do |key, callable|
-            value.traits[key] = callable#.call(value.value)
-          end
-          value.success(value_for_coercion_output(value.value))
-        end
-      end
-
-      def sub(s)
-        copy(sub: s)
-      end
-
       def [](child)
         copy(sub: child)
       end
@@ -185,19 +180,33 @@ module Parametric
         v
       end
 
-        # return value.failure("#{value.value.inspect} cannot be coerced into #{name}") unless matcher
-      def match(value)
+      def match(result)
         matchers.each do |m|
-          v = m.(Result.success(value.value))
+          v = m.(Result.success(result.value))
           return v if v.success?
         end
 
-        return value.failure("#{value.value.inspect} (#{value.value.class}) cannot be coerced into #{name}. No matcher registered.")
+        return result.failure("#{result.value.inspect} (#{result.value.class}) cannot be coerced into #{name}. No matcher registered.")
       end
 
       private
 
-      # attr_reader :sub
+      attr_reader :sub
+
+      def _call(result)
+        result = match(result)
+        return result unless result.success?
+
+        if err = errors_for_coercion_output(result.value)
+          result.failure(err, value_for_coercion_output(result.value))
+        else
+          @traits.each do |key, callable|
+            result.traits[key] = callable
+          end
+          result.success(value_for_coercion_output(result.value))
+        end
+      end
+
     end
 
     class ArrayClass < Type
@@ -227,27 +236,33 @@ module Parametric
     end
 
     class TraitValidator
-      def initialize(type, trait_key)
-        @type, @trait_key = type, trait_key
+      include ChainableType
+
+      def initialize(sub, trait_key)
+        @sub, @trait_key = sub, trait_key
       end
 
-      def call(result)
-        result = @type.call(result)
-        return result unless result.success?
+      private
 
+      attr_reader :sub # required by ChainableType
+
+      def _call(result)
         result.trait(@trait_key) ? result : result.failure("expected value to be #{@trait_key}, but got #{result.value.inspect}")
       end
     end
 
     class Default
-      def initialize(type, val)
-        @type, @val = type, val
+      include ChainableType
+
+      def initialize(sub, val)
+        @sub, @val = sub, val
       end
 
-      def call(result)
-        result = @type.call(result)
-        return result unless result.success?
+      private
 
+      attr_reader :sub
+
+      def _call(result)
         result.trait(:present) ? result : (result.traits[:present] = true;result.success(@val))
       end
     end
