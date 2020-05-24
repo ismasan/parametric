@@ -209,6 +209,11 @@ RSpec.describe Types do
     assert_result(type.call('two'), 'two', true)
     assert_result(type.call('three'), 'three', true)
     assert_result(type.call('four'), 'four', false)
+
+    # it copies options
+    type = type.copy
+    assert_result(type.call('three'), 'three', true)
+    assert_result(type.call('four'), 'four', false)
   end
 
   private

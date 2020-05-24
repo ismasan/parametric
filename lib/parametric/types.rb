@@ -288,6 +288,10 @@ module Parametric
         @sub, @opts = sub, Array(opts)
       end
 
+      def copy(sub: nil, traits: nil)
+        @sub.copy.options(opts)
+      end
+
       private
 
       attr_reader :sub, :opts
