@@ -95,6 +95,10 @@ module Parametric
         _call(result)
       end
 
+      def default(val)
+        Default.new(self, val)
+      end
+
       private
 
       def _call(result)
@@ -164,10 +168,6 @@ module Parametric
             i.matches m
           end
         end
-      end
-
-      def default(val)
-        Default.new(self, val)
       end
 
       protected

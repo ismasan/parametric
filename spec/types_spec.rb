@@ -175,6 +175,8 @@ RSpec.describe Types do
 
     assert_result(Types::Any.default(10).call(11), 11, true)
     assert_result(Types::Any.default(10).call(nil), 10, true)
+    # #default on a Default instance is a noop
+    assert_result(Types::Any.default(10).default(13).call(nil), 10, true)
   end
 
   describe Types::TraitValidator do
