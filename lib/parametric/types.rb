@@ -95,8 +95,12 @@ module Parametric
         _call(result)
       end
 
-      def default(val)
-        Default.new(self, val)
+      def default(val = Undefined, &block)
+        Default.new(self, val, &block)
+      end
+
+      def options(opts)
+        Enum.new(self, opts)
       end
 
       private
@@ -254,8 +258,18 @@ module Parametric
     class Default
       include ChainableType
 
-      def initialize(sub, val)
-        @sub, @val = sub, val
+      def initialize(sub, val = Undefined, &block)
+        @sub = sub
+        val = block if val == Undefined
+        @val = val.respond_to?(:call) ? val : -> { val }
+      end
+
+      def copy(sub: nil, traits: nil)
+        @sub.copy.default(@val)
+      end
+
+      def |(other)
+        (@sub | other).default(@val)
       end
 
       private
@@ -263,7 +277,7 @@ module Parametric
       attr_reader :sub
 
       def _call(result)
-        result.trait(:present) ? result : (result.traits[:present] = true;result.success(@val))
+        result.trait(:present) ? result : (result.traits[:present] = true;result.success(@val.call))
       end
     end
 

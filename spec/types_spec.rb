@@ -177,6 +177,22 @@ RSpec.describe Types do
     assert_result(Types::Any.default(10).call(nil), 10, true)
     # #default on a Default instance is a noop
     assert_result(Types::Any.default(10).default(13).call(nil), 10, true)
+
+    # it works with procs
+    val = 'foo'
+    type = Types::String.default { val }
+    assert_result(type.call(''), val, true)
+
+    # it copies default
+    type = Types::Any.default(10).copy
+    assert_result(type.call(nil), 10, true)
+
+    with_default = Types::String.default('nope')
+
+    # it can be union'd
+    type = with_default | Types::Integer
+    assert_result(type.call(''), 'nope', true)
+    assert_result(type.call(10), 10, true)
   end
 
   describe Types::TraitValidator do
