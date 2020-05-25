@@ -12,6 +12,11 @@ RSpec.describe Types do
     assert_result(Types::String.call(10), 10, false)
   end
 
+  specify Types::Integer do
+    assert_result(Types::Integer.call(10), 10, true)
+    assert_result(Types::Integer.call('10'), '10', false)
+  end
+
   specify Types::Lax::String do
     assert_result(Types::Lax::String.call('aa'), 'aa', true)
     assert_result(Types::Lax::String.call(11), '11', true)
@@ -26,6 +31,11 @@ RSpec.describe Types do
     assert_result(Types::Lax::Integer.call('113'), 113, true)
     assert_result(Types::Lax::Integer.call('113.10'), 113, true)
     assert_result(Types::Lax::Integer.call('nope'), 'nope', false)
+  end
+
+  specify Types::True do
+    assert_result(Types::True.call(true), true, true)
+    assert_result(Types::True.call(false), false, false)
   end
 
   specify Types::Boolean do
@@ -187,12 +197,12 @@ RSpec.describe Types do
     type = Types::Any.default(10).copy
     assert_result(type.call(nil), 10, true)
 
+    # it can be union'd
     with_default = Types::String.default('nope')
 
-    # it can be union'd
-    type = with_default | Types::Integer
-    assert_result(type.call(''), 'nope', true)
-    assert_result(type.call(10), 10, true)
+    union = with_default | Types::Integer
+    assert_result(union.call(''), 'nope', true)
+    assert_result(union.call(10), 10, true)
   end
 
   describe Types::TraitValidator do
@@ -200,6 +210,22 @@ RSpec.describe Types do
       assert_result(Types::TraitValidator.new(Types::String.default('aa'), :present).call(''), 'aa', true)
       assert_result(Types::Default.new(Types::TraitValidator.new(Types::String, :present), 'aa').call(''), '', false)
     end
+  end
+
+  specify RuleRegistry do
+    registry = RuleRegistry.new.tap do |r|
+      r.define :is_a? do |value, type|
+        value.is_a?(type)
+      end
+    end
+
+    expect(registry[:is_a?].call('foo', ::String)).to be true
+    expect(registry[:is_a?].call(1, ::String)).to be false
+
+    set = RuleSet.new(registry)
+    set.rule(:is_a?, ::String)
+    expect(set.call('foo')).to eq [true, nil]
+    expect(set.call(1)).to eq [false, %(failed is_a?(1, String))]
   end
 
   specify '#options' do
@@ -216,9 +242,15 @@ RSpec.describe Types do
     assert_result(Types::String.options(%w[one two]).default('two').call(''), '', false)
 
     # it copies options
-    type = type.copy
-    assert_result(type.call('three'), 'three', true)
-    assert_result(type.call('four'), 'four', false)
+    copy = type.copy
+    assert_result(copy.call('three'), 'three', true)
+    assert_result(copy.call('four'), 'four', false)
+
+    # it can be union'd
+    # union = type | Types::Integer
+    # assert_result(union.call('two'), 'two', true)
+    # assert_result(union.call(10), 10, true)
+    # assert_result(union.call('twenty'), 'twenty', false)
   end
 
   private

@@ -53,6 +53,39 @@ module Parametric
     end
   end
 
+  class RuleRegistry
+    def initialize
+      @rules = {}
+    end
+
+    def define(predicate, callable = nil, &block)
+      callable ||= block
+      @rules[predicate] = callable
+    end
+
+    def [](predicate)
+      @rules.fetch(predicate)
+    end
+  end
+
+  class RuleSet
+    Rule = Struct.new(:predicate, :args)
+
+    def initialize(registry)
+      @registry = registry
+      @rules = Set.new
+    end
+
+    def rule(predicate, *args)
+      @rules << Rule.new(predicate, args)
+    end
+
+    def call(value)
+      failure = @rules.find { |r| !@registry[r.predicate].call(value, *r.args) }
+      failure ? [false, %[failed #{failure.predicate}(#{value.inspect}, #{failure.args.join(', ')})]] : [true, nil]
+    end
+  end
+
   class PrimitiveMatcher
     attr_reader :hash
 
@@ -69,6 +102,18 @@ module Parametric
   end
 
   module Types
+    Rules = RuleRegistry.new.tap do |r|
+      r.define :is_a? do |value, type|
+        value.is_a?(type)
+      end
+      r.define :included_in? do |value, array|
+        !(Array(value) - array).any?
+      end
+      r.define :eq? do |actual, expected|
+        actual == expected
+      end
+    end
+
     def self.value(val)
       Value.new(val)
     end
@@ -117,12 +162,13 @@ module Parametric
 
       attr_reader :name, :hash
 
-      def initialize(name, sub: BaseValue, traits: {})
+      def initialize(name, sub: BaseValue, traits: {}, rule_set: RuleSet.new(Rules))
         @name = name
         @matchers = {}
         @hash = name
         @sub = sub
         @traits = traits
+        @rule_set = rule_set
         # Register a default :present trait
         trait(:present) { |v| !v.nil? } unless @traits.key?(:present)
       end
@@ -148,6 +194,11 @@ module Parametric
         self
       end
 
+      def rule(predicate, *args)
+        rule_set.rule(predicate, *args)
+        self
+      end
+
       def trait(key, callable = nil, &block)
         callable ||= block
         raise ArgumentError, 'a trait needs a callable object or a block' unless callable
@@ -161,13 +212,14 @@ module Parametric
       end
 
       def |(other)
-        copy.tap do |i|
-          i.matches other
-        end
+        Union.new(self, other)
+        # copy.tap do |i|
+        #   i.matches other
+        # end
       end
 
-      def copy(sub: nil, traits: nil)
-        self.class.new(name, sub: sub || @sub, traits: traits || @traits).tap do |i|
+      def copy(sub: nil, traits: nil, rule_set: nil)
+        self.class.new(name, sub: sub || @sub, traits: traits || @traits, rule_set: rule_set || @rule_set).tap do |i|
           matchers.each do |m|
             i.matches m
           end
@@ -184,21 +236,29 @@ module Parametric
         v
       end
 
-      def match(result)
+      private
+
+      attr_reader :sub, :rule_set
+
+      def coerce(result)
         matchers.each do |m|
           v = m.(Result.success(result.value))
           return v if v.success?
         end
 
-        return result.failure("#{result.value.inspect} (#{result.value.class}) cannot be coerced into #{name}. No matcher registered.")
+        result
+        # return result.failure("#{result.value.inspect} (#{result.value.class}) cannot be coerced into #{name}. No matcher registered.")
       end
 
-      private
+      def run_rules(result)
+        success, err = rule_set.call(result.value)
+        return result.failure(err) unless success
 
-      attr_reader :sub
+        result
+      end
 
       def _call(result)
-        result = match(result)
+        result = run_rules(coerce(result))
         return result unless result.success?
 
         if err = errors_for_coercion_output(result.value)
@@ -235,7 +295,7 @@ module Parametric
     class Value < Type
       def initialize(val, *_args)
         super
-        matches val, ->(v) { v }
+        rule :eq?, val
       end
     end
 
@@ -264,12 +324,12 @@ module Parametric
         @val = val.respond_to?(:call) ? val : -> { val }
       end
 
-      def copy(sub: nil, traits: nil)
-        @sub.copy.default(@val)
+      def copy(**_)
+        sub.copy.default(@val)
       end
 
       def |(other)
-        (@sub | other).default(@val)
+        (sub | other).default(@val)
       end
 
       private
@@ -288,8 +348,12 @@ module Parametric
         @sub, @opts = sub, Array(opts)
       end
 
-      def copy(sub: nil, traits: nil)
-        @sub.copy.options(opts)
+      def copy(**_)
+        sub.copy.options(opts)
+      end
+
+      def |(other)
+        (sub | other).options(opts)
       end
 
       private
@@ -304,41 +368,75 @@ module Parametric
       end
     end
 
-    Union = Type.new('Union')
+    class Union
+      include ChainableType
+
+      def initialize(*types)
+        @types = types
+        @sub = BaseValue
+      end
+
+      def |(other)
+        Union.new(*(types + [other]))
+      end
+
+      private
+
+      attr_reader :types, :sub
+
+      def _call(result)
+        types.each do |t|
+          r = t.(Result.success(result.value))
+          return r if r.success?
+        end
+
+        result.failure("expected one of #{types.map(&:inspect).join(', ')}, but got #{result.value.inspect}")
+      end
+    end
+
+    # Union = Type.new('Union')
 
     Any = Type.new('Any').tap do |i|
-      i.matches ::Object, ->(value) { value }
+      i.rule :is_a?, ::Object
+      # i.matches ::Object, ->(value) { value }
     end
 
     Nil = Type.new('Nil').tap do |i|
-      i.matches ::NilClass, ->(v) { v }
+      i.rule :is_a?, ::NilClass
+      # i.matches ::NilClass, ->(v) { v }
     end
 
     String = Type.new('String').tap do |i|
-      i.matches ::String, ->(value) { value }
+      i.rule :is_a?, ::String
+      # i.matches ::String, ->(value) { value }
       i.trait(:present) { |v| v != '' }
     end
 
     Integer = Type.new('Integer').tap do |i|
+      i.rule :is_a?, ::Numeric
       i.matches ::Numeric, ->(value) { value.to_i }
     end
 
     True = Type.new('True').tap do |i|
-      i.matches TrueClass, ->(v) { v }
+      i.rule :is_a?, ::TrueClass
+      # i.matches TrueClass, ->(v) { v }
     end
 
     False = Type.new('False').tap do |i|
-      i.matches FalseClass, ->(v) { v }
+      i.rule :is_a?, ::FalseClass
+      # i.matches FalseClass, ->(v) { v }
     end
 
     Boolean = True | False
 
     CSV = Type.new('CSV').tap do |i|
       i.matches ::String, ->(v) { v.split(/\s*,\s*/) }
+      i.rule :is_a?, ::Array
     end
 
     Array = ArrayClass.new('Array').tap do |i|
       i.matches ::Array, ->(v) { v.map { |e| Any.(e) } }
+      i.rule :is_a?, ::Array
       i.trait(:present) { |v| v.any? }
     end
 
