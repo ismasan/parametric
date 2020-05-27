@@ -69,6 +69,11 @@ RSpec.describe Types do
     assert_result(Types.union(Types::String, Types::Boolean).call(11), 11, false)
   end
 
+  specify Types::Nothing do
+    assert_result(Types::Nothing.call(), Parametric::Undefined, true)
+    assert_result(Types::Nothing.call(''), '', false)
+  end
+
   specify Types::Static do
     type = Types::Static.new('foo')
     assert_result(type.call(1), 'foo', true)
@@ -93,6 +98,12 @@ RSpec.describe Types do
 
     meta_pipeline = pipeline > Types::Transform.new{|v| "Hello, #{v}" }
     assert_result(meta_pipeline.call('Joan'), 'Hello, Mrs. Joan', true)
+
+    # custom default for blank string
+    default_if_blank = (Types.value('') > Types::Static.new('nope')) | Types::String
+    assert_result(default_if_blank.call(''), 'nope', true)
+    assert_result(default_if_blank.call('yes'), 'yes', true)
+    assert_result(default_if_blank.call(10), 10, false)
   end
 
   specify '.maybe' do
