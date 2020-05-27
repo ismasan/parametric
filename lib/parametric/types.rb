@@ -176,7 +176,7 @@ module Parametric
 
       def initialize(name, rule_set: RuleSet.new(Rules))
         @name = name
-        @matchers = {}
+        @coercions = {}
         @hash = name
         @rule_set = rule_set
       end
@@ -189,20 +189,20 @@ module Parametric
         to_s
       end
 
-      def matchers
-        @matchers.values
+      def coercions
+        @coercions.values
       end
 
-      def matches(type, coercion = nil, &block)
-        coercion = coercion || block || NOOP
+      def coercion(type, cr = nil, &block)
+        cr = cr || block || NOOP
         matcher = if type.respond_to?(:call)
                     type
                   elsif type.respond_to?(:===)
-                    PrimitiveMatcher.new(type, coercion)
+                    PrimitiveMatcher.new(type, cr)
                   else
                     raise ArgumentError, "#{type.inspect} is not a valid matcher"
                   end
-        @matchers[matcher.hash] = matcher
+        @coercions[matcher.hash] = matcher
         self
       end
 
@@ -217,8 +217,8 @@ module Parametric
 
       def copy(rule_set: nil)
         self.class.new(name, rule_set: rule_set || @rule_set.clone).tap do |i|
-          matchers.each do |m|
-            i.matches m
+          coercions.each do |m|
+            i.coercion m
           end
         end
       end
@@ -238,7 +238,7 @@ module Parametric
       attr_reader :rule_set
 
       def coerce(result)
-        matchers.each do |m|
+        coercions.each do |m|
           v = m.(Result.success(result.value))
           return v if v.success?
         end
@@ -303,7 +303,7 @@ module Parametric
     class ArrayClass < Type
       def of(element_type)
         copy.tap do |cp|
-          cp.matches ::Array, ->(v) { v.map { |e| element_type.(e) } }
+          cp.coercion ::Array, ->(v) { v.map { |e| element_type.(e) } }
         end
       end
 
@@ -369,7 +369,7 @@ module Parametric
 
     Integer = Type.new('Integer').tap do |i|
       i.rule :is_a?, ::Numeric
-      i.matches ::Numeric, ->(value) { value.to_i }
+      i.coercion ::Numeric, ->(value) { value.to_i }
     end
 
     True = Type.new('True').tap do |i|
@@ -383,37 +383,37 @@ module Parametric
     Boolean = True | False
 
     CSV = Type.new('CSV').tap do |i|
-      i.matches ::String, ->(v) { v.split(/\s*,\s*/) }
+      i.coercion ::String, ->(v) { v.split(/\s*,\s*/) }
       i.rule :is_a?, ::Array
     end
 
     Array = ArrayClass.new('Array').tap do |i|
-      i.matches ::Array, ->(v) { v.map { |e| Any.(e) } }
+      i.coercion ::Array, ->(v) { v.map { |e| Any.(e) } }
       i.rule :is_a?, ::Array
     end
 
     module Lax
       String = Types::String.copy.tap do |i|
-        i.matches BigDecimal, ->(value) { value.to_s('F') }
-        i.matches Numeric, ->(value) { value.to_s }
+        i.coercion BigDecimal, ->(value) { value.to_s('F') }
+        i.coercion Numeric, ->(value) { value.to_s }
       end
       Integer = Types::Integer.copy.tap do |i|
-        i.matches /^\d+$/, ->(value) { value.to_i }
-        i.matches /^\d+.\d*?$/, ->(value) { value.to_i }
+        i.coercion /^\d+$/, ->(value) { value.to_i }
+        i.coercion /^\d+.\d*?$/, ->(value) { value.to_i }
       end
     end
 
     module Forms
       True = Types::True.copy.tap do |i|
-        i.matches /^true$/i, ->(_) { true }
-        i.matches '1', ->(_) { true }
-        i.matches 1, ->(_) { true }
+        i.coercion /^true$/i, ->(_) { true }
+        i.coercion '1', ->(_) { true }
+        i.coercion 1, ->(_) { true }
       end
 
       False = Types::False.copy.tap do |i|
-        i.matches /^false$/i, ->(_) { false }
-        i.matches '0', ->(_) { false }
-        i.matches 0, ->(_) { false }
+        i.coercion /^false$/i, ->(_) { false }
+        i.coercion '0', ->(_) { false }
+        i.coercion 0, ->(_) { false }
       end
 
       Boolean = True | False
