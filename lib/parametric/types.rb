@@ -136,12 +136,6 @@ module Parametric
       Types::Nil | type
     end
 
-    class BaseValue
-      def self.call(value)
-        Result.wrap(value)
-      end
-    end
-
     module ChainableType
       def call(value = Undefined)
         result = Result.wrap(value)
