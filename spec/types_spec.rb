@@ -69,6 +69,32 @@ RSpec.describe Types do
     assert_result(Types.union(Types::String, Types::Boolean).call(11), 11, false)
   end
 
+  specify Types::Static do
+    type = Types::Static.new('foo')
+    assert_result(type.call(1), 'foo', true)
+    assert_result(type.call('dd'), 'foo', true)
+
+    type = Types::Static.new { 'bar' }
+    assert_result(type.call(1), 'bar', true)
+  end
+
+  specify Types::Transform do
+    type = Types::Transform.new{ |v| "Mr. #{v}" }
+    assert_result(type.call('Ismael'), 'Mr. Ismael', true)
+  end
+
+  specify Types::Pipeline do
+    pipeline = Types::Pipeline.new([Types::String, Types::Transform.new{|v| "Mr. #{v}" }])
+    assert_result(pipeline.call('Ismael'), 'Mr. Ismael', true)
+    assert_result(pipeline.call(1), 1, false)
+
+    pipeline = Types::String > Types::Transform.new{|v| "Mrs. #{v}" }
+    assert_result(pipeline.call('Joan'), 'Mrs. Joan', true)
+
+    meta_pipeline = pipeline > Types::Transform.new{|v| "Hello, #{v}" }
+    assert_result(meta_pipeline.call('Joan'), 'Hello, Mrs. Joan', true)
+  end
+
   specify '.maybe' do
     union = Types::Nil | Types::String
     assert_result(union.call(nil), nil, true)
@@ -132,84 +158,38 @@ RSpec.describe Types do
     assert_result(type.call('11'), '11', false)
   end
 
-  describe 'traits' do
-    it 'includes a default :present trait for all types, checking on nil values' do
-      blank_slate = Types::Type.new('Blank').tap do |i|
-        i.matches(::Object) { |v| v }
-      end
+  # describe Types::Default do
+  #   it "relies on underlying type's :present trait" do
+  #     default = Types::Default.new(Types::String, 'nope')
+  #     assert_result(default.call('yes'), 'yes', true)
+  #     assert_result(default.call(''), 'nope', true)
 
-      expect(blank_slate.call('foo').trait(:present)).to be true
-      expect(blank_slate.call('').trait(:present)).to be true
-      expect(blank_slate.call(nil).trait(:present)).to be false
-    end
-
-    it 'can register custom traits' do
-      type = Types::String.copy.tap do |i|
-        i.trait :polite, ->(v) { v.start_with?('Mr.') }
-      end
-
-      expect(type.call('Mr. Ismael').trait(:polite)).to be true
-      expect(type.call('Ismael').trait(:polite)).to be false
-    end
-
-    it 'copies traits' do
-      type1 = Types::String.copy.tap do |i|
-        i.trait :polite, ->(v) { v.start_with?('Mr.') }
-      end
-
-      type2 = type1.copy
-      expect(type2.call('Mr. Ismael').trait(:polite)).to be true
-    end
-
-    it 'registers :present for String' do
-      expect(Types::String.call('foo').trait(:present)).to be true
-      expect(Types::String.call('').trait(:present)).to be false
-    end
-  end
-
-  describe Types::Default do
-    it "relies on underlying type's :present trait" do
-      default = Types::Default.new(Types::String, 'nope')
-      assert_result(default.call('yes'), 'yes', true)
-      assert_result(default.call(''), 'nope', true)
-
-      default = Types::Default.new(Types::Array, [1])
-      assert_result(default.call([2,3]), [2,3], true)
-      assert_result(default.call([]), [1], true)
-    end
-  end
+  #     default = Types::Default.new(Types::Array, [1])
+  #     assert_result(default.call([2,3]), [2,3], true)
+  #     assert_result(default.call([]), [1], true)
+  #   end
+  # end
 
   specify '#default' do
     assert_result(Types::String.default('nope').call('yup'), 'yup', true)
-    assert_result(Types::String.default('nope').call(''), 'nope', true)
+    assert_result(Types::String.default('nope').call(), 'nope', true)
+    assert_result(Types::String.default('nope').call(Parametric::Undefined), 'nope', true)
 
     assert_result(Types::Any.default(10).call(11), 11, true)
-    assert_result(Types::Any.default(10).call(nil), 10, true)
-    # #default on a Default instance is a noop
-    assert_result(Types::Any.default(10).default(13).call(nil), 10, true)
+    assert_result(Types::Any.default(10).call(), 10, true)
+    assert_result(Types::Any.default(10).default(13).call(), 13, true)
 
     # it works with procs
     val = 'foo'
     type = Types::String.default { val }
-    assert_result(type.call(''), val, true)
-
-    # it copies default
-    type = Types::Any.default(10).copy
-    assert_result(type.call(nil), 10, true)
+    assert_result(type.call(), val, true)
 
     # it can be union'd
     with_default = Types::String.default('nope')
 
     union = with_default | Types::Integer
-    assert_result(union.call(''), 'nope', true)
+    assert_result(union.call(), 'nope', true)
     assert_result(union.call(10), 10, true)
-  end
-
-  describe Types::TraitValidator do
-    it 'validates that pre-defined trait is true' do
-      assert_result(Types::TraitValidator.new(Types::String.default('aa'), :present).call(''), 'aa', true)
-      assert_result(Types::Default.new(Types::TraitValidator.new(Types::String, :present), 'aa').call(''), '', false)
-    end
   end
 
   specify RuleRegistry do
@@ -225,7 +205,7 @@ RSpec.describe Types do
     set = RuleSet.new(registry)
     set.rule(:is_a?, ::String)
     expect(set.call('foo')).to eq [true, nil]
-    expect(set.call(1)).to eq [false, %(failed is_a?(1, String))]
+    expect(set.call(1)).to eq [false, %[failed is_a?(1, String)]]
   end
 
   specify '#options' do
@@ -237,9 +217,8 @@ RSpec.describe Types do
     assert_result(type.call('four'), 'four', false)
 
     # it works alongside Default
-    assert_result(Types::String.default('two').options(%w[one two]).call(''), 'two', true)
-    # options are validated first if defined first
-    assert_result(Types::String.options(%w[one two]).default('two').call(''), '', false)
+    assert_result(Types::String.default('two').options(%w[one two]).call(), 'two', true)
+    assert_result(Types::String.options(%w[one two]).default('two').call(), 'two', true)
 
     # it copies options
     copy = type.copy
@@ -247,10 +226,10 @@ RSpec.describe Types do
     assert_result(copy.call('four'), 'four', false)
 
     # it can be union'd
-    # union = type | Types::Integer
-    # assert_result(union.call('two'), 'two', true)
-    # assert_result(union.call(10), 10, true)
-    # assert_result(union.call('twenty'), 'twenty', false)
+    union = type | Types::Integer
+    assert_result(union.call('two'), 'two', true)
+    assert_result(union.call(10), 10, true)
+    assert_result(union.call('twenty'), 'twenty', false)
   end
 
   private

@@ -20,16 +20,8 @@ module Parametric
       new(value)
     end
 
-    attr_reader :traits
-
-    def initialize(value, error: nil, traits: {})
+    def initialize(value, error: nil)
       @value, @error = value, error
-      @traits = traits
-    end
-
-    def trait(key)
-      val = traits.fetch(key)
-      val.respond_to?(:call) ? @traits[key] = val.call(value) : val
     end
 
     def success?
@@ -69,20 +61,38 @@ module Parametric
   end
 
   class RuleSet
-    Rule = Struct.new(:predicate, :args)
+    include Enumerable
 
-    def initialize(registry)
+    class Rule < Struct.new(:predicate, :args)
+      def inspect_line(value)
+        %[#{predicate}(#{value.inspect}, #{args.map(&:inspect).join(', ')})]
+      end
+
+      def inspect
+        %[#{predicate}(#{args.map(&:inspect).join(', ')})]
+      end
+    end
+
+    def initialize(registry, rules: Set.new)
       @registry = registry
-      @rules = Set.new
+      @rules = rules
+    end
+
+    def clone
+      self.class.new(@registry, rules: @rules.clone)
     end
 
     def rule(predicate, *args)
       @rules << Rule.new(predicate, args)
     end
 
+    def each(&block)
+      @rules.each(&block)
+    end
+
     def call(value)
       failure = @rules.find { |r| !@registry[r.predicate].call(value, *r.args) }
-      failure ? [false, %[failed #{failure.predicate}(#{value.inspect}, #{failure.args.join(', ')})]] : [true, nil]
+      failure ? [false, %[failed #{failure.inspect_line(value)}]] : [true, nil]
     end
   end
 
@@ -133,7 +143,7 @@ module Parametric
     end
 
     module ChainableType
-      def call(value)
+      def call(value = Undefined)
         result = sub.call(Result.wrap(value))
         return result unless result.success?
 
@@ -141,11 +151,15 @@ module Parametric
       end
 
       def default(val = Undefined, &block)
-        Default.new(self, val, &block)
+        (Nothing > Static.new(val, &block)) | self
       end
 
       def options(opts)
-        Enum.new(self, opts)
+        copy.rule(:included_in?, opts)
+      end
+
+      def >(other)
+        Pipeline.new([self, other])
       end
 
       private
@@ -162,19 +176,20 @@ module Parametric
 
       attr_reader :name, :hash
 
-      def initialize(name, sub: BaseValue, traits: {}, rule_set: RuleSet.new(Rules))
+      def initialize(name, sub: BaseValue, rule_set: RuleSet.new(Rules))
         @name = name
         @matchers = {}
         @hash = name
         @sub = sub
-        @traits = traits
         @rule_set = rule_set
-        # Register a default :present trait
-        trait(:present) { |v| !v.nil? } unless @traits.key?(:present)
       end
 
       def to_s
-        %(<#{self.class.name} [#{name}]>)
+        %(<#{self.class.name} [#{name}] #{rule_set.map(&:inspect).join(' ')}>)
+      end
+
+      def inspect
+        to_s
       end
 
       def matchers
@@ -199,27 +214,16 @@ module Parametric
         self
       end
 
-      def trait(key, callable = nil, &block)
-        callable ||= block
-        raise ArgumentError, 'a trait needs a callable object or a block' unless callable
-
-        @traits[key] = callable
-        self
-      end
-
       def [](child)
         copy(sub: child)
       end
 
       def |(other)
         Union.new(self, other)
-        # copy.tap do |i|
-        #   i.matches other
-        # end
       end
 
-      def copy(sub: nil, traits: nil, rule_set: nil)
-        self.class.new(name, sub: sub || @sub, traits: traits || @traits, rule_set: rule_set || @rule_set).tap do |i|
+      def copy(sub: nil, rule_set: nil)
+        self.class.new(name, sub: sub || @sub, rule_set: rule_set || @rule_set.clone).tap do |i|
           matchers.each do |m|
             i.matches m
           end
@@ -247,7 +251,6 @@ module Parametric
         end
 
         result
-        # return result.failure("#{result.value.inspect} (#{result.value.class}) cannot be coerced into #{name}. No matcher registered.")
       end
 
       def run_rules(result)
@@ -264,13 +267,44 @@ module Parametric
         if err = errors_for_coercion_output(result.value)
           result.failure(err, value_for_coercion_output(result.value))
         else
-          @traits.each do |key, callable|
-            result.traits[key] = callable
-          end
           result.success(value_for_coercion_output(result.value))
         end
       end
+    end
 
+    class Static < Type
+      def initialize(value = Undefined, &block)
+        super 'static'
+        @_value = value == Undefined ? block : ->{ value }
+      end
+
+      private def _call(result)
+        result.success(@_value.call)
+      end
+    end
+
+    class Transform < Type
+      def initialize(callable = Undefined, &block)
+        super 'transform'
+        @_value = callable == Undefined ? block : callable
+      end
+
+      private def _call(result)
+        result.success @_value.call(result.value)
+      end
+    end
+
+    class Pipeline < Type
+      def initialize(steps)
+        super 'pipeline'
+        @steps = Array(steps)
+      end
+
+      private def _call(result)
+        @steps.reduce(result) do |r, step|
+          step.call(r)
+        end
+      end
     end
 
     class ArrayClass < Type
@@ -299,117 +333,45 @@ module Parametric
       end
     end
 
-    class TraitValidator
-      include ChainableType
-
-      def initialize(sub, trait_key)
-        @sub, @trait_key = sub, trait_key
-      end
-
-      private
-
-      attr_reader :sub # required by ChainableType
-
-      def _call(result)
-        result.trait(@trait_key) ? result : result.failure("expected value to be #{@trait_key}, but got #{result.value.inspect}")
-      end
-    end
-
-    class Default
-      include ChainableType
-
-      def initialize(sub, val = Undefined, &block)
-        @sub = sub
-        val = block if val == Undefined
-        @val = val.respond_to?(:call) ? val : -> { val }
-      end
-
-      def copy(**_)
-        sub.copy.default(@val)
-      end
-
-      def |(other)
-        (sub | other).default(@val)
-      end
-
-      private
-
-      attr_reader :sub
-
-      def _call(result)
-        result.trait(:present) ? result : (result.traits[:present] = true;result.success(@val.call))
-      end
-    end
-
-    class Enum
-      include ChainableType
-
-      def initialize(sub, opts)
-        @sub, @opts = sub, Array(opts)
-      end
-
-      def copy(**_)
-        sub.copy.options(opts)
-      end
-
-      def |(other)
-        (sub | other).options(opts)
-      end
-
-      private
-
-      attr_reader :sub, :opts
-
-      def _call(result)
-        val = Array(result.value)
-        return result.failure("expected value to be included in #{opts.inspect}, but got #{result.value.inspect}") if (val - opts).any?
-
-        result
-      end
-    end
-
-    class Union
-      include ChainableType
-
+    class Union < Type
       def initialize(*types)
+        super 'Union'
         @types = types
-        @sub = BaseValue
       end
 
-      def |(other)
-        Union.new(*(types + [other]))
+      def copy(**_args)
+        self.class.new(*@types)
       end
 
       private
 
-      attr_reader :types, :sub
+      attr_reader :types
 
       def _call(result)
+        last_result = result
         types.each do |t|
-          r = t.(Result.success(result.value))
-          return r if r.success?
+          last_result = t.(Result.success(result.value))
+          return last_result if last_result.success?
         end
 
-        result.failure("expected one of #{types.map(&:inspect).join(', ')}, but got #{result.value.inspect}")
+        last_result
       end
     end
 
-    # Union = Type.new('Union')
+    Nothing = Type.new('Nothing').tap do |i|
+      i.rule :eq?, Undefined
+    end
 
     Any = Type.new('Any').tap do |i|
       i.rule :is_a?, ::Object
-      # i.matches ::Object, ->(value) { value }
     end
 
     Nil = Type.new('Nil').tap do |i|
       i.rule :is_a?, ::NilClass
-      # i.matches ::NilClass, ->(v) { v }
     end
 
     String = Type.new('String').tap do |i|
       i.rule :is_a?, ::String
-      # i.matches ::String, ->(value) { value }
-      i.trait(:present) { |v| v != '' }
     end
 
     Integer = Type.new('Integer').tap do |i|
@@ -419,12 +381,10 @@ module Parametric
 
     True = Type.new('True').tap do |i|
       i.rule :is_a?, ::TrueClass
-      # i.matches TrueClass, ->(v) { v }
     end
 
     False = Type.new('False').tap do |i|
       i.rule :is_a?, ::FalseClass
-      # i.matches FalseClass, ->(v) { v }
     end
 
     Boolean = True | False
@@ -437,7 +397,6 @@ module Parametric
     Array = ArrayClass.new('Array').tap do |i|
       i.matches ::Array, ->(v) { v.map { |e| Any.(e) } }
       i.rule :is_a?, ::Array
-      i.trait(:present) { |v| v.any? }
     end
 
     module Lax
