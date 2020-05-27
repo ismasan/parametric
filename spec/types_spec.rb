@@ -118,6 +118,13 @@ RSpec.describe Types do
     assert_result(Types.maybe(Types::Lax::String).call(11), '11', true)
   end
 
+  specify '#optional' do
+    type = Types::String.optional
+    assert_result(type.call('nope'), 'nope', true)
+    assert_result(type.call(nil), nil, true)
+    assert_result(type.call(10), 10, false)
+  end
+
   specify Types::CSV do
     assert_result(
       Types::CSV.call('one,two, three , four'),
@@ -168,18 +175,6 @@ RSpec.describe Types do
     assert_result(type.call(1), '1', true)
     assert_result(type.call('11'), '11', false)
   end
-
-  # describe Types::Default do
-  #   it "relies on underlying type's :present trait" do
-  #     default = Types::Default.new(Types::String, 'nope')
-  #     assert_result(default.call('yes'), 'yes', true)
-  #     assert_result(default.call(''), 'nope', true)
-
-  #     default = Types::Default.new(Types::Array, [1])
-  #     assert_result(default.call([2,3]), [2,3], true)
-  #     assert_result(default.call([]), [1], true)
-  #   end
-  # end
 
   specify '#default' do
     assert_result(Types::String.default('nope').call('yup'), 'yup', true)

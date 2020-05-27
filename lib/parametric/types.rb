@@ -154,6 +154,10 @@ module Parametric
         (Nothing > Static.new(val, &block)) | self
       end
 
+      def optional
+        Types::Nil | self
+      end
+
       def options(opts)
         copy.rule(:included_in?, opts)
       end
