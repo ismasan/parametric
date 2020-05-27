@@ -170,12 +170,6 @@ RSpec.describe Types do
     assert_result(Types.value('foo').call('bar'), 'bar', false)
   end
 
-  specify 'nested' do
-    type = Types::Lax::String[Types.value(1)]
-    assert_result(type.call(1), '1', true)
-    assert_result(type.call('11'), '11', false)
-  end
-
   specify '#default' do
     assert_result(Types::String.default('nope').call('yup'), 'yup', true)
     assert_result(Types::String.default('nope').call(), 'nope', true)

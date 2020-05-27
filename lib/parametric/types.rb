@@ -144,7 +144,7 @@ module Parametric
 
     module ChainableType
       def call(value = Undefined)
-        result = sub.call(Result.wrap(value))
+        result = Result.wrap(value)
         return result unless result.success?
 
         _call(result)
@@ -180,11 +180,10 @@ module Parametric
 
       attr_reader :name, :hash
 
-      def initialize(name, sub: BaseValue, rule_set: RuleSet.new(Rules))
+      def initialize(name, rule_set: RuleSet.new(Rules))
         @name = name
         @matchers = {}
         @hash = name
-        @sub = sub
         @rule_set = rule_set
       end
 
@@ -218,16 +217,12 @@ module Parametric
         self
       end
 
-      def [](child)
-        copy(sub: child)
-      end
-
       def |(other)
         Union.new(self, other)
       end
 
-      def copy(sub: nil, rule_set: nil)
-        self.class.new(name, sub: sub || @sub, rule_set: rule_set || @rule_set.clone).tap do |i|
+      def copy(rule_set: nil)
+        self.class.new(name, rule_set: rule_set || @rule_set.clone).tap do |i|
           matchers.each do |m|
             i.matches m
           end
@@ -246,7 +241,7 @@ module Parametric
 
       private
 
-      attr_reader :sub, :rule_set
+      attr_reader :rule_set
 
       def coerce(result)
         matchers.each do |m|
