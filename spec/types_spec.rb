@@ -7,6 +7,25 @@ require 'parametric/types'
 include Parametric
 
 RSpec.describe Types do
+  specify 'building types' do
+    type = Types::Type.new('test')
+    assert_result(type.call(1), 1, true)
+
+    str = type.rule(:is_a?, ::String)
+    expect(str.object_id).not_to eq type.object_id
+    assert_result(str.call(1), 1, false)
+    assert_result(str.call('foo'), 'foo', true)
+
+    coerced_str = str.coercion(10) { |v| 'ten' }
+    expect(coerced_str.object_id).not_to eq str.object_id
+    assert_result(coerced_str.call(10), 'ten', true)
+
+    # it's frozen
+    expect {
+      coerced_str.send(:coercion!, :is_a?, ::Numeric)
+    }.to raise_error(FrozenError)
+  end
+
   specify Types::String do
     assert_result(Types::String.call('aa'), 'aa', true)
     assert_result(Types::String.call(10), 10, false)
@@ -221,7 +240,7 @@ RSpec.describe Types do
     assert_result(Types::String.options(%w[one two]).default('two').call(), 'two', true)
 
     # it copies options
-    copy = type.copy
+    copy = type.clone
     assert_result(copy.call('three'), 'three', true)
     assert_result(copy.call('four'), 'four', false)
 

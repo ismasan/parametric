@@ -78,8 +78,18 @@ module Parametric
       @rules = rules
     end
 
+    def freeze
+      super
+      @rules.freeze
+      self
+    end
+
     def clone
-      self.class.new(@registry, rules: @rules.clone)
+      self.class.new(@registry).tap do |rs|
+        @rules.each do |r|
+          rs.rule r.predicate, *r.args
+        end
+      end
     end
 
     def rule(predicate, *args)
@@ -96,7 +106,7 @@ module Parametric
     end
   end
 
-  class PrimitiveMatcher
+  class PrimitiveCoercion
     attr_reader :hash
 
     def initialize(type, coercion)
@@ -153,7 +163,7 @@ module Parametric
       end
 
       def options(opts)
-        copy.rule(:included_in?, opts)
+        rule(:included_in?, opts)
       end
 
       def >(other)
@@ -181,6 +191,13 @@ module Parametric
         @rule_set = rule_set
       end
 
+      def freeze
+        super
+        @coercions.freeze
+        @rule_set.freeze
+        self
+      end
+
       def to_s
         %(<#{self.class.name} [#{name}] #{rule_set.map(&:inspect).join(' ')}>)
       end
@@ -194,11 +211,17 @@ module Parametric
       end
 
       def coercion(type, cr = nil, &block)
+        clone do |i|
+          i.coercion!(type, cr, &block)
+        end
+      end
+
+      protected def coercion!(type, cr = nil, &block)
         cr = cr || block || NOOP
         matcher = if type.respond_to?(:call)
                     type
                   elsif type.respond_to?(:===)
-                    PrimitiveMatcher.new(type, cr)
+                    PrimitiveCoercion.new(type, cr)
                   else
                     raise ArgumentError, "#{type.inspect} is not a valid matcher"
                   end
@@ -207,6 +230,12 @@ module Parametric
       end
 
       def rule(predicate, *args)
+        clone do |i|
+          i.rule!(predicate, *args)
+        end
+      end
+
+      protected def rule!(predicate, *args)
         rule_set.rule(predicate, *args)
         self
       end
@@ -215,11 +244,13 @@ module Parametric
         Union.new(self, other)
       end
 
-      def copy(rule_set: nil)
-        self.class.new(name, rule_set: rule_set || @rule_set.clone).tap do |i|
+      def clone(&block)
+        self.class.new(name, rule_set: rule_set.clone).tap do |i|
           coercions.each do |m|
-            i.coercion m
+            i.coercion! m
           end
+          yield i if block_given?
+          i.freeze
         end
       end
 
@@ -302,9 +333,7 @@ module Parametric
 
     class ArrayClass < Type
       def of(element_type)
-        copy.tap do |cp|
-          cp.coercion ::Array, ->(v) { v.map { |e| element_type.(e) } }
-        end
+        coercion(::Array) { |v| v.map { |e| element_type.(e) } }
       end
 
       private
@@ -322,7 +351,7 @@ module Parametric
     class Value < Type
       def initialize(val, *_args)
         super
-        rule :eq?, val
+        rule! :eq?, val
       end
     end
 
@@ -332,8 +361,11 @@ module Parametric
         @types = types
       end
 
-      def copy(**_args)
-        self.class.new(*@types)
+      def clone(&block)
+        self.class.new(*@types).tap do |i|
+          yield i if block_given?
+          i.freeze
+        end
       end
 
       private
@@ -351,70 +383,52 @@ module Parametric
       end
     end
 
-    Nothing = Type.new('Nothing').tap do |i|
-      i.rule :eq?, Undefined
-    end
+    Nothing = Type.new('Nothing').rule(:eq?, Undefined)
 
-    Any = Type.new('Any').tap do |i|
-      i.rule :is_a?, ::Object
-    end
+    Any = Type.new('Any').rule(:is_a?, ::Object)
 
-    Nil = Type.new('Nil').tap do |i|
-      i.rule :is_a?, ::NilClass
-    end
+    Nil = Type.new('Nil').rule(:is_a?, ::NilClass)
 
-    String = Type.new('String').tap do |i|
-      i.rule :is_a?, ::String
-    end
+    String = Type.new('String').rule(:is_a?, ::String)
 
-    Integer = Type.new('Integer').tap do |i|
-      i.rule :is_a?, ::Numeric
-      i.coercion ::Numeric, ->(value) { value.to_i }
-    end
+    Integer = Type.new('Integer')
+      .rule(:is_a?, ::Numeric)
+      .coercion(::Numeric) { |value|  value.to_i }
 
-    True = Type.new('True').tap do |i|
-      i.rule :is_a?, ::TrueClass
-    end
+    True = Type.new('True').rule(:is_a?, ::TrueClass)
 
-    False = Type.new('False').tap do |i|
-      i.rule :is_a?, ::FalseClass
-    end
+    False = Type.new('False').rule(:is_a?, ::FalseClass)
 
     Boolean = True | False
 
-    CSV = Type.new('CSV').tap do |i|
-      i.coercion ::String, ->(v) { v.split(/\s*,\s*/) }
-      i.rule :is_a?, ::Array
-    end
+    CSV = Type.new('CSV')
+      .coercion(::String) { |v| v.split(/\s*,\s*/) }
+      .rule(:is_a?, ::Array)
 
-    Array = ArrayClass.new('Array').tap do |i|
-      i.coercion ::Array, ->(v) { v.map { |e| Any.(e) } }
-      i.rule :is_a?, ::Array
-    end
+    Array = ArrayClass.new('Array')
+      .coercion(::Array) { |v| v.map { |e| Any.(e) } }
+      .rule(:is_a?, ::Array)
 
     module Lax
-      String = Types::String.copy.tap do |i|
-        i.coercion BigDecimal, ->(value) { value.to_s('F') }
-        i.coercion Numeric, ->(value) { value.to_s }
-      end
-      Integer = Types::Integer.copy.tap do |i|
-        i.coercion /^\d+$/, ->(value) { value.to_i }
-        i.coercion /^\d+.\d*?$/, ->(value) { value.to_i }
-      end
+      String = Types::String
+        .coercion(BigDecimal) { |v| v.to_s('F') }
+        .coercion(Numeric) { |v| v.to_s }
+
+      Integer = Types::Integer
+        .coercion(/^\d+$/) { |v| v.to_i }
+        .coercion(/^\d+.\d*?$/) { |v| v.to_i }
     end
 
     module Forms
-      True = Types::True.copy.tap do |i|
-        i.coercion /^true$/i, ->(_) { true }
-        i.coercion '1', ->(_) { true }
-        i.coercion 1, ->(_) { true }
-      end
+      True = Types::True
+        .coercion(/^true$/i) { |_| true }
+        .coercion('1') { |_| true }
+        .coercion(1) { |_| true }
 
-      False = Types::False.copy.tap do |i|
-        i.coercion /^false$/i, ->(_) { false }
-        i.coercion '0', ->(_) { false }
-        i.coercion 0, ->(_) { false }
-      end
+      False = Types::False
+        .coercion(/^false$/i) { |_| false }
+        .coercion('0') { |_| false }
+        .coercion(0) { |_| false }
 
       Boolean = True | False
     end
