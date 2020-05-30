@@ -264,15 +264,17 @@ RSpec.describe Types do
       hash = Types::Hash.schema(
         title: Types::String.default('Mr'),
         name: Types::String,
-        age: Types::Lax::Integer
+        age: Types::Lax::Integer,
+        friend: Types::Hash.schema(name: Types::String)
       )
 
-      assert_result(hash.call({name: 'Ismael', age: '42'}), {title: 'Mr', name: 'Ismael', age: 42}, true)
+      assert_result(hash.call({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
 
-      hash.call({title: 'Dr', name: 'Ismael'}).tap do |result|
+      hash.call({title: 'Dr', name: 'Ismael', friend: {}}).tap do |result|
         expect(result.success?).to be false
-        expect(result.value).to eq({title: 'Dr', name: 'Ismael', age: Parametric::Undefined})
+        expect(result.value).to eq({title: 'Dr', name: 'Ismael', age: Parametric::Undefined, friend: { name: Parametric::Undefined }})
         expect(result.error[:age]).to match(/failed is_a\?/)
+        expect(result.error[:friend][:name]).to match(/failed is_a\?/)
       end
     end
   end
