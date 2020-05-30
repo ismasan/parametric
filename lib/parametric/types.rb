@@ -393,7 +393,7 @@ module Parametric
 
     Integer = Type.new('Integer')
       .rule(:is_a?, ::Numeric)
-      .coercion(::Numeric) { |value|  value.to_i }
+      .coercion(::Numeric, &:to_i)
 
     True = Type.new('True').rule(:is_a?, ::TrueClass)
 
@@ -412,11 +412,11 @@ module Parametric
     module Lax
       String = Types::String
         .coercion(BigDecimal) { |v| v.to_s('F') }
-        .coercion(Numeric) { |v| v.to_s }
+        .coercion(Numeric, &:to_s)
 
       Integer = Types::Integer
-        .coercion(/^\d+$/) { |v| v.to_i }
-        .coercion(/^\d+.\d*?$/) { |v| v.to_i }
+        .coercion(/^\d+$/, &:to_i)
+        .coercion(/^\d+.\d*?$/, &:to_i)
     end
 
     module Forms
