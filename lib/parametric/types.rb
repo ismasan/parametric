@@ -387,6 +387,41 @@ module Parametric
       end
     end
 
+    class HashClass < Type
+      def initialize(schema = {})
+        super 'Hash'
+        @_schema = schema
+        rule!(:is_a?, ::Hash)
+        freeze
+      end
+
+      def schema(hash)
+        self.class.new(_schema.merge(hash))
+      end
+
+      private
+
+      attr_reader :_schema
+
+      def _call(result)
+        result = run_rules(coerce(result))
+        return result unless result.success?
+        return result unless _schema.any?
+
+        input = result.value
+        errors = {}
+        output = _schema.each.with_object({}) do |(key, field), ret|
+          r = field.call(input.key?(key) ? input[key] : Undefined)
+          errors[key] = r.error if r.failure?
+          ret[key] = r.value
+        end
+
+        errors.any? ? Result.success(output).failure(errors) : result.success(output)
+      end
+    end
+
+    Hash = HashClass.new
+
     Nothing = Type.new('Nothing').rule(:eq?, Undefined)
 
     Any = Type.new('Any').rule(:is_a?, ::Object)

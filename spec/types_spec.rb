@@ -256,6 +256,27 @@ RSpec.describe Types do
     assert_result(union.call('twenty'), 'twenty', false)
   end
 
+  describe Types::Hash do
+    specify do
+      assert_result(Types::Hash.call({foo: 1}), {foo: 1}, true)
+      assert_result(Types::Hash.call(1), 1, false)
+
+      hash = Types::Hash.schema(
+        title: Types::String.default('Mr'),
+        name: Types::String,
+        age: Types::Lax::Integer
+      )
+
+      assert_result(hash.call({name: 'Ismael', age: '42'}), {title: 'Mr', name: 'Ismael', age: 42}, true)
+
+      hash.call({title: 'Dr', name: 'Ismael'}).tap do |result|
+        expect(result.success?).to be false
+        expect(result.value).to eq({title: 'Dr', name: 'Ismael', age: Parametric::Undefined})
+        expect(result.error[:age]).to match(/failed is_a\?/)
+      end
+    end
+  end
+
   private
 
   def assert_result(result, value, is_success, debug: false)
