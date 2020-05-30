@@ -170,6 +170,10 @@ module Parametric
         Pipeline.new([self, other])
       end
 
+      def transform(val = Undefined, &block)
+        self > Transform.new(val, &block)
+      end
+
       private
 
       def _call(result)

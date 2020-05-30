@@ -107,6 +107,11 @@ RSpec.describe Types do
     assert_result(type.call('Ismael'), 'Mr. Ismael', true)
   end
 
+  specify '#transform' do
+    type = Types::String.transform { |v| "Mr. #{v}" }
+    assert_result(type.call('Ismael'), 'Mr. Ismael', true)
+  end
+
   specify Types::Pipeline do
     pipeline = Types::Pipeline.new([Types::String, Types::Transform.new{|v| "Mr. #{v}" }])
     assert_result(pipeline.call('Ismael'), 'Mr. Ismael', true)
