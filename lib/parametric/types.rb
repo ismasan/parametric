@@ -626,6 +626,10 @@ module Parametric
           self
         end
 
+        def of(*args, &block)
+          schema(*args, &block)
+        end
+
         def call(result)
           _type.call(result)
         end

@@ -380,6 +380,14 @@ RSpec.describe Types do
           expect(result.error[:friends][1][:name]).not_to be_nil
         end
       end
+
+      specify 'array.of' do
+        schema = Types::Schema.new do |sc|
+          sc.field(:numbers).type(:array).of(Types::Integer | Types::String.transform(&:to_i))
+        end
+
+        assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
+      end
     end
   end
 
