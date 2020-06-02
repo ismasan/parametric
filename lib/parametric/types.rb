@@ -164,8 +164,8 @@ module Parametric
     end
 
     module ChainableType
-      def call(value = Undefined)
-        result = Result.wrap(value)
+      def call(input = Undefined)
+        result = Result.wrap(input)
         return result unless result.success?
 
         _call(result)
