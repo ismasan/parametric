@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'bigdecimal'
+
 module Parametric
   class Undefined;end
 
@@ -144,6 +146,21 @@ module Parametric
 
     def self.maybe(type)
       Types::Nil | type
+    end
+
+    class Registry
+      def initialize(parent: {})
+        @parent = parent
+        @registry = {}
+      end
+
+      def []=(key, type)
+        @registry[key] = type
+      end
+
+      def [](key)
+        @registry.fetch(key) { @parent[key] }
+      end
     end
 
     module ChainableType
@@ -365,6 +382,10 @@ module Parametric
         @types = types
       end
 
+      def to_s
+        %(<#{self.class.name} #{types.map(&:to_s).join(' | ')}>)
+      end
+
       def clone(&block)
         self.class.new(*@types).tap do |i|
           yield i if block_given?
@@ -387,6 +408,24 @@ module Parametric
       end
     end
 
+    class Key
+      def self.wrap(key)
+        key.is_a?(Key) ? key : new(key)
+      end
+
+      def initialize(key, optional: false)
+        @key, @optional = key, optional
+      end
+
+      def to_sym
+        @key
+      end
+
+      def optional?
+        @optional
+      end
+    end
+
     class HashClass < Type
       def initialize(schema = {})
         super 'Hash'
@@ -396,12 +435,37 @@ module Parametric
       end
 
       def schema(hash)
-        self.class.new(_schema.merge(hash))
+        self.class.new(_schema.merge(wrap_keys(hash)))
       end
 
-      private
+      def &(other)
+        self.class.new(_schema.merge(other._schema))
+      end
+
+      def >(other)
+        HashPipeline.new([self, other])
+      end
+
+      class HashPipeline < Type
+        def initialize(steps)
+          super 'pipeline'
+          @steps = Array(steps)
+        end
+
+        private def _call(result)
+          initial_value = result.value
+          @steps.reduce(result) do |r, step|
+            r1 = step.call(r)
+            r1.success? ? (r1.success(initial_value.merge(r1.value))) : r1
+          end
+        end
+      end
+
+      protected
 
       attr_reader :_schema
+
+      private
 
       def _call(result)
         result = run_rules(coerce(result))
@@ -411,12 +475,33 @@ module Parametric
         input = result.value
         errors = {}
         output = _schema.each.with_object({}) do |(key, field), ret|
-          r = field.call(input.key?(key) ? input[key] : Undefined)
-          errors[key] = r.error if r.failure?
-          ret[key] = r.value
+          if input.key?(key.to_sym)
+            r = field.call(input[key.to_sym])
+            errors[key.to_sym] = r.error if r.failure?
+            ret[key.to_sym] = r.value
+          elsif key.optional?
+            # do nothing, omit key
+          else
+            r = field.call(Undefined)
+            errors[key.to_sym] = r.error if r.failure?
+            ret[key.to_sym] = r.value unless r.value == Undefined
+          end
         end
 
         errors.any? ? Result.success(output).failure(errors) : result.success(output)
+      end
+
+      def wrap_keys(hash)
+        case hash
+        when ::Array
+          hash.map { |e| wrap_keys(e) }
+        when ::Hash
+          hash.each.with_object({}) do |(k, v), ret|
+            ret[Key.wrap(k)] = wrap_keys(v)
+          end
+        else
+          hash
+        end
       end
     end
 
@@ -470,6 +555,97 @@ module Parametric
         .coercion(0) { |_| false }
 
       Boolean = True | False
+    end
+
+    BaseRegistry = Registry.new.tap do |r|
+      r[:string] = Types::String
+      r[:integer] = Types::Integer
+      r[:hash] = Types::Hash
+    end
+
+    class Schema
+      def initialize(registry: BaseRegistry, &block)
+        @_schema = {}
+        @registry = registry
+        @hash = Types::Hash
+        setup(&block) if block_given?
+      end
+
+      def setup(&block)
+        yield self
+        @hash = Types::Hash.schema(build_hash(@_schema))
+        freeze
+      end
+
+      def freeze
+        super
+        @_schema.freeze
+        self
+      end
+
+      def field(key)
+        _schema[Key.new(key)] = Field.new(registry)
+      end
+
+      def field?(key)
+        _schema[Key.new(key, optional: true)] = Field.new(registry)
+      end
+
+      def schema(sc = nil, &block)
+        if sc
+          @hash = sc
+          freeze
+          self
+        else
+          setup(&block) if block_given?
+        end
+      end
+
+      def call(value)
+        hash.call(value)
+      end
+
+      private
+
+      attr_reader :_schema, :registry, :hash
+
+      def build_hash(sc)
+        return sc
+        sc.each.with_object({}) do |(key, field), ret|
+          # ret[Key.new(key, optional: field.optional)] = b
+        end
+      end
+
+      class Field
+        attr_reader :_type
+
+        def initialize(registry)
+          @registry = registry
+          @_type = Types::Any
+        end
+
+        def type(type_symbol)
+          if type_symbol == :hash
+            @_type = Types::Schema.new(registry: registry)
+          else
+            @_type = registry[type_symbol]
+            self
+          end
+        end
+
+        def default(v, &block)
+          @_type = @_type.default(v, &block)
+          self
+        end
+
+        def call(result)
+          @_type.call(result)
+        end
+
+        private
+
+        attr_reader :registry
+      end
     end
   end
 end

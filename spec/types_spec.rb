@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'bigdecimal'
 require 'parametric/types'
 
 include Parametric
@@ -272,10 +271,83 @@ RSpec.describe Types do
 
       hash.call({title: 'Dr', name: 'Ismael', friend: {}}).tap do |result|
         expect(result.success?).to be false
-        expect(result.value).to eq({title: 'Dr', name: 'Ismael', age: Parametric::Undefined, friend: { name: Parametric::Undefined }})
+        expect(result.value).to eq({title: 'Dr', name: 'Ismael', friend: { }})
         expect(result.error[:age]).to match(/failed is_a\?/)
         expect(result.error[:friend][:name]).to match(/failed is_a\?/)
       end
+    end
+
+    specify 'optional keys' do
+      hash = Types::Hash.schema(
+        title: Types::String.default('Mr'),
+        Types::Key.new(:name, optional: true) => Types::String,
+        Types::Key.new(:age, optional: true) => Types::Lax::Integer
+      )
+
+      assert_result(hash.call({}), {title: 'Mr'}, true)
+    end
+
+    specify '&' do
+      s1 = Types::Hash.schema(name: Types::String)
+      s2 = Types::Hash.schema(age: Types::Integer)
+      s3 = s1 & s2
+
+      assert_result(s3.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
+      assert_result(s3.call(age: 42), {age: 42}, false)
+    end
+
+    specify '>' do
+      s1 = Types::Hash.schema(name: Types::String)
+      s2 = Types::Hash.schema(age: Types::Integer)
+
+      pipe = s1 > s2
+      assert_result(pipe.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
+      assert_result(pipe.call(age: 42), {}, false)
+    end
+  end
+
+  describe Types::Registry do
+    specify do
+      root = Types::Registry.new
+      root[:integer] = Types::Integer
+      root[:string] = Types::String
+      child = Types::Registry.new(parent: root)
+      child[:integer] = Types::Integer.coercion(::String, &:to_i)
+
+      assert_result(root[:integer].call(10), 10, true)
+      assert_result(root[:integer].call('10'), '10', false)
+      assert_result(child[:integer].call('10'), 10, true)
+      assert_result(child[:string].call('hi'), 'hi', true)
+    end
+  end
+
+  describe Types::Schema do
+    specify 'defining a nested schema' do
+      schema = Types::Schema.new do |sc|
+        sc.field(:title).type(:string).default('Mr')
+        sc.field(:name).type(:string)
+        sc.field?(:age).type(:integer)
+        sc.field(:friend).type(:hash).schema do |s|
+          s.field(:name).type(:string)
+        end
+      end
+
+      assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    end
+
+    specify 'reusing schemas' do
+      friend_schema = Types::Schema.new do |s|
+        s.field(:name).type(:string)
+      end
+
+      schema = Types::Schema.new do |sc|
+        sc.field(:title).type(:string).default('Mr')
+        sc.field(:name).type(:string)
+        sc.field?(:age).type(:integer)
+        sc.field(:friend).type(:hash).schema friend_schema
+      end
+
+      assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
     end
   end
 
