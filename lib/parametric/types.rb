@@ -361,7 +361,12 @@ module Parametric
 
       def errors_for_coercion_output(list)
         failure = list.find(&:failure?)
-        failure ? failure.error : nil
+        if failure
+          idx = list.index(failure)
+          {idx => failure.error}
+        else
+          nil
+        end
       end
 
       def value_for_coercion_output(list)
@@ -573,7 +578,7 @@ module Parametric
 
       def setup(&block)
         yield self
-        @hash = Types::Hash.schema(build_hash(@_schema))
+        @hash = Types::Hash.schema(@_schema)
         freeze
       end
 
@@ -609,11 +614,25 @@ module Parametric
 
       attr_reader :_schema, :registry, :hash
 
-      def build_hash(sc)
-        return sc
-        sc.each.with_object({}) do |(key, field), ret|
-          # ret[Key.new(key, optional: field.optional)] = b
+      class SchemaArray
+        def initialize(registry:)
+          @registry = registry
+          @_type = Types::Array
         end
+
+        def schema(sc = nil, &block)
+          sc ||= Types::Schema.new(registry: registry, &block)
+          @_type = @_type.of(sc)
+          self
+        end
+
+        def call(result)
+          _type.call(result)
+        end
+
+        private
+
+        attr_reader :registry, :_type
       end
 
       class Field
@@ -627,6 +646,8 @@ module Parametric
         def type(type_symbol)
           if type_symbol == :hash
             @_type = Types::Schema.new(registry: registry)
+          elsif type_symbol == :array
+            @_type = SchemaArray.new(registry: registry)
           else
             @_type = registry[type_symbol]
             self

@@ -163,11 +163,11 @@ RSpec.describe Types do
       [true, true, false],
       true
     )
-    assert_result(
-      Types::Array.of(Types::Boolean).call([true, 'nope', false]),
-      [true, 'nope', false],
-      false
-    )
+    Types::Array.of(Types::Boolean).call([true, 'nope', false]).tap do |result|
+      expect(result.success?).to be false
+      expect(result.value).to eq [true, 'nope', false]
+      expect(result.error[1]).to match(/failed/)
+    end
     assert_result(
       Types::Array.of(Types.value('a') | Types.value('b')).call(['a', 'b', 'a']),
       %w[a b a],
@@ -348,6 +348,38 @@ RSpec.describe Types do
       end
 
       assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    end
+
+    context 'with array schemas' do
+      specify 'inline array schemas' do
+        schema = Types::Schema.new do |sc|
+          sc.field(:friends).type(:array).schema do |f|
+            f.field(:name).type(:string)
+          end
+        end
+
+        input = {friends: [{name: 'Joe'}, {name: 'Joan'}]}
+
+        assert_result(schema.call(input), input, true)
+      end
+
+      specify 'reusable array schemas' do
+        friend_schema = Types::Schema.new do |s|
+          s.field(:name).type(:string)
+        end
+
+        schema = Types::Schema.new do |sc|
+          sc.field(:friends).type(:array).schema friend_schema
+        end
+
+        input = {friends: [{name: 'Joe'}, {name: 'Joan'}]}
+
+        assert_result(schema.call(input), input, true)
+        schema.call({friends: [{name: 'Joan'}, {}]}).tap do |result|
+          expect(result.success?).to be false
+          expect(result.error[:friends][1][:name]).not_to be_nil
+        end
+      end
     end
   end
 
