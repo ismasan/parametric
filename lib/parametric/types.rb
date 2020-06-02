@@ -65,7 +65,7 @@ module Parametric
   class RuleSet
     include Enumerable
 
-    class Rule < Struct.new(:predicate, :args)
+    class Rule < ::Struct.new(:predicate, :args)
       def inspect_line(value)
         %[#{predicate}(#{value.inspect}, #{args.map(&:inspect).join(', ')})]
       end
