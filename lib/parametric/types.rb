@@ -3,7 +3,8 @@
 require 'bigdecimal'
 
 module Parametric
-  class Undefined;end
+  # class Undefined;end
+  Undefined = Object.new.freeze
 
   class Result
     attr_reader :value, :error
@@ -75,7 +76,7 @@ module Parametric
       end
     end
 
-    def initialize(registry, rules: Set.new)
+    def initialize(registry, rules: [])
       @registry = registry
       @rules = rules
     end
