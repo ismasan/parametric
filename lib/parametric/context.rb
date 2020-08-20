@@ -46,5 +46,4 @@ module Parametric
       end.join
     end
   end
-
 end
