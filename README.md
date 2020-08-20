@@ -967,6 +967,7 @@ end
 
 result = schema.resolve({ deposit: 1100, house_price: 1000 })
 result.valid? # false
+result.errors[:deposit] # ['cannot be greater than house price']
 result.output[:deposit] # 1100
 result.output[:house_price] # 1000
 result.output[:desc] # 'hello'
