@@ -946,6 +946,32 @@ result.errors # => {'$' => ['friend names must be unique']}
 
 In most cases you should be validating individual fields using field policies. Only validate in before hooks in cases you have dependencies between fields.
 
+`Schema#after_resolve` takes the sanitized input hash, and can be used to further validate fields that depend on eachother.
+
+```ruby
+schema = Parametric::Schema.new do
+  after_resolve do |payload, ctx|
+    # Add a top level error using an arbitrary key name
+    ctx.add_base_error('deposit', 'cannot be greater than house price') if payload[:deposit] > payload[:house_price]
+    # Or add an error keyed after the current position in the schema
+    # ctx.add_error('some error') if some_condition
+    # after_resolve hooks must also return the payload, or a modified copy of it
+    # note that any changes added here won't be validated.
+    payload.merge(desc: 'hello')
+  end
+
+  field(:deposit).policy(:integer).present
+  field(:house_price).policy(:integer).present
+  field(:desc).policy(:string)
+end
+
+result = schema.resolve({ deposit: 1100, house_price: 1000 })
+result.valid? # false
+result.output[:deposit] # 1100
+result.output[:house_price] # 1000
+result.output[:desc] # 'hello'
+```
+
 ## Structs
 
 Structs turn schema definitions into objects graphs with attribute readers.

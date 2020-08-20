@@ -28,6 +28,10 @@ module Parametric
       top.add_error(string_path, msg)
     end
 
+    def add_base_error(key, msg)
+      top.add_error(key, msg)
+    end
+
     def sub(key)
       self.class.new(path + [key], top)
     end

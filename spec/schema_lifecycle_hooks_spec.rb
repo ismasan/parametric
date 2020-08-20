@@ -92,4 +92,42 @@ describe Parametric::Schema do
       expect(results.output[:slug]).to eq 'ismael-celis'
     end
   end
+
+  describe '#after_resolve' do
+    let!(:schema) do
+      described_class.new do
+        after_resolve do |payload, ctx|
+          ctx.add_base_error('deposit', 'cannot be greater than house price') if payload[:deposit] > payload[:house_price]
+          payload.merge(desc: 'hello')
+        end
+
+        field(:deposit).policy(:integer).present
+        field(:house_price).policy(:integer).present
+        field(:desc).policy(:string)
+      end
+    end
+
+    it 'passes payload through after_resolve block, if defined' do
+      result = schema.resolve({ deposit: 1100, house_price: 1000 })
+      expect(result.valid?).to be false
+      expect(result.output[:deposit]).to eq 1100
+      expect(result.output[:house_price]).to eq 1000
+      expect(result.output[:desc]).to eq 'hello'
+    end
+
+    it 'copies after hooks when merging schemas' do
+      child_schema = described_class.new do
+        field(:name).type(:string)
+      end
+
+      union = schema.merge(child_schema)
+
+      result = union.resolve({ name: 'Joe', deposit: 1100, house_price: 1000 })
+      expect(result.valid?).to be false
+      expect(result.output[:deposit]).to eq 1100
+      expect(result.output[:house_price]).to eq 1000
+      expect(result.output[:desc]).to eq 'hello'
+      expect(result.output[:name]).to eq 'Joe'
+    end
+  end
 end
