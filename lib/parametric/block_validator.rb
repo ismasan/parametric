@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Parametric
   class BlockValidator
     def self.build(meth, &block)
@@ -8,12 +10,12 @@ module Parametric
 
     def self.message(&block)
       @message_block = block if block_given?
-      @message_block
+      @message_block if instance_variable_defined?('@message_block')
     end
 
     def self.validate(&validate_block)
       @validate_block = validate_block if block_given?
-      @validate_block
+      @validate_block if instance_variable_defined?('@validate_block')
     end
 
     def self.coerce(&coerce_block)
@@ -23,12 +25,12 @@ module Parametric
 
     def self.eligible(&block)
       @eligible_block = block if block_given?
-      @eligible_block
+      @eligible_block if instance_variable_defined?('@eligible_block')
     end
 
     def self.meta_data(&block)
       @meta_data_block = block if block_given?
-      @meta_data_block
+      @meta_data_block if instance_variable_defined?('@meta_data_block')
     end
 
     attr_reader :message

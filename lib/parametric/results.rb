@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Parametric
   class Results
     attr_reader :output, :errors

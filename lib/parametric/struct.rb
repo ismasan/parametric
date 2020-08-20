@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'parametric/dsl'
 
 module Parametric
@@ -56,10 +58,24 @@ module Parametric
 
       # this hook is called after schema definition in DSL module
       def parametric_after_define_schema(schema)
-        schema.fields.keys.each do |key|
-          define_method key do
-            _graph[key]
+        schema.fields.values.each do |field|
+          if field.meta_data[:schema]
+            if field.meta_data[:schema].is_a?(Parametric::Schema)
+              klass = Class.new do
+                include Struct
+              end
+              klass.schema = field.meta_data[:schema]
+              self.const_set(__class_name(field.key), klass)
+              klass.parametric_after_define_schema(field.meta_data[:schema])
+            else
+              self.const_set(__class_name(field.key), field.meta_data[:schema])
+            end
           end
+          self.class_eval <<-RUBY, __FILE__, __LINE__ + 1
+            def #{field.key}
+              _graph[:#{field.key}]
+            end
+          RUBY
         end
       end
 
@@ -69,33 +85,23 @@ module Parametric
         end
       end
 
-      def parametric_build_class_for_child(key, child_schema)
-        klass = Class.new do
-          include Struct
-        end
-        klass.schema = child_schema
-        klass
-      end
-
       def wrap(key, value)
-        field = schema.fields[key]
-        return value unless field
-
         case value
         when Hash
           # find constructor for field
-          cons = field.meta_data[:schema]
-          if cons.kind_of?(Parametric::Schema)
-            klass = parametric_build_class_for_child(key, cons)
-            klass.parametric_after_define_schema(cons)
-            cons = klass
-          end
+          cons = self.const_get(__class_name(key))
           cons ? cons.new(value) : value.freeze
         when Array
           value.map{|v| wrap(key, v) }.freeze
         else
           value.freeze
         end
+      end
+
+      PLURAL_END = /s$/.freeze
+
+      def __class_name(key)
+        key.to_s.split('_').map(&:capitalize).join.sub(PLURAL_END, '')
       end
     end
   end
