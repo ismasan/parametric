@@ -849,17 +849,17 @@ results.errors["$.Weight"] # => ["is required and value must be present"]
 
 NOTES: dynamically expanded field names are not included in `Schema#structure` metadata, and they are only processes if fields with the given expressions are present in the payload. This means that validations applied to those fields only run if keys are present in the first place.
 
-## Prepare blocks
+## Before and after resolve hooks
 
-`Schema#prepare` can be used to register blocks to modify the entire input payload _before_ individual fields are validated and coerced.
+`Schema#before_resolve` can be used to register blocks to modify the entire input payload _before_ individual fields are validated and coerced.
 This can be useful when you need to pre-populate fields relative to other fields' values, or fetch extra data from other sources.
 
 ```ruby
 # This example computes the value of the :slug field based on :name
 schema = Parametric::Schema.new do
   # Note1: These blocks run before field validations, so :name might be blank or invalid at this point.
-  # Note2: Prepare blocks _must_ return a payload hash.
-  prepare do |payload, context|
+  # Note2: Before hooks _must_ return a payload hash.
+  before_resolve do |payload, context|
     payload.merge(
       slug: payload[:name].to_s.downcase.gsub(/\s+/, '-')
     )
@@ -874,12 +874,12 @@ result = schema.resolve( name: 'Joe Bloggs' )
 result.output # => { name: 'Joe Bloggs', slug: 'joe-bloggs' }
 ```
 
-Prepare blocks can be added to nested schemas, too:
+Before hooks can be added to nested schemas, too:
 
 ```ruby
 schema = Parametric::Schema.new do
   field(:friends).type(:array).schema do
-    prepare do |friend_payload, context|
+    before_resolve do |friend_payload, context|
       friend_payload.merge(title: "Mr/Ms #{friend_payload[:name]}")
     end
 
@@ -905,18 +905,18 @@ class SlugMaker
 end
 
 schema = Parametric::Schema.new do
-  prepare SlugMaker.new(:slug, from: :name)
+  before_resolve SlugMaker.new(:slug, from: :name)
 
   field(:name).type(:string)
   field(:slug).type(:slug)
 end
 ```
 
-The `context` argument can be used to add custom validation errors in a prepare block.
+The `context` argument can be used to add custom validation errors in a before hook block.
 
 ```ruby
 schema = Parametric::Schema.new do
-  prepare do |payload, context|
+  before_resolve do |payload, context|
     # validate that there's no duplicate friend names
     friends = payload[:friends] || []
     if friends.any? && friends.map{ |fr| fr[:name] }.uniq.size < friends.size
@@ -944,7 +944,7 @@ result.valid? # => false
 result.errors # => {'$' => ['friend names must be unique']}
 ```
 
-In most cases you should be validating individual fields using field policies. Only validate in prepare blocks in cases you have dependencies between fields.
+In most cases you should be validating individual fields using field policies. Only validate in before hooks in cases you have dependencies between fields.
 
 ## Structs
 

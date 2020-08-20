@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe Parametric::Schema do
-  it 'passes payload through prepare block, if defined' do
+  it 'passes payload through before_resolve block, if defined' do
     schema = described_class.new do
-      prepare do |payload, _context|
+      before_resolve do |payload, _context|
         payload[:slug] = payload[:name].to_s.downcase.gsub(/\s+/, '-') unless payload[:slug]
         payload
       end
@@ -11,7 +11,7 @@ describe Parametric::Schema do
       field(:name).policy(:string).present
       field(:slug).policy(:string).present
       field(:variants).policy(:array).schema do
-        prepare do |payload, _context|
+        before_resolve do |payload, _context|
           payload[:slug] = "v: #{payload[:name].to_s.downcase}"
           payload
         end
@@ -26,10 +26,10 @@ describe Parametric::Schema do
     expect(result.output[:variants].first[:slug]).to eq 'v: a variant'
   end
 
-  it 'collects errors added in pre-resolvers' do
+  it 'collects errors added in before_resolve blocks' do
     schema = described_class.new do
       field(:variants).type(:array).schema do
-        prepare do |payload, context|
+        before_resolve do |payload, context|
           context.add_error 'nope!' if payload[:name] == 'with errors'
           payload
         end
@@ -44,7 +44,7 @@ describe Parametric::Schema do
 
   it 'copies pre-resolvers to merged schemas' do
     schema1 = described_class.new do
-      prepare do |payload, _context|
+      before_resolve do |payload, _context|
         payload[:slug] = payload[:name].to_s.downcase.gsub(/\s+/, '-') unless payload[:slug]
         payload
       end
@@ -53,7 +53,7 @@ describe Parametric::Schema do
     end
 
     schema2 = described_class.new do
-      prepare do |payload, _context|
+      before_resolve do |payload, _context|
         payload[:slug] = "slug-#{payload[:slug]}" if payload[:slug]
         payload
       end
@@ -81,7 +81,7 @@ describe Parametric::Schema do
     end
 
     schema = described_class.new do |sc, _opts|
-      sc.prepare slug_maker.new(:slug, from: :name)
+      sc.before_resolve slug_maker.new(:slug, from: :name)
 
       sc.field(:name).type(:string)
       sc.field(:slug).type(:string)
