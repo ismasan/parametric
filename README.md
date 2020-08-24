@@ -849,6 +849,130 @@ results.errors["$.Weight"] # => ["is required and value must be present"]
 
 NOTES: dynamically expanded field names are not included in `Schema#structure` metadata, and they are only processes if fields with the given expressions are present in the payload. This means that validations applied to those fields only run if keys are present in the first place.
 
+## Before and after resolve hooks
+
+`Schema#before_resolve` can be used to register blocks to modify the entire input payload _before_ individual fields are validated and coerced.
+This can be useful when you need to pre-populate fields relative to other fields' values, or fetch extra data from other sources.
+
+```ruby
+# This example computes the value of the :slug field based on :name
+schema = Parametric::Schema.new do
+  # Note1: These blocks run before field validations, so :name might be blank or invalid at this point.
+  # Note2: Before hooks _must_ return a payload hash.
+  before_resolve do |payload, context|
+    payload.merge(
+      slug: payload[:name].to_s.downcase.gsub(/\s+/, '-')
+    )
+  end
+
+  # You still need to define the fields you want
+  field(:name).type(:string).present
+  field(:slug).type(:string).present
+end
+
+result = schema.resolve( name: 'Joe Bloggs' )
+result.output # => { name: 'Joe Bloggs', slug: 'joe-bloggs' }
+```
+
+Before hooks can be added to nested schemas, too:
+
+```ruby
+schema = Parametric::Schema.new do
+  field(:friends).type(:array).schema do
+    before_resolve do |friend_payload, context|
+      friend_payload.merge(title: "Mr/Ms #{friend_payload[:name]}")
+    end
+
+    field(:name).type(:string)
+    field(:title).type(:string)
+  end
+end
+```
+
+You can use inline blocks, but anything that responds to `#call(payload, context)` will work, too:
+
+```ruby
+class SlugMaker
+  def initialize(slug_field, from:)
+    @slug_field, @from = slug_field, from
+  end
+
+  def call(payload, context)
+    payload.merge(
+      @slug_field => payload[@from].to_s.downcase.gsub(/\s+/, '-')
+    )
+  end
+end
+
+schema = Parametric::Schema.new do
+  before_resolve SlugMaker.new(:slug, from: :name)
+
+  field(:name).type(:string)
+  field(:slug).type(:slug)
+end
+```
+
+The `context` argument can be used to add custom validation errors in a before hook block.
+
+```ruby
+schema = Parametric::Schema.new do
+  before_resolve do |payload, context|
+    # validate that there's no duplicate friend names
+    friends = payload[:friends] || []
+    if friends.any? && friends.map{ |fr| fr[:name] }.uniq.size < friends.size
+      context.add_error 'friend names must be unique'
+    end
+
+    # don't forget to return the payload
+    payload
+  end
+
+  field(:friends).type(:array).schema do
+    field(:name).type(:string)
+  end
+end
+
+result = schema.resolve(
+  friends: [
+    {name: 'Joe Bloggs'},
+    {name: 'Joan Bloggs'},
+    {name: 'Joe Bloggs'}
+  ]
+)
+
+result.valid? # => false
+result.errors # => {'$' => ['friend names must be unique']}
+```
+
+In most cases you should be validating individual fields using field policies. Only validate in before hooks in cases you have dependencies between fields.
+
+`Schema#after_resolve` takes the sanitized input hash, and can be used to further validate fields that depend on eachother.
+
+```ruby
+schema = Parametric::Schema.new do
+  after_resolve do |payload, ctx|
+    # Add a top level error using an arbitrary key name
+    ctx.add_base_error('deposit', 'cannot be greater than house price') if payload[:deposit] > payload[:house_price]
+    # Or add an error keyed after the current position in the schema
+    # ctx.add_error('some error') if some_condition
+    # after_resolve hooks must also return the payload, or a modified copy of it
+    # note that any changes added here won't be validated.
+    payload.merge(desc: 'hello')
+  end
+
+  field(:deposit).policy(:integer).present
+  field(:house_price).policy(:integer).present
+  field(:desc).policy(:string)
+end
+
+result = schema.resolve({ deposit: 1100, house_price: 1000 })
+result.valid? # false
+result.errors[:deposit] # ['cannot be greater than house price']
+result.output[:deposit] # 1100
+result.output[:house_price] # 1000
+result.output[:desc] # 'hello'
+```
+
 ## Structs
 
 Structs turn schema definitions into objects graphs with attribute readers.

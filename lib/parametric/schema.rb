@@ -14,6 +14,8 @@ module Parametric
       @default_field_policies = []
       @ignored_field_keys = []
       @expansions = {}
+      @before_hooks = []
+      @after_hooks = []
     end
 
     def schema
@@ -92,6 +94,20 @@ module Parametric
       end
     end
 
+    def before_resolve(klass = nil, &block)
+      raise ArgumentError, '#before_resolve expects a callable object, or a block' if !klass && !block_given?
+      callable = klass || block
+      before_hooks << callable
+      self
+    end
+
+    def after_resolve(klass = nil, &block)
+      raise ArgumentError, '#after_resolve expects a callable object, or a block' if !klass && !block_given?
+      callable = klass || block
+      after_hooks << callable
+      self
+    end
+
     def expand(exp, &block)
       expansions[exp] = block
       self
@@ -141,18 +157,34 @@ module Parametric
 
     protected
 
-    attr_reader :definitions, :options
+    attr_reader :definitions, :options, :before_hooks, :after_hooks
 
     private
 
     attr_reader :default_field_policies, :ignored_field_keys, :expansions
 
     def coerce_one(val, context, flds: fields)
-      flds.each_with_object({}) do |(_, field), m|
+      val = run_before_hooks(val, context)
+
+      out = flds.each_with_object({}) do |(_, field), m|
         r = field.resolve(val, context.sub(field.key))
         if r.eligible?
           m[field.key] = r.value
         end
+      end
+
+      run_after_hooks(out, context)
+    end
+
+    def run_before_hooks(val, context)
+      before_hooks.reduce(val) do |value, callable|
+        callable.call(value, context)
+      end
+    end
+
+    def run_after_hooks(val, context)
+      after_hooks.reduce(val) do |value, callable|
+        callable.call(value, context)
       end
     end
 
