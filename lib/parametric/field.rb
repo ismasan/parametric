@@ -45,6 +45,15 @@ module Parametric
       policy sc.schema
     end
 
+    def from(another_field)
+      meta another_field.meta_data
+      another_field.policies.each do |plc|
+        policies << plc
+      end
+
+      self
+    end
+
     def visit(meta_key = nil, &visitor)
       if sc = meta_data[:schema]
         r = sc.visit(meta_key, &visitor)
@@ -85,8 +94,13 @@ module Parametric
       Result.new(eligible, value)
     end
 
+    protected
+
+    attr_reader :policies
+
     private
-    attr_reader :policies, :registry, :default_block
+
+    attr_reader :registry, :default_block
 
     def resolve_one(policy, value, context)
       begin
