@@ -40,6 +40,10 @@ describe Parametric::Struct do
     expect(instance.friends.first.name).to eq 'Ismael'
     expect(instance.friends.first).to be_a friend_class
 
+    # Hash access with #[]
+    expect(instance[:title]).to eq instance.title
+    expect(instance[:friends].first[:name]).to eq instance.friends.first.name
+
     invalid_instance = klass.new({
       friends: [
         {name: 'Ismael', age: 40},
