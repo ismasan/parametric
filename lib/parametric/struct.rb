@@ -38,6 +38,10 @@ module Parametric
       _results.output.clone
     end
 
+    def [](key)
+      _results.output[key.to_sym]
+    end
+
     def ==(other)
       other.respond_to?(:to_h) && other.to_h.eql?(to_h)
     end
