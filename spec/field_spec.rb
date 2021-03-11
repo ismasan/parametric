@@ -112,6 +112,20 @@ describe Parametric::Field do
     end
   end
 
+  describe '#from' do
+    it 'copies policies and metadata from an existing field' do
+      subject.policy(:string).present.options(['a', 'b', 'c'])
+
+      field = described_class.new(:another_key, registry).from(subject)
+      resolve(field, another_key: "abc").tap do |r|
+        has_errors
+      end
+      expect(field.meta_data[:type]).to eq(:string)
+      expect(field.meta_data[:present]).to be(true)
+      expect(field.meta_data[:options]).to eq(['a', 'b', 'c'])
+    end
+  end
+
   describe "#present" do
     it "is valid if value is present" do
       resolve(subject.present, a_key: "abc").tap do |r|

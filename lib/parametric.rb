@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "parametric/version"
 require "parametric/registry"
 require "parametric/field"

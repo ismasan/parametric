@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'parametric/block_validator'
 
 module Parametric
