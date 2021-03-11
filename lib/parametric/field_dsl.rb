@@ -26,8 +26,7 @@ module Parametric
     end
 
     def maybe(key, *args)
-      pol = MaybePolicy.new(lookup(key, args))
-      policy pol
+      policy MaybePolicy.new(lookup(key, args))
     end
   end
 end
