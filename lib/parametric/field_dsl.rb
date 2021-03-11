@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "parametric/maybe_policy"
+
 module Parametric
   # Field DSL
   # host instance must implement:
@@ -21,6 +23,11 @@ module Parametric
 
     def options(opts)
       policy :options, opts
+    end
+
+    def maybe(key, *args)
+      pol = MaybePolicy.new(lookup(key, args))
+      policy pol
     end
   end
 end
