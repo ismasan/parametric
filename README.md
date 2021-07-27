@@ -275,6 +275,33 @@ Useful for parsing comma-separated query-string parameters.
 field(:status).policy(:split) # turns "pending,confirmed" into ["pending", "confirmed"]
 ```
 
+### :maybe (optional values)
+
+Fields support a `.maybe(type_policy)` method that will return `nil` if the value is `nil`, or coerce to the configured type otherwise.
+
+```ruby
+schema = Parametric::Schema.new do
+  field(:age).maybe(:integer)
+end
+
+schema.resolve(age: 10).output[:age] # 10
+schema.resolve(age: "10").output[:age] # 10
+schema.resolve(age: nil).output[:age] # nil
+schema.resolve(age: nil).output.key?(:age) # true
+```
+
+By default, _maybe_ policies include nil values in the resulting hash.
+You can make them omit the key entirely with `omit_if_nil: true`.
+
+```ruby
+schema = Parametric::Schema.new do
+  field(:age).maybe(:integer, omit_if_nil: true)
+end
+
+schema.resolve(age: nil).output[:age] # nil
+schema.resolve(age: nil).output.key?(:age) # false
+```
+
 ## Custom policies
 
 You can also register your own custom policy objects. A policy must implement the following methods:
