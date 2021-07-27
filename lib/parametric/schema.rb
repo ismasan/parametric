@@ -132,6 +132,10 @@ module Parametric
       true
     end
 
+    def include_non_eligible_in_ouput?
+      false
+    end
+
     def meta_data
       {}
     end

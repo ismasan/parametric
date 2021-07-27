@@ -292,6 +292,12 @@ class MyPolicy
     true
   end
 
+  # Whether to include the key for this field in resolved output
+  # if this policy is not eligible
+  def include_non_eligible_in_ouput?
+    false
+  end
+
   # Transform the value
   def coerce(value, key, context)
     value

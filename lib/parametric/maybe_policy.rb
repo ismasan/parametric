@@ -20,6 +20,10 @@ module Parametric
       value.nil? ? false : policy.eligible?(value, key, payload)
     end
 
+    def include_non_eligible_in_ouput?
+      true
+    end
+
     def_delegators :policy, :meta_data, :message
 
     private

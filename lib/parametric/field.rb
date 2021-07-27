@@ -79,7 +79,7 @@ module Parametric
 
       policies.each do |policy|
         if !policy.eligible?(value, key, payload)
-          eligible = false
+          eligible = policy.include_non_eligible_in_ouput?
           if has_default?
             eligible = true
             value = default_block.call(key, payload, context)
@@ -124,10 +124,9 @@ module Parametric
 
       raise ConfigurationError, "No policies defined for #{key.inspect}" unless obj
 
-      obj = obj.new(*args) if obj.respond_to?(:new)
+      pol = obj.respond_to?(:new) ? obj.new(*args) : obj
       obj = PolicyWithKey.new(obj, key)
-
-      obj
+      adapt_policy(pol)
     end
 
     class PolicyWithKey < SimpleDelegator
@@ -136,6 +135,19 @@ module Parametric
       def initialize(policy, key)
         super policy
         @key = key
+      end
+    end
+
+    # Decorate policies to implement latest interface, if some
+    # methods are missing.
+    def adapt_policy(pol)
+      pol = PolicyWithIncludeNonEligible.new(pol) unless pol.respond_to?(:include_non_eligible_in_ouput?)
+      pol
+    end
+
+    class PolicyWithIncludeNonEligible < SimpleDelegator
+      def include_non_eligible_in_ouput?
+        false
       end
     end
   end

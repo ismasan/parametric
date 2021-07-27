@@ -49,6 +49,10 @@ module Parametric
       @eligible_block.call(*args)
     end
 
+    def include_non_eligible_in_ouput?
+      false
+    end
+
     def coerce(value, key, context)
       @coerce_block.call(value, key, context)
     end

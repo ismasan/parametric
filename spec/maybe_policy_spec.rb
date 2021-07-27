@@ -10,7 +10,7 @@ describe 'maybe policy' do
     expect(schema.resolve({ age: '10' }).output[:age]).to eq 10
     expect(schema.resolve({ age: nil }).output[:age]).to eq nil
     expect(schema.resolve({ age: false }).output[:age]).to be false
-    expect(schema.resolve({ nope: 1 }).output.key?(:age)).to be false
+    expect(schema.resolve({ nope: 1 }).output.key?(:age)).to be true
   end
 
   specify 'interacting with types that validate' do
@@ -45,11 +45,12 @@ describe 'maybe policy' do
       expect(r.errors.any?).to be true
     end
     schema.resolve({ age: nil }).tap do |r|
+      expect(r.output.key?(:age)).to be(true)
       expect(r.output[:age]).to eq nil
       expect(r.errors.any?).to be false
     end
     expect(schema.resolve({ age: nil }).output[:age]).to eq nil
-    expect(schema.resolve({ nope: 1 }).output.key?(:age)).to be false
+    expect(schema.resolve({ nope: 1 }).output.key?(:age)).to be true
   end
 
   specify 'interacting with required fields' do
@@ -58,6 +59,7 @@ describe 'maybe policy' do
     end
 
     result = schema.resolve({})
+    expect(result.output.key?(:age)).to be(true)
     expect(result.output[:age]).to eq nil
     expect(result.errors['$.age']).to eq nil
   end
