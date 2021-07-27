@@ -51,4 +51,14 @@ describe 'maybe policy' do
     expect(schema.resolve({ age: nil }).output[:age]).to eq nil
     expect(schema.resolve({ nope: 1 }).output.key?(:age)).to be false
   end
+
+  specify 'interacting with required fields' do
+    schema = Parametric::Schema.new do
+      field(:age).maybe(:integer).required
+    end
+
+    result = schema.resolve({})
+    expect(result.output[:age]).to eq nil
+    expect(result.errors['$.age']).to eq nil
+  end
 end

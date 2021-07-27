@@ -16,7 +16,11 @@ module Parametric
       value.nil? ? true : policy.valid?(value, key, payload)
     end
 
-    def_delegators :policy, :eligible?, :meta_data, :message
+    def eligible?(value, key, payload)
+      value.nil? ? false : policy.eligible?(value, key, payload)
+    end
+
+    def_delegators :policy, :meta_data, :message
 
     private
 
