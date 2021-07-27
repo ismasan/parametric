@@ -61,4 +61,20 @@ describe 'maybe policy' do
     expect(result.output[:age]).to eq nil
     expect(result.errors['$.age']).to eq nil
   end
+
+  specify 'copying policies via Field#from' do
+    source_schema = Parametric::Schema.new do
+      field(:age).maybe(:integer).required
+    end
+
+    target_schema = Parametric::Schema.new do |sc, _|
+      source_schema.fields.each do |key, f|
+        sc.field(key).from(f)
+      end
+    end
+
+    result = target_schema.resolve({})
+    expect(result.output[:age]).to eq nil
+    expect(result.errors['$.age']).to eq nil
+  end
 end
