@@ -4,8 +4,9 @@ module Parametric
   class MaybePolicy
     extend Forwardable
 
-    def initialize(policy)
+    def initialize(policy, omit_if_nil: false)
       @policy = policy
+      @omit_if_nil = omit_if_nil
     end
 
     def coerce(value, key, context)
@@ -21,7 +22,7 @@ module Parametric
     end
 
     def include_non_eligible_in_ouput?
-      true
+      !@omit_if_nil
     end
 
     def_delegators :policy, :meta_data, :message

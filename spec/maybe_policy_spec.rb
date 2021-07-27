@@ -79,4 +79,12 @@ describe 'maybe policy' do
     expect(result.output[:age]).to eq nil
     expect(result.errors['$.age']).to eq nil
   end
+
+  specify 'ommiting nil values from output' do
+    schema = Parametric::Schema.new do
+      field(:age).maybe(:integer, omit_if_nil: true)
+    end
+    result = schema.resolve({})
+    expect(result.output.key?(:age)).to be(false)
+  end
 end

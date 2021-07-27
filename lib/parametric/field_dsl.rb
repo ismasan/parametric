@@ -26,7 +26,9 @@ module Parametric
     end
 
     def maybe(key, *args)
-      policy MaybePolicy.new(lookup(key, args))
+      opts = args.last || {}
+      omit_if_nil = opts.delete(:omit_if_nil) || false
+      policy MaybePolicy.new(lookup(key, args), omit_if_nil: omit_if_nil)
     end
   end
 end
