@@ -54,6 +54,10 @@ module Parametric
       self
     end
 
+    def has_policy?(key)
+      policies.any? { |pol| pol.key == key }
+    end
+
     def visit(meta_key = nil, &visitor)
       if sc = meta_data[:schema]
         r = sc.visit(meta_key, &visitor)
@@ -120,7 +124,19 @@ module Parametric
 
       raise ConfigurationError, "No policies defined for #{key.inspect}" unless obj
 
-      obj.respond_to?(:new) ? obj.new(*args) : obj
+      obj = obj.new(*args) if obj.respond_to?(:new)
+      obj = PolicyWithKey.new(obj, key)
+
+      obj
+    end
+
+    class PolicyWithKey < SimpleDelegator
+      attr_reader :key
+
+      def initialize(policy, key)
+        super policy
+        @key = key
+      end
     end
   end
 end

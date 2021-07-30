@@ -88,6 +88,14 @@ describe Parametric::Field do
     end
   end
 
+  describe '#has_policy?' do
+    it 'is a boolean' do
+      subject.policy(:integer)
+      expect(subject.has_policy?(:integer)).to be(true)
+      expect(subject.has_policy?(:string)).to be(false)
+    end
+  end
+
   describe "#default" do
     it "is default if missing key" do
       resolve(subject.default("AA"), foobar: 1).tap do |r|
