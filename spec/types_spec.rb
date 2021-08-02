@@ -326,13 +326,13 @@ RSpec.describe Types do
       schema = Types::Schema.new do |sc|
         sc.field(:title).type(:string).default('Mr')
         sc.field(:name).type(:string)
-        sc.field?(:age).type(:integer)
+        sc.field?(:age).type(Types::Lax::Integer)
         sc.field(:friend).type(:hash).schema do |s|
           s.field(:name).type(:string)
         end
       end
 
-      assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+      assert_result(schema.call({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
     end
 
     specify 'reusing schemas' do

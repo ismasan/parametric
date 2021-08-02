@@ -649,6 +649,11 @@ module Parametric
         end
 
         def type(type_symbol)
+          if type_symbol.is_a?(Type)
+            @_type = type_symbol
+            return self
+          end
+
           if type_symbol == :hash
             @_type = Types::Schema.new(registry: registry)
           elsif type_symbol == :array
