@@ -125,8 +125,21 @@ module Parametric
       raise ConfigurationError, "No policies defined for #{key.inspect}" unless obj
 
       pol = obj.respond_to?(:new) ? obj.new(*args) : obj
-      obj = PolicyWithKey.new(obj, key)
-      adapt_policy(pol)
+      adapt_policy(pol, key)
+    end
+
+    # Decorate policies to implement latest interface, if some
+    # methods are missing.
+    def adapt_policy(pol, key)
+      pol = PolicyWithKey.new(pol, key)
+      pol = PolicyWithIncludeNonEligible.new(pol) unless pol.respond_to?(:include_non_eligible_in_ouput?)
+      pol
+    end
+
+    class PolicyWithIncludeNonEligible < SimpleDelegator
+      def include_non_eligible_in_ouput?
+        false
+      end
     end
 
     class PolicyWithKey < SimpleDelegator
@@ -135,19 +148,6 @@ module Parametric
       def initialize(policy, key)
         super policy
         @key = key
-      end
-    end
-
-    # Decorate policies to implement latest interface, if some
-    # methods are missing.
-    def adapt_policy(pol)
-      pol = PolicyWithIncludeNonEligible.new(pol) unless pol.respond_to?(:include_non_eligible_in_ouput?)
-      pol
-    end
-
-    class PolicyWithIncludeNonEligible < SimpleDelegator
-      def include_non_eligible_in_ouput?
-        false
       end
     end
   end
