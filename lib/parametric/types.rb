@@ -383,17 +383,17 @@ module Parametric
     end
 
     class Union < Type
-      def initialize(*types)
+      def initialize(a, b)
         super 'Union'
-        @types = types
+        @a, @b = a, b
       end
 
       def to_s
-        %(<#{self.class.name} #{types.map(&:to_s).join(' | ')}>)
+        %(<#{self.class.name} #{[a, b].map(&:to_s).join(' | ')}>)
       end
 
       def clone(&block)
-        self.class.new(*@types).tap do |i|
+        self.class.new(a, b).tap do |i|
           yield i if block_given?
           i.freeze
         end
@@ -401,16 +401,11 @@ module Parametric
 
       private
 
-      attr_reader :types
+      attr_reader :a, :b
 
       def _call(result)
-        last_result = result
-        types.each do |t|
-          last_result = t.(Result.success(result.value))
-          return last_result if last_result.success?
-        end
-
-        last_result
+        result = a.call(result)
+        result.success? ? result : b.call(Result.success(result.value))
       end
     end
 
