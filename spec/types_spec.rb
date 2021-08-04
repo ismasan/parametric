@@ -112,7 +112,7 @@ RSpec.describe Types do
   end
 
   specify Types::Pipeline do
-    pipeline = Types::Pipeline.new([Types::String, Types::Transform.new{|v| "Mr. #{v}" }])
+    pipeline = Types::Pipeline.new(Types::String, Types::Transform.new{|v| "Mr. #{v}" })
     assert_result(pipeline.call('Ismael'), 'Mr. Ismael', true)
     assert_result(pipeline.call(1), 1, false)
 

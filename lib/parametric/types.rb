@@ -185,7 +185,7 @@ module Parametric
       end
 
       def >(other)
-        Pipeline.new([self, other])
+        Pipeline.new(self, other)
       end
 
       def transform(val = Undefined, &block)
@@ -341,15 +341,13 @@ module Parametric
     end
 
     class Pipeline < Type
-      def initialize(steps)
+      def initialize(a, b)
         super 'pipeline'
-        @steps = Array(steps)
+        @a, @b = a, b
       end
 
       private def _call(result)
-        @steps.reduce(result) do |r, step|
-          step.call(r)
-        end
+        @b.call(@a.call(result))
       end
     end
 
