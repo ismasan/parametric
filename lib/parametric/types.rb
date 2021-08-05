@@ -188,8 +188,16 @@ module Parametric
         Pipeline.new(self, other)
       end
 
-      def transform(val = Undefined, &block)
-        self > Transform.new(val, &block)
+      alias >> >
+
+      def constructor(callable = nil, &block)
+        self > Constructor.new(callable, &block)
+      end
+
+      def transform(callable = nil, &block)
+        callable ||= block
+        callable = callable.to_proc if callable.is_a?(::Symbol)
+        constructor { |r| Result.success(callable.call(r.value)) }
       end
 
       private
@@ -329,14 +337,14 @@ module Parametric
       end
     end
 
-    class Transform < Type
-      def initialize(callable = Undefined, &block)
-        super 'transform'
-        @_value = callable == Undefined ? block : callable
+    class Constructor < Type
+      def initialize(callable = nil, &block)
+        super 'Constructor'
+        @_value = callable || block
       end
 
       private def _call(result)
-        result.success @_value.call(result.value)
+        Result.wrap @_value.call(result)
       end
     end
 

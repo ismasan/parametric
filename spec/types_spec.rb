@@ -101,25 +101,47 @@ RSpec.describe Types do
     assert_result(type.call(1), 'bar', true)
   end
 
-  specify Types::Transform do
-    type = Types::Transform.new{ |v| "Mr. #{v}" }
+  specify Types::Constructor do
+    type = Types::Constructor.new{ |r| "Mr. #{r.value}" }
     assert_result(type.call('Ismael'), 'Mr. Ismael', true)
+
+    type = Types::Constructor.new { |r| r.success("Mr. #{r.value}") }
+    assert_result(type.call('Ismael'), 'Mr. Ismael', true)
+
+    type = Types::Constructor.new { |r| r.failure('nope') }
+    assert_result(type.call('Ismael'), 'Ismael', false)
+  end
+
+  specify '#constructor' do
+    type = Types::String.constructor { |r| r.value == 'Ismael' ? r.success("Hello #{r.value}") : r.failure('nope') }
+    assert_result(type.call('Ismael'), 'Hello Ismael', true)
+    type.call(1).tap do |r|
+      expect(r.success?).to be(false)
+      expect(r.error).to eq('failed is_a?(1, String)')
+    end
+    assert_result(type.call('Joe'), 'Joe', false)
   end
 
   specify '#transform' do
     type = Types::String.transform { |v| "Mr. #{v}" }
     assert_result(type.call('Ismael'), 'Mr. Ismael', true)
+
+    type = Types::String.transform(:to_i)
+    assert_result(type.call('10'), 10, true)
+
+    type = Types::String.transform(&:to_i)
+    assert_result(type.call('10'), 10, true)
   end
 
   specify Types::Pipeline do
-    pipeline = Types::Pipeline.new(Types::String, Types::Transform.new{|v| "Mr. #{v}" })
+    pipeline = Types::Pipeline.new(Types::String, Types::Constructor.new{|r| "Mr. #{r.value}" })
     assert_result(pipeline.call('Ismael'), 'Mr. Ismael', true)
     assert_result(pipeline.call(1), 1, false)
 
-    pipeline = Types::String > Types::Transform.new{|v| "Mrs. #{v}" }
+    pipeline = Types::String > Types::Constructor.new{|r| "Mrs. #{r.value}" }
     assert_result(pipeline.call('Joan'), 'Mrs. Joan', true)
 
-    meta_pipeline = pipeline > Types::Transform.new{|v| "Hello, #{v}" }
+    meta_pipeline = pipeline > Types::Constructor.new{|r| "Hello, #{r.value}" }
     assert_result(meta_pipeline.call('Joan'), 'Hello, Mrs. Joan', true)
 
     # custom default for blank string
