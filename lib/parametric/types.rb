@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'bigdecimal'
+require 'concurrent'
 
 module Parametric
   # class Undefined;end
@@ -359,9 +360,43 @@ module Parametric
       end
     end
 
+    class ConcurrentArray < Type
+      def initialize(array, element_type: Any, **kargs)
+        super 'ConcurrentArray', **kargs
+        # rule!(:is_a?, ::Array)
+        @array = array
+        @element_type = element_type
+      end
+
+      def of(element_type)
+        self.class.new(@array, element_type: element_type)
+      end
+
+      private def _call(result)
+        list = result.value.map do |e|
+          Concurrent::Future.execute { @element_type.call(e) }
+        end
+        results = list.map(&:value)
+        values = results.map { |v| v&.value }
+        errors = list.map(&:reason).compact
+        errors += results.each.with_object([]) { |r, m| m << r.error if r.failure? }
+        errors.any? ? result.failure(errors) : result.success(values)
+      end
+    end
+
     class ArrayClass < Type
+      def initialize(name = 'Array', **kargs)
+        super name, **kargs
+        coercion!(::Array) { |v| v.map { |e| Any.(e) } }
+        rule!(:is_a?, ::Array)
+      end
+
       def of(element_type)
         coercion(::Array) { |v| v.map { |e| element_type.(e) } }
+      end
+
+      def concurrent
+        ConcurrentArray.new(self)
       end
 
       private
@@ -536,9 +571,7 @@ module Parametric
       .coercion(::String) { |v| v.split(/\s*,\s*/) }
       .rule(:is_a?, ::Array)
 
-    Array = ArrayClass.new('Array')
-      .coercion(::Array) { |v| v.map { |e| Any.(e) } }
-      .rule(:is_a?, ::Array)
+    Array = ArrayClass.new
 
     module Lax
       String = Types::String

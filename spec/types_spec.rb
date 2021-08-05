@@ -197,6 +197,17 @@ RSpec.describe Types do
     )
   end
 
+  specify 'Types::Array.concurrent' do
+    slow_type = Types::String.constructor { |r| sleep(1); r }
+    array = Types::Array.concurrent.of(slow_type)
+    assert_result(array.call(1), 1, false)
+    result, elapsed = bench do
+      array.call(%w[a b c])
+    end
+    assert_result(result, %w[a b c], true)
+    expect(elapsed).to be < 2000
+  end
+
   specify Types::Any do
     obj = Struct.new(:name).new('Joe')
 
@@ -419,5 +430,12 @@ RSpec.describe Types do
     byebug if debug
     expect(result.value).to eq value
     expect(result.success?).to be is_success
+  end
+
+  def bench(&block)
+    start = Time.now
+    result = yield
+    elapsed = (Time.now - start).to_f * 1000
+    [result, elapsed]
   end
 end
