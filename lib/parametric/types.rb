@@ -442,18 +442,18 @@ module Parametric
       end
 
       def >(other)
-        HashPipeline.new([self, other])
+        HashPipeline.new(self, other)
       end
 
       class HashPipeline < Type
-        def initialize(steps)
+        def initialize(a, b)
           super 'pipeline'
-          @steps = Array(steps)
+          @a, @b = a, b
         end
 
         private def _call(result)
           initial_value = result.value
-          @steps.reduce(result) do |r, step|
+          [@a, @b].reduce(result) do |r, step|
             r1 = step.call(r)
             r1.success? ? (r1.success(initial_value.merge(r1.value))) : r1
           end
