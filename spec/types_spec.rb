@@ -179,6 +179,7 @@ RSpec.describe Types do
   end
 
   specify Types::Array do
+    assert_result(Types::Array.call(1), 1, false)
     assert_result(Types::Array.call([]), [], true)
     assert_result(
       Types::Array.of(Types::Boolean).call([true, true, false]),
@@ -198,14 +199,28 @@ RSpec.describe Types do
   end
 
   specify 'Types::Array.concurrent' do
-    slow_type = Types::String.constructor { |r| sleep(1); r }
-    array = Types::Array.concurrent.of(slow_type)
+    slow_type = Types::String.constructor { |r| sleep(0.2); r }
+    array = Types::Array.of(slow_type).concurrent
     assert_result(array.call(1), 1, false)
     result, elapsed = bench do
       array.call(%w[a b c])
     end
     assert_result(result, %w[a b c], true)
-    expect(elapsed).to be < 2000
+    expect(elapsed).to be < 300
+
+    assert_result(array.optional.call(nil), nil, true)
+  end
+
+  specify 'complex conditional type' do
+    commas = Types::String.rule(:matches?, /\s*,\s*/).transform { |s| s.split(/\s*,\s*/) }
+    names = (commas | Types::Array.of(Types::String)).transform { |a| a.map { |e| "hi #{e}" } }
+    maybe_names = Types::Nil | Types::Nothing | names
+    assert_result(maybe_names.call('a,b, c'), ['hi a', 'hi b', 'hi c'], true)
+    assert_result(maybe_names.call(%w[a b c]), ['hi a', 'hi b', 'hi c'], true)
+    assert_result(maybe_names.call(nil), nil, true)
+    assert_result(maybe_names.call(), Parametric::Undefined, true)
+    assert_result(maybe_names.call(1), 1, false)
+    assert_result(maybe_names.call('no commas'), 'no commas', false)
   end
 
   specify Types::Any do

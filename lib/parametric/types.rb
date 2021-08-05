@@ -136,6 +136,9 @@ module Parametric
       r.define :eq? do |actual, expected|
         actual == expected
       end
+      r.define :matches? do |actual, expression|
+        actual =~ expression
+      end
     end
 
     def self.value(val)
@@ -275,8 +278,9 @@ module Parametric
         Union.new(self, other)
       end
 
-      def clone(&block)
-        self.class.new(name, rule_set: rule_set.clone).tap do |i|
+      def clone(instance = nil, &block)
+        instance ||= self.class.new(name, rule_set: rule_set.clone)
+        instance.tap do |i|
           coercions.each do |m|
             i.coercion! m
           end
@@ -322,8 +326,12 @@ module Parametric
         if err = errors_for_coercion_output(result.value)
           result.failure(err, value_for_coercion_output(result.value))
         else
-          result.success(value_for_coercion_output(result.value))
+          run_result_after_coercions result.success(value_for_coercion_output(result.value))
         end
+      end
+
+      def run_result_after_coercions(result)
+        result
       end
     end
 
@@ -360,59 +368,52 @@ module Parametric
       end
     end
 
-    class ConcurrentArray < Type
-      def initialize(array, element_type: Any, **kargs)
-        super 'ConcurrentArray', **kargs
-        # rule!(:is_a?, ::Array)
-        @array = array
+    class ArrayClass < Type
+      def initialize(name = 'Array', element_type: Any, **kargs)
+        super name, **kargs
+        rule!(:is_a?, ::Array)
         @element_type = element_type
       end
 
       def of(element_type)
-        self.class.new(@array, element_type: element_type)
-      end
-
-      private def _call(result)
-        list = result.value.map do |e|
-          Concurrent::Future.execute { @element_type.call(e) }
-        end
-        results = list.map(&:value)
-        values = results.map { |v| v&.value }
-        errors = list.map(&:reason).compact
-        errors += results.each.with_object([]) { |r, m| m << r.error if r.failure? }
-        errors.any? ? result.failure(errors) : result.success(values)
-      end
-    end
-
-    class ArrayClass < Type
-      def initialize(name = 'Array', **kargs)
-        super name, **kargs
-        coercion!(::Array) { |v| v.map { |e| Any.(e) } }
-        rule!(:is_a?, ::Array)
-      end
-
-      def of(element_type)
-        coercion(::Array) { |v| v.map { |e| element_type.(e) } }
+        clone(self.class.new(name, element_type: element_type, rule_set: rule_set.clone))
       end
 
       def concurrent
-        ConcurrentArray.new(self)
+        ConcurrentArrayClass.new('ConcurrentArray', element_type: element_type)
       end
 
       private
 
-      def errors_for_coercion_output(list)
-        failure = list.find(&:failure?)
-        if failure
-          idx = list.index(failure)
-          {idx => failure.error}
-        else
-          nil
+      attr_reader :element_type
+
+      def run_result_after_coercions(result)
+        list = map_array_elements(result.value)
+        errors = list.each.with_object({}).with_index do |(r, memo), idx|
+          memo[idx] = r.error if r.failure?
         end
+
+        values = list.map(&:value)
+        return result.success(values) unless errors.any?
+
+        result.failure(errors)
       end
 
-      def value_for_coercion_output(list)
-        list.map &:value
+      def map_array_elements(list)
+        list.map { |e| element_type.call(e) }
+      end
+    end
+
+    class ConcurrentArrayClass < ArrayClass
+      private
+
+      def map_array_elements(list)
+        list
+          .map { |e| Concurrent::Future.execute { element_type.call(e) } }
+          .map do |f|
+            result = f.value
+            f.rejected? ? Result.failure(e.reason) : result
+          end
       end
     end
 
