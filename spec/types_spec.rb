@@ -346,10 +346,10 @@ RSpec.describe Types do
 
     specify '>' do
       s1 = Types::Hash.schema(name: Types::String)
-      s2 = Types::Hash.schema(age: Types::Integer)
+      s2 = Types::Any.transform { |v| "Name is #{v[:name]}" }
 
       pipe = s1 > s2
-      assert_result(pipe.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
+      assert_result(pipe.call(name: 'Ismael', age: 42), 'Name is Ismael', true)
       assert_result(pipe.call(age: 42), {}, false)
     end
   end

@@ -139,6 +139,9 @@ module Parametric
       r.define :matches? do |actual, expression|
         actual =~ expression
       end
+      r.define :respond_to? do |actual, method_name|
+        actual.respond_to?(method_name)
+      end
     end
 
     def self.value(val)
@@ -483,25 +486,6 @@ module Parametric
 
       def &(other)
         self.class.new(_schema.merge(other._schema))
-      end
-
-      def >(other)
-        HashPipeline.new(self, other)
-      end
-
-      class HashPipeline < Type
-        def initialize(a, b)
-          super 'pipeline'
-          @a, @b = a, b
-        end
-
-        private def _call(result)
-          initial_value = result.value
-          [@a, @b].reduce(result) do |r, step|
-            r1 = step.call(r)
-            r1.success? ? (r1.success(initial_value.merge(r1.value))) : r1
-          end
-        end
       end
 
       protected
