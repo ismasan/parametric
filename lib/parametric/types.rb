@@ -548,7 +548,7 @@ module Parametric
 
     Nothing = Type.new('Nothing').rule(:eq?, Undefined)
 
-    Any = Type.new('Any').rule(:is_a?, ::Object)
+    Any = Type.new('Any')
 
     Nil = Type.new('Nil').rule(:is_a?, ::NilClass)
 
