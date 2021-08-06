@@ -236,7 +236,7 @@ module Parametric
       end
 
       def to_s
-        %(<#{self.class.name} [#{name}] #{rule_set.map(&:inspect).join(' ')}>)
+        %(Parametric::Types::#{name}#{inspect_line} [#{rule_set.map(&:inspect).join(' ')}])
       end
 
       def inspect
@@ -272,11 +272,6 @@ module Parametric
         end
       end
 
-      protected def rule!(predicate, *args)
-        rule_set.rule(predicate, *args)
-        self
-      end
-
       def |(other)
         Union.new(self, other)
       end
@@ -293,6 +288,11 @@ module Parametric
       end
 
       protected
+
+      def rule!(predicate, *args)
+        rule_set.rule(predicate, *args)
+        self
+      end
 
       def errors_for_coercion_output(_)
         nil
@@ -336,6 +336,10 @@ module Parametric
       def run_result_after_coercions(result)
         result
       end
+
+      def inspect_line
+        ''
+      end
     end
 
     class Static < Type
@@ -364,6 +368,10 @@ module Parametric
       def initialize(a, b)
         super 'pipeline'
         @a, @b = a, b
+      end
+
+      def to_s
+        %(#{@a} > #{@b})
       end
 
       private def _call(result)
@@ -405,6 +413,10 @@ module Parametric
       def map_array_elements(list)
         list.map { |e| element_type.call(e) }
       end
+
+      def inspect_line
+        "<#{element_type}>"
+      end
     end
 
     class ConcurrentArrayClass < ArrayClass
@@ -434,7 +446,7 @@ module Parametric
       end
 
       def to_s
-        %(<#{self.class.name} #{[a, b].map(&:to_s).join(' | ')}>)
+        %(#{a} | #{b})
       end
 
       def clone(&block)
