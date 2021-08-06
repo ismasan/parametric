@@ -330,6 +330,16 @@ RSpec.describe Types do
       end
     end
 
+    specify 'union' do
+      hash1 = Types::Hash.schema(foo: Types::String)
+      hash2 = Types::Hash.schema(bar: Types::Integer)
+      union = hash1 | hash2
+
+      assert_result(union.call(foo: 'bar'), { foo: 'bar' }, true)
+      assert_result(union.call(bar: 10), { bar: 10 }, true)
+      assert_result(union.call(bar: '10'), { bar: '10' }, false)
+    end
+
     specify 'optional keys' do
       hash = Types::Hash.schema(
         title: Types::String.default('Mr'),

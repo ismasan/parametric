@@ -511,8 +511,8 @@ module Parametric
       attr_reader :a, :b
 
       def _call(result)
-        result = a.call(result)
-        result.success? ? result : b.call(result.success)
+        r1 = a.call(result)
+        r1.success? ? r1 : b.call(result)
       end
     end
 
