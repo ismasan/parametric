@@ -8,44 +8,78 @@ module Parametric
   Undefined = Object.new.freeze
 
   class Result
-    attr_reader :value, :error
+    attr_reader :value
 
-    def self.success(value)
-      new(value)
+    class << self
+      def success(value)
+        Success.new(value)
+      end
+
+      def failure(error, val = nil)
+        Failure.new(val, error)
+      end
+
+      def wrap(value)
+        return value if value.is_a?(Result)
+
+        success(value)
+      end
     end
 
-    def self.failure(error)
-      new(nil, error: error)
+    def initialize(value)
+      @value = value
     end
 
-    def self.wrap(value)
-      return value if value.is_a?(Result)
+    class Success < self
+      def success?
+        true
+      end
 
-      new(value)
+      def failure?
+        false
+      end
+
+      def map(fn)
+        fn.call(self)
+      end
+
+      def success(v = value)
+        v == value ? self : Result.success(v)
+      end
+
+      def failure(error, val = nil)
+        Result.failure(error, val || value)
+      end
     end
 
-    def initialize(value, error: nil)
-      @value, @error = value, error
-    end
+    class Failure < self
+      attr_reader :error
 
-    def success?
-      error.nil?
-    end
+      def initialize(v = nil, error = nil)
+        @error = error
+        super v
+      end
 
-    def failure?
-      !!error
-    end
+      def success?
+        false
+      end
 
-    def success(v)
-      @value = v
-      @error = nil
-      self
-    end
+      def failure?
+        true
+      end
 
-    def failure(err, value = Undefined)
-      @error = err
-      @value = value unless value == Undefined
-      self
+      def map(_)
+        self
+      end
+
+      def success(v = value)
+        Result.success(v)
+      end
+
+      def failure(errs, val = nil)
+        val ||= value
+        errs == errors && value == val ? self : Result.failure(errs, val)
+      end
     end
   end
 
@@ -308,7 +342,7 @@ module Parametric
 
       def coerce(result)
         coercions.each do |m|
-          v = m.(Result.success(result.value))
+          v = m.(result.success)
           return v if v.success?
         end
 
@@ -375,7 +409,7 @@ module Parametric
       end
 
       private def _call(result)
-        @b.call(@a.call(result))
+        result.map(@a).map(@b)
       end
     end
 
@@ -462,7 +496,7 @@ module Parametric
 
       def _call(result)
         result = a.call(result)
-        result.success? ? result : b.call(Result.success(result.value))
+        result.success? ? result : b.call(result.success)
       end
     end
 
@@ -527,7 +561,7 @@ module Parametric
           end
         end
 
-        errors.any? ? Result.success(output).failure(errors) : result.success(output)
+        errors.any? ? result.failure(errors, output) : result.success(output)
       end
 
       def wrap_keys(hash)
