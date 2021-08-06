@@ -241,6 +241,10 @@ module Parametric
         constructor { |r| Result.success(callable.call(r.value)) }
       end
 
+      def not
+        Not.new(self)
+      end
+
       private
 
       def _call(result)
@@ -373,6 +377,18 @@ module Parametric
 
       def inspect_line
         ''
+      end
+    end
+
+    class Not < Type
+      def initialize(type)
+        @type = type
+        super 'Not'
+      end
+
+      private def _call(result)
+        result = @type.call(result)
+        result.success? ? result.failure : result.success
       end
     end
 

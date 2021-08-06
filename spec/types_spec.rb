@@ -112,6 +112,11 @@ RSpec.describe Types do
     assert_result(type.call('Ismael'), 'Ismael', false)
   end
 
+  specify '#not' do
+    assert_result(Types::String.not.call(1), 1, true)
+    assert_result(Types::Integer.not.call('nope'), 'nope', true)
+  end
+
   specify '#constructor' do
     type = Types::String.constructor { |r| r.value == 'Ismael' ? r.success("Hello #{r.value}") : r.failure('nope') }
     assert_result(type.call('Ismael'), 'Hello Ismael', true)
