@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'delegate'
 require "parametric/field_dsl"
 
 module Parametric
