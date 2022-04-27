@@ -264,6 +264,16 @@ describe Parametric::Field do
     end
   end
 
+  describe ":value policy" do
+    it 'always resolves to static value' do
+      resolve(subject.policy(:value, 'hello'), a_key: "tag1,tag2").tap do |r|
+        expect(r.eligible?).to be true
+        no_errors
+        expect(r.value).to eq 'hello'
+      end
+    end
+  end
+
   describe ":declared policy" do
     it "is eligible if key exists" do
       resolve(subject.policy(:declared).present, a_key: "").tap do |r|

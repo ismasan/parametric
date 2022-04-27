@@ -9,6 +9,13 @@ describe 'default validators' do
     expect(validator.valid?(payload[key], key, payload)).to eq valid
   end
 
+  describe ':value' do
+    it {
+      test_validator({key: 'Foobar'}, :key, :value, true, true, 'Foobar')
+      test_validator({key: 'Nope'}, :key, :value, true, false, 'Foobar')
+    }
+  end
+
   describe ':format' do
     it {
       test_validator({key: 'Foobar'}, :key, :format, true, true, /^Foo/)

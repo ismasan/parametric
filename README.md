@@ -275,6 +275,14 @@ Useful for parsing comma-separated query-string parameters.
 field(:status).policy(:split) # turns "pending,confirmed" into ["pending", "confirmed"]
 ```
 
+### :value
+
+A policy to return a static value
+
+```ruby
+field(:currency).policy(:value, 'gbp') # this field always resolves to 'gbp'
+```
+
 ## Custom policies
 
 You can also register your own custom policy objects. A policy must implement the following methods:
