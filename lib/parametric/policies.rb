@@ -26,6 +26,31 @@ module Parametric
         {}
       end
     end
+
+    class Value
+      attr_reader :message
+
+      def initialize(val, msg = 'invalid value')
+        @message = msg
+        @val = val
+      end
+
+      def eligible?(value, key, payload)
+        payload.key?(key)
+      end
+
+      def coerce(_value, _key, _context)
+        @val
+      end
+
+      def valid?(value, key, payload)
+        !payload.key?(key) || !!(value == @val)
+      end
+
+      def meta_data
+        { value: @val }
+      end
+    end
   end
 
   # Default validators
@@ -33,6 +58,7 @@ module Parametric
 
   Parametric.policy :format, Policies::Format
   Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
+  Parametric.policy :value, Policies::Value
 
   Parametric.policy :noop do
     eligible do |value, key, payload|
