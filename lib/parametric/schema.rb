@@ -75,7 +75,7 @@ module Parametric
       fields.each_with_object({}) do |(_, field), obj|
         meta = field.meta_data.dup
         sc = meta.delete(:schema)
-        meta[:structure] = sc.structure if sc
+        meta[:structure] = sc.schema.structure if sc
         obj[field.key] = meta
       end
     end

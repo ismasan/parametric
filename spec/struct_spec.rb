@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'parametric/struct'
 
 describe Parametric::Struct do
-  it "works" do
-    friend_class = Class.new do
+  let(:friend_class) do
+    Class.new do
       include Parametric::Struct
 
       schema do
@@ -11,16 +11,19 @@ describe Parametric::Struct do
         field(:age).type(:integer)
       end
     end
+  end
+  let(:klass) do
+    Class.new.tap do |cl|
+      cl.send(:include, Parametric::Struct)
 
-    klass = Class.new do
-      include Parametric::Struct
-
-      schema do
-        field(:title).type(:string).present
-        field(:friends).type(:array).default([]).schema friend_class
+      cl.schema do |sc, _|
+        sc.field(:title).type(:string).present
+        sc.field(:friends).type(:array).default([]).schema friend_class
       end
     end
+  end
 
+  it "works" do
     new_instance = klass.new
     expect(new_instance.title).to eq ''
     expect(new_instance.friends).to eq []
@@ -55,6 +58,18 @@ describe Parametric::Struct do
     expect(invalid_instance.errors['$.title']).not_to be_nil
     expect(invalid_instance.errors['$.friends[1].name']).not_to be_nil
     expect(invalid_instance.friends[1].errors['$.name']).not_to be_nil
+  end
+
+  it 'supports #structure' do
+    st = klass.schema.structure
+    expect(st[:title][:type]).to eq(:string)
+    expect(st[:friends][:structure][:age][:type]).to eq(:integer)
+  end
+
+  it 'supports #walk' do
+    output = klass.schema.walk(:type).output
+    expect(output[:title]).to eq(:string)
+    expect(output[:friends][0][:name]).to eq(:string)
   end
 
   it "is inmutable by default" do
