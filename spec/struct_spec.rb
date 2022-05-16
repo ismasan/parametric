@@ -301,6 +301,9 @@ describe Parametric::Struct do
 
         schema do
           field(:title).type(:string).present
+          field(:consumption).type(:object).present.schema do
+            field(:type).present.options(%w[aaa bbb])
+          end
         end
       end
 
@@ -308,9 +311,10 @@ describe Parametric::Struct do
         klass.new!(title: '')
       rescue Parametric::InvalidStructError => e
         expect(e.errors['$.title']).not_to be nil
+        expect(e.errors['$.consumption']).not_to be nil
       end
 
-      valid = klass.new!(title: 'foo')
+      valid = klass.new!(title: 'foo', consumption: { type: 'aaa' })
       expect(valid.title).to eq 'foo'
     end
   end
