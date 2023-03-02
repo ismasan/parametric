@@ -2,6 +2,7 @@
 
 require 'bigdecimal'
 require 'concurrent'
+require 'forwardable'
 
 module Parametric
   Undefined = Object.new.freeze
@@ -659,7 +660,12 @@ module Parametric
       end
 
       class Field
+        extend Forwardable
+
         attr_reader :_type
+
+        def_delegators :_type, :call, :metadata
+        alias meta_data metadata # bw compatibility
 
         def initialize(registry: Types)
           @registry = registry
@@ -684,13 +690,13 @@ module Parametric
 
         def policy(*args)
           @_type = case args
-          in [::Symbol => pl]
+          in [::Symbol => pl] # policy(:email)
             @_type >> registry[pl]
-          in [Steppable => pl]
+          in [Steppable => pl] # policy(Types::Email)
             @_type >> pl
-          in [::Hash => rules]
+          in [::Hash => rules] # policy(gt: 20, lt: 100)
             @_type.rule(rules)
-          in [::Symbol => rule_name, Object => rule_matcher]
+          in [::Symbol => rule_name, Object => rule_matcher] # policy(:gt, 20)
             @_type.rule(rule_name => rule_matcher)
           else
             raise ArgumentError, "expected #{self.class}#policy(Symbol | Step) or #{self.class}#policy(Symbol, matcher)"
@@ -703,8 +709,9 @@ module Parametric
           self
         end
 
-        def call(result)
-          @_type.call(result)
+        def meta(md = nil)
+          @_type = @_type.meta(md) if md
+          self
         end
 
         private

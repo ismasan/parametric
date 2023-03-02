@@ -406,6 +406,12 @@ RSpec.describe Types do
       end
     end
 
+    specify 'Field#meta' do
+      field = Types::Schema::Field.new.type(:string).meta(foo: 1).meta(bar: 2)
+      expect(field.metadata).to eq(foo: 1, bar: 2)
+      expect(field.meta_data).to eq(foo: 1, bar: 2) # bw comp
+    end
+
     context 'with array schemas' do
       specify 'inline array schemas' do
         schema = Types::Schema.new do |sc|
