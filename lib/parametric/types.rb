@@ -683,8 +683,12 @@ module Parametric
         end
 
         def policy(pl, rule_matcher = Undefined)
-          if rule_matcher == Undefined
-            @_type = @_type >> (pl.is_a?(Steppable) ? pl : registry[pl])
+          if pl.is_a?(::Symbol) && rule_matcher == Undefined
+            @_type = @_type >> registry[pl]
+          elsif pl.is_a?(Steppable) && rule_matcher == Undefined
+            @_type = @_type >> pl
+          elsif pl.is_a?(::Hash) && rule_matcher == Undefined
+            @_type = @_type.rule(pl)
           elsif pl.is_a?(::Symbol)
             @_type = @_type.rule(pl => rule_matcher)
           else

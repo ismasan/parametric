@@ -392,10 +392,17 @@ RSpec.describe Types do
         assert_result(field.call(1), 1, false)
       end
 
-      it 'takes rule' do
+      it 'takes rule as :rule_name, matcher' do
         field = Types::Schema::Field.new.type(:string).policy(:format, /^Mr\s/)
         assert_result(field.call('Mr Ismael'), 'Mr Ismael', true)
         assert_result(field.call('Ismael'), 'Ismael', false)
+      end
+
+      it 'takes rules as hash' do
+        field = Types::Schema::Field.new.type(:integer).policy(gte: 10, lte: 20)
+        assert_result(field.call(11), 11, true)
+        assert_result(field.call(9), 9, false)
+        assert_result(field.call(21), 21, false)
       end
     end
 
