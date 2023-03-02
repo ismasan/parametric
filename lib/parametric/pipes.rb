@@ -80,13 +80,17 @@ module Parametric
       end
     end
 
-    module Chainable
+    module Steppable
       def self.wrap(callable)
-        callable.is_a?(Chainable) ? callable : Step.new(callable)
+        callable.is_a?(Steppable) ? callable : Step.new(callable)
+      end
+
+      def call(result = Undefined)
+        _call(Result.wrap(result))
       end
 
       def >>(other)
-        Chain.new(self, Chainable.wrap(other))
+        Chain.new(self, Steppable.wrap(other))
       end
 
       def transform(callable = nil, &block)
@@ -108,7 +112,7 @@ module Parametric
       end
 
       def |(other)
-        Or.new(self, Chainable.wrap(other))
+        Or.new(self, Steppable.wrap(other))
       end
 
       def meta(data = {})
@@ -200,7 +204,7 @@ module Parametric
         end
       end
 
-      include Chainable
+      include Steppable
 
       attr_reader :metadata
 
@@ -217,7 +221,7 @@ module Parametric
         @metadata = DEFAULT_METADATA
       end
 
-      def call(result)
+      private def _call(result)
         errors = @rules.map { |(ruledef, value)| ruledef.error_for(result, value) }.compact
         return result unless errors.any?
 
@@ -260,7 +264,7 @@ module Parametric
     end
 
     class Static
-      include Chainable
+      include Steppable
 
       attr_reader :metadata
 
@@ -270,17 +274,17 @@ module Parametric
         @metadata = DEFAULT_METADATA
       end
 
-      def call(result)
-        result.success(@value.call)
-      end
-
       def inspect
         %(Static[value:#{@value}])
+      end
+
+      private def _call(result)
+        result.success(@value.call)
       end
     end
 
     class Not
-      include Chainable
+      include Steppable
 
       attr_reader :metadata
 
@@ -289,18 +293,18 @@ module Parametric
         @metadata = step.metadata
       end
 
-      def call(result)
-        result = @step.call(result)
-        result.success? ? result.halt : result.success
-      end
-
       def inspect
         %(Not(#{@step.inspect}))
+      end
+
+      private def _call(result)
+        result = @step.call(result)
+        result.success? ? result.halt : result.success
       end
     end
 
     class Chain
-      include Chainable
+      include Steppable
 
       # @param left [Reducer]
       # @param right [Reducer]
@@ -313,19 +317,17 @@ module Parametric
         @left.metadata.merge(@right.metadata)
       end
 
-      # @param result [Result]
-      # @return [Result]
-      def call(result)
-        Result.wrap(result).map(@left).map(@right)
-      end
-
       def inspect
         %((#{@left.inspect} >> #{@right.inspect}))
+      end
+
+      private def _call(result)
+        result.map(@left).map(@right)
       end
     end
 
     class Or
-      include Chainable
+      include Steppable
 
       def initialize(left, right)
         @left, @right = left, right
@@ -335,18 +337,18 @@ module Parametric
         @left.metadata.merge(@right.metadata)
       end
 
-      def call(result)
-        left_result = @left.call(result)
-        left_result.success? ? left_result : @right.call(result)
-      end
-
       def inspect
         %((#{@left.inspect} | #{@right.inspect}))
+      end
+
+      private def _call(result)
+        left_result = @left.call(result)
+        left_result.success? ? left_result : @right.call(result)
       end
     end
 
     class Step
-      include Chainable
+      include Steppable
 
       attr_reader :metadata
 
@@ -355,19 +357,19 @@ module Parametric
         @callable = callable || block
       end
 
-      def call(result)
-        @callable.call(Result.wrap(result))
-      end
-
       def inspect
         %(Step[#{metadata.map { |(k,v)| "#{k}:#{v}" }.join(', ')}])
+      end
+
+      private def _call(result)
+        @callable.call(result)
       end
     end
 
     Noop = Step.new { |r| r }
 
     class ArrayClass
-      include Chainable
+      include Steppable
 
       attr_reader :metadata
 
@@ -378,21 +380,6 @@ module Parametric
 
       def of(element_type)
         self.class.new(element_type:)
-      end
-
-      def call(result)
-        result = Result.wrap(result)
-        return result.halt(error: 'is not an Enumerable') unless result.value.is_a?(::Enumerable)
-
-        list = map_array_elements(result.value)
-        errors = list.each.with_object({}).with_index do |(r, memo), idx|
-          memo[idx] = r.error unless r.success?
-        end
-
-        values = list.map(&:value)
-        return result.success(values) unless errors.any?
-
-        result.halt(error: errors)
       end
 
       def concurrent
@@ -406,6 +393,20 @@ module Parametric
       private
 
       attr_reader :element_type
+
+      private def _call(result)
+        return result.halt(error: 'is not an Enumerable') unless result.value.is_a?(::Enumerable)
+
+        list = map_array_elements(result.value)
+        errors = list.each.with_object({}).with_index do |(r, memo), idx|
+          memo[idx] = r.error unless r.success?
+        end
+
+        values = list.map(&:value)
+        return result.success(values) unless errors.any?
+
+        result.halt(error: errors)
+      end
 
       def map_array_elements(list)
         list.map { |e| element_type.call(e) }
@@ -449,7 +450,7 @@ module Parametric
     end
 
     class HashClass
-      include Chainable
+      include Steppable
 
       def initialize(schema = {})
         @_schema = schema
@@ -464,8 +465,17 @@ module Parametric
         self.class.new(_schema.merge(other._schema))
       end
 
-      def call(result)
-        result = Result.wrap(result)
+      def inspect
+        %(Hash[#{_schema.map{ |(k,v)| [k, v.inspect].join(':') }.join(' ')}])
+      end
+
+      protected
+
+      attr_reader :_schema
+
+      private
+
+      def _call(result)
         return result.halt(error: 'must be a Hash') unless result.value.is_a?(::Hash)
         return result unless _schema.any?
 
@@ -485,16 +495,6 @@ module Parametric
 
         errors.any? ? result.halt(output, error: errors) : result.success(output)
       end
-
-      def inspect
-        %(Hash[#{_schema.map{ |(k,v)| [k, v.inspect].join(':') }.join(' ')}])
-      end
-
-      protected
-
-      attr_reader :_schema
-
-      private
 
       def wrap_keys(hash)
         case hash
