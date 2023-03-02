@@ -507,62 +507,42 @@ module Parametric
     end
   end
 
-  module TypeNamespace
-    def define(const_name, &type_builder)
-      const_set(const_name, type_builder.call.meta(type: [ancestors.last.to_s, const_name].join('::')))
-    end
-  end
-
   module Types
-    extend TypeNamespace
-
-    define(:Any) { Step.new { |r| r } }
-    define(:Nothing) { Any.rule(eq: Undefined) }
-    define(:String) { Any.is_a(::String) }
-    define(:Numeric) { Any.is_a(::Numeric) }
-    define(:Integer) { Any.is_a(::Integer) }
-    define(:Nil) { Any.is_a(::NilClass) }
-    define(:True) { Any.is_a(::TrueClass) }
-    define(:False) { Any.is_a(::FalseClass) }
-    define(:Boolean) { (True | False) }
+    Any = Step.new { |r| r }
+    Nothing = Any.rule(eq: Undefined)
+    String = Any.is_a(::String)
+    Numeric = Any.is_a(::Numeric)
+    Integer = Any.is_a(::Integer)
+    Nil = Any.is_a(::NilClass)
+    True = Any.is_a(::TrueClass)
+    False = Any.is_a(::FalseClass)
+    Boolean = True | False
 
     Array = ArrayClass.new
     Hash = HashClass.new
 
     module Lax
-      extend TypeNamespace
+      String = Types::String \
+               | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
+               | Any.coerce(::Numeric, &:to_s)
 
-      define(:String) do
-        Types::String \
-          | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
-          | Any.coerce(::Numeric, &:to_s)
-      end
-
-      define(:Integer) do
-        Types::Numeric.transform(&:to_i) \
-          | Any.coerce(/^\d+$/, &:to_i) \
-          | Any.coerce(/^\d+.\d*?$/, &:to_i)
-      end
+      Integer = Types::Numeric.transform(&:to_i) \
+                | Any.coerce(/^\d+$/, &:to_i) \
+                | Any.coerce(/^\d+.\d*?$/, &:to_i)
     end
 
     module Forms
-      extend TypeNamespace
+      True = Types::True \
+             | Any.coerce(/^true$/i) { |_| true } \
+             | Any.coerce('1') { |_| true } \
+             | Any.coerce(1) { |_| true }
 
-      define(:True) do
-        Types::True \
-          | Any.coerce(/^true$/i) { |_| true } \
-          | Any.coerce('1') { |_| true } \
-          | Any.coerce(1) { |_| true }
-      end
+      False = Types::False \
+              | Any.coerce(/^false$/i) { |_| false } \
+              | Any.coerce('0') { |_| false } \
+              | Any.coerce(0) { |_| false }
 
-      define(:False) do
-        Types::False \
-          | Any.coerce(/^false$/i) { |_| false } \
-          | Any.coerce('0') { |_| false } \
-          | Any.coerce(0) { |_| false }
-      end
-
-      define(:Boolean) { True | False }
+      Boolean = True | False
     end
   end
 end

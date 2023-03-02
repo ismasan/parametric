@@ -191,13 +191,11 @@ RSpec.describe Types do
       end
 
       specify Types::True do
-        expect(Types::True.metadata[:type]).to eq('Parametric::Types::True')
         assert_result(Types::True.call(true), true, true)
         assert_result(Types::True.call(false), false, false)
       end
 
       specify Types::Boolean do
-        expect(Types::Boolean.metadata[:type]).to eq('Parametric::Types::Boolean')
         assert_result(Types::Boolean.call(true), true, true)
         assert_result(Types::Boolean.call(false), false, true)
         assert_result(Types::Boolean.call('true'), 'true', false)
@@ -324,16 +322,6 @@ RSpec.describe Types do
         assert_result(s3.call(age: 42), {age: 42}, false)
       end
     end
-  end
-
-  module TestNamespace
-    extend TypeNamespace
-
-    define(:Foo) { Types::Any }
-  end
-
-  specify TypeNamespace do
-    expect(TestNamespace::Foo.metadata[:type]).to eq('TestNamespace::Foo')
   end
 
   private
