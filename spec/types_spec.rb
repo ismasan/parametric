@@ -421,6 +421,16 @@ RSpec.describe Types do
       expect(field.metadata[:options]).to eq(%w(aa bb cc))
     end
 
+    specify 'Field#declared' do
+      field = Types::Schema::Field.new.type(:string).declared.policy(Types::Any.transform { |v| 'Hello %s' % v })
+      assert_result(field.call('Ismael'), 'Hello Ismael', true)
+      assert_result(field.call(Undefined), Undefined, false)
+
+      with_default = Types::Schema::Field.new.type(:string).declared.default('no')
+      assert_result(with_default.call('Ismael'), 'Ismael', true)
+      assert_result(with_default.call(Undefined), 'no', true)
+    end
+
     context 'with array schemas' do
       specify 'inline array schemas' do
         schema = Types::Schema.new do |sc|

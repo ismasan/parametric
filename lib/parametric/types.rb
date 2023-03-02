@@ -722,6 +722,12 @@ module Parametric
           self
         end
 
+        def declared
+          # Halt pipeline if value is undefined
+          @_type = Types::Nothing.not | @_type
+          self
+        end
+
         private
 
         attr_reader :registry
