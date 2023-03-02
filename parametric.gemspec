@@ -18,6 +18,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "rake"
-  spec.add_development_dependency "rspec", '3.4.0'
+  spec.add_development_dependency "rspec", '3.12.0'
   spec.add_development_dependency "byebug"
 end
