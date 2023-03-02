@@ -8,6 +8,9 @@ module Parametric
   Undefined = Object.new.freeze
 
   DEFAULT_METADATA = {}.freeze
+  DEFAULT_ERROR_MESSAGE = 'is invalid'
+  BLANK_STRING = ''
+  BLANK_ARRAY = [].freeze
 
   module Resultable
     def success?
@@ -131,6 +134,14 @@ module Parametric
       Not.new(other)
     end
 
+    def halt(error: nil)
+      Not.new(self, error:)
+    end
+
+    def bundle(name: nil, error: DEFAULT_ERROR_MESSAGE)
+      Bundle.new(self, name:, error:)
+    end
+
     def value(val, error = 'invalid value')
       check(error) { |v| val === v }
     end
@@ -145,6 +156,10 @@ module Parametric
 
     def optional
       Types::Nil | self
+    end
+
+    def present
+      Types::Present >> self
     end
 
     def rule(rules = {})
@@ -296,9 +311,10 @@ module Parametric
 
     attr_reader :metadata
 
-    def initialize(step)
+    def initialize(step, error: nil)
       @step = step
       @metadata = step.metadata
+      @error = error
     end
 
     def inspect
@@ -307,7 +323,35 @@ module Parametric
 
     private def _call(result)
       result = @step.call(result)
-      result.success? ? result.halt : result.success
+      result.success? ? result.halt(error: @error) : result.success
+    end
+  end
+
+  class Bundle
+    include Steppable
+
+    attr_reader :metadata
+
+    def initialize(step, name: 'Bundle', error:)
+      @step = step
+      @name = name
+      @metadata = step.metadata
+      @error = error
+    end
+
+    def bundle(name: nil, error: DEFAULT_ERROR_MESSAGE)
+      Bundle.new(@step, name:, error:)
+    end
+
+    def inspect
+      %(#{@name}[#{@step.inspect}])
+    end
+
+    private def _call(result)
+      result = @step.call(result)
+      return result if result.success?
+
+      Result.halt(result.value, error: @error % result.value)
     end
   end
 
@@ -550,6 +594,14 @@ module Parametric
       Boolean = True | False
       Array = ArrayClass.new
       Hash = HashClass.new
+      Blank = (
+        Nothing \
+        | Nil \
+        | String.value(BLANK_STRING) \
+        | Array.value(BLANK_ARRAY)
+      ).bundle(name: 'Blank', error: 'must be blank')
+
+      Present = Blank.not.bundle(name: 'Present', error: 'must be present')
     end
 
     class Lax < self
@@ -730,6 +782,10 @@ module Parametric
         def optional
           @_type = Types::Nil.not | @_type
           self
+        end
+
+        def present
+          policy(:present)
         end
 
         private

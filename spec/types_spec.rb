@@ -41,6 +41,15 @@ RSpec.describe Types do
       expect(is_a_string.call(10).error).to eq('not a string')
     end
 
+    specify '#present' do
+      assert_result(Types::Any.present.call, Undefined, false)
+      assert_result(Types::Any.present.call(''), '', false)
+      assert_result(Types::Any.present.call('foo'), 'foo', true)
+      assert_result(Types::Any.present.call([]), [], false)
+      assert_result(Types::Any.present.call([1, 2]), [1, 2], true)
+      assert_result(Types::Any.present.call(nil), nil, false)
+    end
+
     specify '#is_a' do
       pipeline = Types::Any.is_a(::Integer).transform { |v| v + 5 }
       assert_result(pipeline.call(10), 15, true)
@@ -76,6 +85,13 @@ RSpec.describe Types do
       assert_result(string.not.call(10), 10, true)
     end
 
+    specify '#halt' do
+      type = Types::Integer.rule(lte: 10).halt(error: 'nope')
+      assert_result(type.call(9), 9, false)
+      assert_result(type.call(19), 19, true)
+      expect(type.call(9).error).to eq('nope')
+    end
+
     specify '#value' do
       assert_result(Types::Any.value('hello').call('hello'), 'hello', true)
       assert_result(Types::Any.value('hello').call('nope'), 'nope', false)
@@ -91,6 +107,12 @@ RSpec.describe Types do
       assert_result(Types::Any.default('hello').call('bye'), 'bye', true)
       assert_result(Types::Any.default('hello').call(nil), nil, true)
       assert_result(Types::Any.default('hello').call(Undefined), 'hello', true)
+    end
+
+    specify '#bundle' do
+      type = (Types::String.value('foo') | Types::String.value('bar')).bundle(error: 'expected foo or bar, but got %s')
+      assert_result(type.call('foo'), 'foo', true)
+      expect(type.call('nope').error).to eq('expected foo or bar, but got nope')
     end
 
     specify '#optional' do
@@ -436,6 +458,13 @@ RSpec.describe Types do
       assert_result(field.call('Ismael'), 'Hello Ismael', true)
       assert_result(field.call(nil), nil, false)
     end
+
+    # specify 'Field#present' do
+    #   field = Types::Schema::Field.new.present
+    #   # assert_result(field.call('Ismael'), 'Ismael', true)
+    #   # assert_result(field.call(nil), nil, false)
+    #   expect(field.call(nil).error).to eq(1)
+    # end
 
     context 'with array schemas' do
       specify 'inline array schemas' do
