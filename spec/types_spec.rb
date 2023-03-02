@@ -107,6 +107,7 @@ RSpec.describe Types do
       assert_result(Types::Any.default('hello').call('bye'), 'bye', true)
       assert_result(Types::Any.default('hello').call(nil), nil, true)
       assert_result(Types::Any.default('hello').call(Undefined), 'hello', true)
+      assert_result(Types::String.default('hello').call(Undefined), 'hello', true)
     end
 
     specify '#bundle' do
