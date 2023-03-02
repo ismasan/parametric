@@ -682,15 +682,16 @@ module Parametric
           end
         end
 
-        def policy(pl, rule_matcher = Undefined)
-          if pl.is_a?(::Symbol) && rule_matcher == Undefined
-            @_type = @_type >> registry[pl]
-          elsif pl.is_a?(Steppable) && rule_matcher == Undefined
-            @_type = @_type >> pl
-          elsif pl.is_a?(::Hash) && rule_matcher == Undefined
-            @_type = @_type.rule(pl)
-          elsif pl.is_a?(::Symbol)
-            @_type = @_type.rule(pl => rule_matcher)
+        def policy(*args)
+          @_type = case args
+          in [::Symbol => pl]
+            @_type >> registry[pl]
+          in [Steppable => pl]
+            @_type >> pl
+          in [::Hash => rules]
+            @_type.rule(rules)
+          in [::Symbol => rule_name, Object => rule_matcher]
+            @_type.rule(rule_name => rule_matcher)
           else
             raise ArgumentError, "expected #{self.class}#policy(Symbol | Step) or #{self.class}#policy(Symbol, matcher)"
           end
