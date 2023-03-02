@@ -308,8 +308,6 @@ module Parametric
     class Chain
       include Steppable
 
-      # @param left [Reducer]
-      # @param right [Reducer]
       def initialize(left, right)
         @left = left
         @right = right
@@ -368,14 +366,14 @@ module Parametric
       end
     end
 
-    Noop = Step.new { |r| r }
+    Any = Step.new { |r| r }
 
     class ArrayClass
       include Steppable
 
       attr_reader :metadata
 
-      def initialize(element_type: Noop)
+      def initialize(element_type: Any)
         @element_type = element_type
         @metadata = @element_type.metadata.merge(type: 'Array')
       end
@@ -521,13 +519,13 @@ module Parametric
     module Types
       extend TypeNamespace
 
-      define(:Nothing) { Noop.rule(eq: Undefined) }
-      define(:String) { Noop.is_a(::String) }
-      define(:Numeric) { Noop.is_a(::Numeric) }
-      define(:Integer) { Noop.is_a(::Integer) }
-      define(:Nil) { Noop.is_a(::NilClass) }
-      define(:True) { Noop.is_a(::TrueClass) }
-      define(:False) { Noop.is_a(::FalseClass) }
+      define(:Nothing) { Any.rule(eq: Undefined) }
+      define(:String) { Any.is_a(::String) }
+      define(:Numeric) { Any.is_a(::Numeric) }
+      define(:Integer) { Any.is_a(::Integer) }
+      define(:Nil) { Any.is_a(::NilClass) }
+      define(:True) { Any.is_a(::TrueClass) }
+      define(:False) { Any.is_a(::FalseClass) }
       define(:Boolean) { (True | False) }
 
       Array = ArrayClass.new
@@ -538,14 +536,14 @@ module Parametric
 
         define(:String) do
           Types::String \
-            | Noop.coerce(BigDecimal) { |v| v.to_s('F') } \
-            | Noop.coerce(::Numeric, &:to_s)
+            | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
+            | Any.coerce(::Numeric, &:to_s)
         end
 
         define(:Integer) do
           Types::Numeric.transform(&:to_i) \
-            | Noop.coerce(/^\d+$/, &:to_i) \
-            | Noop.coerce(/^\d+.\d*?$/, &:to_i)
+            | Any.coerce(/^\d+$/, &:to_i) \
+            | Any.coerce(/^\d+.\d*?$/, &:to_i)
         end
       end
 
@@ -554,16 +552,16 @@ module Parametric
 
         define(:True) do
           Types::True \
-            | Noop.coerce(/^true$/i) { |_| true } \
-            | Noop.coerce('1') { |_| true } \
-            | Noop.coerce(1) { |_| true }
+            | Any.coerce(/^true$/i) { |_| true } \
+            | Any.coerce('1') { |_| true } \
+            | Any.coerce(1) { |_| true }
         end
 
         define(:False) do
           Types::False \
-            | Noop.coerce(/^false$/i) { |_| false } \
-            | Noop.coerce('0') { |_| false } \
-            | Noop.coerce(0) { |_| false }
+            | Any.coerce(/^false$/i) { |_| false } \
+            | Any.coerce('0') { |_| false } \
+            | Any.coerce(0) { |_| false }
         end
 
         define(:Boolean) { True | False }

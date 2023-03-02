@@ -21,37 +21,37 @@ RSpec.describe Pipes do
       step1 = Pipes::Step.new { |r| r.success(r.value + 5) }
       step2 = Pipes::Step.new { |r| r.success(r.value - 2) }
       step3 = Pipes::Step.new { |r| r.halt }
-      pipeline = Pipes::Noop >> step1 >> step2 >> step3 >> ->(r) { r.success(r.value + 1) }
+      pipeline = Pipes::Any >> step1 >> step2 >> step3 >> ->(r) { r.success(r.value + 1) }
 
       expect(pipeline.call(10).success?).to be(false)
       expect(pipeline.call(10).value).to eq(13)
     end
 
     specify '#transform' do
-      to_i = Pipes::Noop.transform(&:to_i)
-      plus_ten = Pipes::Noop.transform { |value| value + 10 }
+      to_i = Pipes::Any.transform(&:to_i)
+      plus_ten = Pipes::Any.transform { |value| value + 10 }
       pipeline = to_i >> plus_ten
       expect(pipeline.call('5').value).to eq(15)
     end
 
     specify '#check' do
-      is_a_string = Pipes::Noop.check('not a string') { |value| value.is_a?(::String) }
+      is_a_string = Pipes::Any.check('not a string') { |value| value.is_a?(::String) }
       expect(is_a_string.call('yup').success?).to be(true)
       expect(is_a_string.call(10).success?).to be(false)
       expect(is_a_string.call(10).error).to eq('not a string')
     end
 
     specify '#is_a' do
-      pipeline = Pipes::Noop.is_a(::Integer).transform { |v| v + 5 }
+      pipeline = Pipes::Any.is_a(::Integer).transform { |v| v + 5 }
       assert_result(pipeline.call(10), 15, true)
       assert_result(pipeline.call('nope'), 'nope', false)
     end
 
     specify '#|' do
-      integer = Pipes::Noop.is_a(::Integer)
-      string = Pipes::Noop.is_a(::String)
-      to_s = Pipes::Noop.transform(&:to_s)
-      title = Pipes::Noop.transform { |v| "The number is #{v}" }
+      integer = Pipes::Any.is_a(::Integer)
+      string = Pipes::Any.is_a(::String)
+      to_s = Pipes::Any.transform(&:to_s)
+      title = Pipes::Any.transform { |v| "The number is #{v}" }
 
       pipeline = string | (integer >> to_s >> title)
 
@@ -60,8 +60,8 @@ RSpec.describe Pipes do
     end
 
     specify '#meta' do
-      to_s = Pipes::Noop.transform(&:to_s).meta(type: :string)
-      to_i = Pipes::Noop.transform(&:to_i).meta(type: :integer).meta(foo: 'bar')
+      to_s = Pipes::Any.transform(&:to_s).meta(type: :string)
+      to_i = Pipes::Any.transform(&:to_i).meta(type: :integer).meta(foo: 'bar')
       pipe = to_s >> to_i
       expect(to_s.metadata[:type]).to eq(:string)
       expect(pipe.metadata[:type]).to eq(:integer)
@@ -69,28 +69,28 @@ RSpec.describe Pipes do
     end
 
     specify '#not' do
-      string = Pipes::Noop.check('not a string') { |v| v.is_a?(::String) }
-      assert_result(Pipes::Noop.not(string).call(10), 10, true)
-      assert_result(Pipes::Noop.not(string).call('hello'), 'hello', false)
+      string = Pipes::Any.check('not a string') { |v| v.is_a?(::String) }
+      assert_result(Pipes::Any.not(string).call(10), 10, true)
+      assert_result(Pipes::Any.not(string).call('hello'), 'hello', false)
 
       assert_result(string.not.call(10), 10, true)
     end
 
     specify '#value' do
-      assert_result(Pipes::Noop.value('hello').call('hello'), 'hello', true)
-      assert_result(Pipes::Noop.value('hello').call('nope'), 'nope', false)
+      assert_result(Pipes::Any.value('hello').call('hello'), 'hello', true)
+      assert_result(Pipes::Any.value('hello').call('nope'), 'nope', false)
     end
 
     specify '#static' do
-      assert_result(Pipes::Noop.static('hello').call('hello'), 'hello', true)
-      assert_result(Pipes::Noop.static('hello').call('nope'), 'hello', true)
-      assert_result(Pipes::Noop.static { |_| 'hello' }.call('nope'), 'hello', true)
+      assert_result(Pipes::Any.static('hello').call('hello'), 'hello', true)
+      assert_result(Pipes::Any.static('hello').call('nope'), 'hello', true)
+      assert_result(Pipes::Any.static { |_| 'hello' }.call('nope'), 'hello', true)
     end
 
     specify '#default' do
-      assert_result(Pipes::Noop.default('hello').call('bye'), 'bye', true)
-      assert_result(Pipes::Noop.default('hello').call(nil), nil, true)
-      assert_result(Pipes::Noop.default('hello').call(Pipes::Undefined), 'hello', true)
+      assert_result(Pipes::Any.default('hello').call('bye'), 'bye', true)
+      assert_result(Pipes::Any.default('hello').call(nil), nil, true)
+      assert_result(Pipes::Any.default('hello').call(Pipes::Undefined), 'hello', true)
     end
 
     specify '#optional' do
@@ -100,14 +100,14 @@ RSpec.describe Pipes do
     end
 
     specify '#coerce' do
-      assert_result(Pipes::Noop.coerce(::Numeric, &:to_i).call(10.5), 10, true)
-      assert_result(Pipes::Noop.coerce(::Numeric, &:to_i).call('10.5'), '10.5', false)
-      assert_result(Pipes::Noop.coerce((0..3), &:to_s).call(2), '2', true)
-      assert_result(Pipes::Noop.coerce((0..3), &:to_s).call(4), 4, false)
-      assert_result(Pipes::Noop.coerce(/true/i) { |_| true }.call('True'), true, true)
-      assert_result(Pipes::Noop.coerce(/true/i) { |_| true }.call('TRUE'), true, true)
-      assert_result(Pipes::Noop.coerce(/true/i) { |_| true }.call('nope'), 'nope', false)
-      assert_result(Pipes::Noop.coerce(1) { |_| true }.call(1), true, true)
+      assert_result(Pipes::Any.coerce(::Numeric, &:to_i).call(10.5), 10, true)
+      assert_result(Pipes::Any.coerce(::Numeric, &:to_i).call('10.5'), '10.5', false)
+      assert_result(Pipes::Any.coerce((0..3), &:to_s).call(2), '2', true)
+      assert_result(Pipes::Any.coerce((0..3), &:to_s).call(4), 4, false)
+      assert_result(Pipes::Any.coerce(/true/i) { |_| true }.call('True'), true, true)
+      assert_result(Pipes::Any.coerce(/true/i) { |_| true }.call('TRUE'), true, true)
+      assert_result(Pipes::Any.coerce(/true/i) { |_| true }.call('nope'), 'nope', false)
+      assert_result(Pipes::Any.coerce(1) { |_| true }.call(1), true, true)
     end
 
     specify '#constructor' do
@@ -116,10 +116,10 @@ RSpec.describe Pipes do
           new(name)
         end
       end
-      assert_result(Pipes::Noop.constructor(custom).call('Ismael'), custom.new('Ismael'), true)
-      with_block = Pipes::Noop.constructor(custom){ |v| custom.new('mr. %s' % v) }
+      assert_result(Pipes::Any.constructor(custom).call('Ismael'), custom.new('Ismael'), true)
+      with_block = Pipes::Any.constructor(custom){ |v| custom.new('mr. %s' % v) }
       expect(with_block.call('Ismael').value.name).to eq('mr. Ismael')
-      with_symbol = Pipes::Noop.constructor(custom, :build)
+      with_symbol = Pipes::Any.constructor(custom, :build)
       expect(with_symbol.call('Ismael').value.name).to eq('Ismael')
     end
 
@@ -174,8 +174,8 @@ RSpec.describe Pipes do
       end
 
       specify ':is_a' do
-        assert_result(Pipes::Noop.rule(is_a: String).call('b'), 'b', true)
-        assert_result(Pipes::Noop.rule(is_a: String).call(1), 1, false)
+        assert_result(Pipes::Any.rule(is_a: String).call('b'), 'b', true)
+        assert_result(Pipes::Any.rule(is_a: String).call(1), 1, false)
       end
     end
 
@@ -249,7 +249,7 @@ RSpec.describe Pipes do
         expect(result.error[3]).to match(/must be/)
       end
       assert_result(
-        Pipes::Types::Array.of(Pipes::Noop.value('a') | Pipes::Noop.value('b')).call(['a', 'b', 'a']),
+        Pipes::Types::Array.of(Pipes::Any.value('a') | Pipes::Any.value('b')).call(['a', 'b', 'a']),
         %w[a b a],
         true
       )
@@ -261,7 +261,7 @@ RSpec.describe Pipes do
     end
 
     specify 'Types::Array.concurrent' do
-      slow_type = Pipes::Noop.transform { |r| sleep(0.02); r }
+      slow_type = Pipes::Any.transform { |r| sleep(0.02); r }
       array = Pipes::Types::Array.of(slow_type).concurrent
       assert_result(array.call(1), 1, false)
       result, elapsed = bench do
@@ -329,7 +329,7 @@ RSpec.describe Pipes do
   module TestNamespace
     extend Pipes::TypeNamespace
 
-    define(:Foo) { Pipes::Noop }
+    define(:Foo) { Pipes::Any }
   end
 
   specify Pipes::TypeNamespace do
