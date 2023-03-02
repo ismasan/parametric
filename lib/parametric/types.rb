@@ -430,11 +430,11 @@ module Parametric
       key.is_a?(Key) ? key : new(key)
     end
 
-    def initialize(key)
+    def initialize(key, optional: false)
       key_s = key.to_s
       match = OPTIONAL_EXP.match(key_s)
       @key = match[1]
-      @optional = !!match[2]
+      @optional = !match[2].nil? ? true : optional
     end
 
     def to_sym
@@ -570,6 +570,120 @@ module Parametric
                 | Any.coerce(0) { |_| false }
 
         Boolean = True | False
+      end
+    end
+
+    class Schema
+      def initialize(registry: Types, &block)
+        @_schema = {}
+        @registry = registry
+        @hash = Types::Hash
+        setup(&block) if block_given?
+      end
+
+      def setup(&block)
+        yield self
+        @hash = Types::Hash.schema(@_schema)
+        freeze
+      end
+
+      def metadata
+        @hash.metadata
+      end
+
+      def freeze
+        super
+        @_schema.freeze
+        self
+      end
+
+      def field(key)
+        _schema[Key.new(key)] = Field.new(registry)
+      end
+
+      def field?(key)
+        _schema[Key.new(key, optional: true)] = Field.new(registry)
+      end
+
+      def schema(sc = nil, &block)
+        if sc
+          @hash = sc
+          freeze
+          self
+        else
+          setup(&block) if block_given?
+        end
+      end
+
+      def call(value)
+        hash.call(value)
+      end
+
+      private
+
+      attr_reader :_schema, :registry, :hash
+
+      class SchemaArray
+        def initialize(registry:)
+          @registry = registry
+          @_type = Types::Array
+        end
+
+        def schema(sc = nil, &block)
+          sc ||= Types::Schema.new(registry: registry, &block)
+          @_type = @_type.of(sc)
+          self
+        end
+
+        def of(*args, &block)
+          schema(*args, &block)
+        end
+
+        def call(result)
+          _type.call(result)
+        end
+
+        private
+
+        attr_reader :registry, :_type
+      end
+
+      class Field
+        attr_reader :_type
+
+        def initialize(registry)
+          @registry = registry
+          @_type = Types::Any
+        end
+
+        def type(type_symbol)
+          if type_symbol.is_a?(Steppable)
+            @_type = type_symbol
+            return self
+          end
+
+          if type_symbol == :hash
+            @_type = Types::Schema.new(registry: registry)
+          elsif type_symbol == :array
+            @_type = SchemaArray.new(registry: registry)
+          else
+            @_type = registry[type_symbol]
+            self
+          end
+        end
+
+        def default(v, &block)
+          @_type = @_type.default(v, &block)
+          self
+        end
+
+        def call(result)
+          @_type.call(result)
+        end
+
+        private
+
+        attr_reader :registry
       end
     end
   end

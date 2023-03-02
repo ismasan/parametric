@@ -350,6 +350,76 @@ RSpec.describe Types do
     end
   end
 
+  describe Types::Schema do
+    specify 'defining a nested schema' do
+      schema = Types::Schema.new do |sc|
+        sc.field(:title).type(:string).default('Mr')
+        sc.field(:name).type(:string)
+        sc.field?(:age).type(Types::Lax::Integer)
+        sc.field(:friend).type(:hash).schema do |s|
+          s.field(:name).type(:string)
+        end
+      end
+
+      assert_result(schema.call({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    end
+
+    specify 'reusing schemas' do
+      friend_schema = Types::Schema.new do |s|
+        s.field(:name).type(:string)
+      end
+
+      schema = Types::Schema.new do |sc|
+        sc.field(:title).type(:string).default('Mr')
+        sc.field(:name).type(:string)
+        sc.field?(:age).type(:integer)
+        sc.field(:friend).type(:hash).schema friend_schema
+      end
+
+      assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    end
+
+    context 'with array schemas' do
+      specify 'inline array schemas' do
+        schema = Types::Schema.new do |sc|
+          sc.field(:friends).type(:array).schema do |f|
+            f.field(:name).type(:string)
+          end
+        end
+
+        input = {friends: [{name: 'Joe'}, {name: 'Joan'}]}
+
+        assert_result(schema.call(input), input, true)
+      end
+
+      specify 'reusable array schemas' do
+        friend_schema = Types::Schema.new do |s|
+          s.field(:name).type(:string)
+        end
+
+        schema = Types::Schema.new do |sc|
+          sc.field(:friends).type(:array).schema friend_schema
+        end
+
+        input = {friends: [{name: 'Joe'}, {name: 'Joan'}]}
+
+        assert_result(schema.call(input), input, true)
+        schema.call({friends: [{name: 'Joan'}, {}]}).tap do |result|
+          expect(result.success?).to be false
+          expect(result.error[:friends][1][:name]).not_to be_nil
+        end
+      end
+
+      specify 'array.of' do
+        schema = Types::Schema.new do |sc|
+          sc.field(:numbers).type(:array).of(Types::Integer | Types::String.transform(&:to_i))
+        end
+
+        assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
+      end
+    end
+  end
+
   private
 
   def assert_result(result, value, is_success, debug: false)
