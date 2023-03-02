@@ -431,6 +431,12 @@ RSpec.describe Types do
       assert_result(with_default.call(Undefined), 'no', true)
     end
 
+    specify 'Field#optional' do
+      field = Types::Schema::Field.new.type(:string).optional.policy(Types::Any.transform { |v| 'Hello %s' % v })
+      assert_result(field.call('Ismael'), 'Hello Ismael', true)
+      assert_result(field.call(nil), nil, false)
+    end
+
     context 'with array schemas' do
       specify 'inline array schemas' do
         schema = Types::Schema.new do |sc|

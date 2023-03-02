@@ -719,12 +719,16 @@ module Parametric
 
         def options(opts)
           policy(:included_in, opts)
-          self
         end
 
         def declared
           # Halt pipeline if value is undefined
           @_type = Types::Nothing.not | @_type
+          self
+        end
+
+        def optional
+          @_type = Types::Nil.not | @_type
           self
         end
 
