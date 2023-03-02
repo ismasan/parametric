@@ -379,16 +379,24 @@ RSpec.describe Types do
       assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
     end
 
-    specify 'Field#policy(step)' do
-      email = Types::Any.rule(match: /\w+@\w+\.\w{3}/)
-      field = Types::Schema::Field.new
-        .type(:string)
-        .policy(email)
-        .policy(Types::String.transform{ |v| "<#{v}>"})
+    describe 'Field#policy(step)' do
+      it 'takes steps as objects or registry symbols' do
+        email = Types::Any.rule(match: /\w+@\w+\.\w{3}/)
+        field = Types::Schema::Field.new
+          .type(:string)
+          .policy(email)
+          .policy(Types::String.transform{ |v| "<#{v}>"})
 
-      assert_result(field.call('user@email.com'), '<user@email.com>', true)
-      assert_result(field.call('nope'), 'nope', false)
-      assert_result(field.call(1), 1, false)
+        assert_result(field.call('user@email.com'), '<user@email.com>', true)
+        assert_result(field.call('nope'), 'nope', false)
+        assert_result(field.call(1), 1, false)
+      end
+
+      it 'takes rule' do
+        field = Types::Schema::Field.new.type(:string).policy(:format, /^Mr\s/)
+        assert_result(field.call('Mr Ismael'), 'Mr Ismael', true)
+        assert_result(field.call('Ismael'), 'Ismael', false)
+      end
     end
 
     context 'with array schemas' do

@@ -254,6 +254,9 @@ module Parametric
   Rules.define :match, 'must match %{value}' do |result, value|
     value === result.value
   end
+  Rules.define :format, 'must match format %{value}' do |result, value|
+    value === result.value
+  end
   Rules.define :included_in, 'must be included in %{value}' do |result, value|
     value.include? result.value
   end
@@ -679,8 +682,14 @@ module Parametric
           end
         end
 
-        def policy(pl)
-          @_type = @_type >> (pl.is_a?(Steppable) ? pl : registry[pl])
+        def policy(pl, rule_matcher = Undefined)
+          if rule_matcher == Undefined
+            @_type = @_type >> (pl.is_a?(Steppable) ? pl : registry[pl])
+          elsif pl.is_a?(::Symbol)
+            @_type = @_type.rule(pl => rule_matcher)
+          else
+            raise ArgumentError, "expected #{self.class}#policy(Symbol | Step) or #{self.class}#policy(Symbol, matcher)"
+          end
           self
         end
 
