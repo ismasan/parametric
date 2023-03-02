@@ -507,42 +507,70 @@ module Parametric
     end
   end
 
-  module Types
-    Any = Step.new { |r| r }
-    Nothing = Any.rule(eq: Undefined)
-    String = Any.is_a(::String)
-    Numeric = Any.is_a(::Numeric)
-    Integer = Any.is_a(::Integer)
-    Nil = Any.is_a(::NilClass)
-    True = Any.is_a(::TrueClass)
-    False = Any.is_a(::FalseClass)
-    Boolean = True | False
-
-    Array = ArrayClass.new
-    Hash = HashClass.new
-
-    module Lax
-      String = Types::String \
-               | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
-               | Any.coerce(::Numeric, &:to_s)
-
-      Integer = Types::Numeric.transform(&:to_i) \
-                | Any.coerce(/^\d+$/, &:to_i) \
-                | Any.coerce(/^\d+.\d*?$/, &:to_i)
+  class TypeRegistry
+    def self.mapping
+      @mapping ||= {}
     end
 
-    module Forms
-      True = Types::True \
-             | Any.coerce(/^true$/i) { |_| true } \
-             | Any.coerce('1') { |_| true } \
-             | Any.coerce(1) { |_| true }
+    def self.define(&)
+      yield
 
-      False = Types::False \
-              | Any.coerce(/^false$/i) { |_| false } \
-              | Any.coerce('0') { |_| false } \
-              | Any.coerce(0) { |_| false }
+      @mapping = constants(false).each.with_object({}) do |const_name, memo|
+        const = const_get(const_name)
+        memo[const_name.to_s.downcase.to_sym] = const
+      end
+    end
 
+    def self.[](key)
+      mapping.fetch(key) { ancestors[1].mapping.fetch(key) }
+    end
+
+    def self.keys
+      (mapping.keys + ancestors[1].mapping.keys).uniq
+    end
+  end
+
+  class Types < TypeRegistry
+    define do
+      Any = Step.new { |r| r }
+      Nothing = Any.rule(eq: Undefined)
+      String = Any.is_a(::String)
+      Numeric = Any.is_a(::Numeric)
+      Integer = Any.is_a(::Integer)
+      Nil = Any.is_a(::NilClass)
+      True = Any.is_a(::TrueClass)
+      False = Any.is_a(::FalseClass)
       Boolean = True | False
+      Array = ArrayClass.new
+      Hash = HashClass.new
+    end
+
+    class Lax < self
+      define do
+        String = Types::String \
+                 | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
+                 | Any.coerce(::Numeric, &:to_s)
+
+        Integer = Types::Numeric.transform(&:to_i) \
+                  | Any.coerce(/^\d+$/, &:to_i) \
+                  | Any.coerce(/^\d+.\d*?$/, &:to_i)
+      end
+    end
+
+    class Forms < self
+      define do
+        True = Types::True \
+               | Types::String >> Any.coerce(/^true$/i) { |_| true } \
+               | Any.coerce('1') { |_| true } \
+               | Any.coerce(1) { |_| true }
+
+        False = Types::False \
+                | Types::String >> Any.coerce(/^false$/i) { |_| false } \
+                | Any.coerce('0') { |_| false } \
+                | Any.coerce(0) { |_| false }
+
+        Boolean = True | False
+      end
     end
   end
 end

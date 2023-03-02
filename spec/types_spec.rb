@@ -179,6 +179,32 @@ RSpec.describe Types do
       end
     end
 
+    class self::TestRegistry < TypeRegistry
+      define do
+        Foo = 'foo'
+        Bar = 'bar'
+      end
+
+      class Child < self
+        define do
+          Bar = 'child::bar'
+        end
+      end
+    end
+
+    describe TypeRegistry do
+      specify do
+        expect(self.class::TestRegistry::Foo).to eq('foo')
+        expect(self.class::TestRegistry::Bar).to eq('bar')
+        expect(self.class::TestRegistry[:foo]).to eq('foo')
+
+        expect(self.class::TestRegistry::Child::Foo).to eq('foo')
+        expect(self.class::TestRegistry::Child::Bar).to eq('child::bar')
+        expect(self.class::TestRegistry::Child[:foo]).to eq('foo')
+        expect(self.class::TestRegistry::Child[:bar]).to eq('child::bar')
+      end
+    end
+
     describe 'built-in types' do
       specify Types::String do
         assert_result(Types::String.call('aa'), 'aa', true)
