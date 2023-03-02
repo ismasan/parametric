@@ -379,6 +379,18 @@ RSpec.describe Types do
       assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
     end
 
+    specify 'Field#policy(step)' do
+      email = Types::Any.rule(match: /\w+@\w+\.\w{3}/)
+      field = Types::Schema::Field.new
+        .type(:string)
+        .policy(email)
+        .policy(Types::String.transform{ |v| "<#{v}>"})
+
+      assert_result(field.call('user@email.com'), '<user@email.com>', true)
+      assert_result(field.call('nope'), 'nope', false)
+      assert_result(field.call(1), 1, false)
+    end
+
     context 'with array schemas' do
       specify 'inline array schemas' do
         schema = Types::Schema.new do |sc|

@@ -582,7 +582,14 @@ module Parametric
       end
 
       def setup(&block)
-        yield self
+        case block.arity
+        when 1
+          yield self
+        when 0
+          self.instance_eval(&block)
+        else
+          raise ArgumentError, "#{self.class} expects a block with 0 or 1 argument, but got #{block.arity}"
+        end
         @hash = Types::Hash.schema(@_schema)
         freeze
       end
@@ -598,11 +605,11 @@ module Parametric
       end
 
       def field(key)
-        _schema[Key.new(key)] = Field.new(registry)
+        _schema[Key.new(key)] = Field.new(registry:)
       end
 
       def field?(key)
-        _schema[Key.new(key, optional: true)] = Field.new(registry)
+        _schema[Key.new(key, optional: true)] = Field.new(registry:)
       end
 
       def schema(sc = nil, &block)
@@ -630,7 +637,7 @@ module Parametric
         end
 
         def schema(sc = nil, &block)
-          sc ||= Types::Schema.new(registry: registry, &block)
+          sc ||= Types::Schema.new(registry:, &block)
           @_type = @_type.of(sc)
           self
         end
@@ -651,7 +658,7 @@ module Parametric
       class Field
         attr_reader :_type
 
-        def initialize(registry)
+        def initialize(registry: Types)
           @registry = registry
           @_type = Types::Any
         end
@@ -670,6 +677,11 @@ module Parametric
             @_type = registry[type_symbol]
             self
           end
+        end
+
+        def policy(pl)
+          @_type = @_type >> (pl.is_a?(Steppable) ? pl : registry[pl])
+          self
         end
 
         def default(v, &block)
