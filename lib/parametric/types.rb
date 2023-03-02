@@ -568,7 +568,7 @@ module Parametric
 
       @mapping = constants(false).each.with_object({}) do |const_name, memo|
         const = const_get(const_name)
-        memo[const_name.to_s.downcase.to_sym] = const
+        memo[underscore(const_name.to_s).to_sym] = const
       end
     end
 
@@ -578,6 +578,13 @@ module Parametric
 
     def self.keys
       (mapping.keys + ancestors[1].mapping.keys).uniq
+    end
+
+    def self.underscore(str)
+      str.gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
+        .gsub(/([a-z\d])([A-Z])/,'\1_\2')
+        .tr('-', '_')
+        .downcase
     end
   end
 
