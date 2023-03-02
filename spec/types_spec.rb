@@ -466,6 +466,13 @@ RSpec.describe Types do
       expect(field.call(nil).error).to eq('must be present')
     end
 
+    specify 'Field#required' do
+      field = Types::Schema::Field.new.required
+      assert_result(field.call, Undefined, false)
+      assert_result(field.call(nil), nil, true)
+      expect(field.call.error).to eq('is required')
+    end
+
     context 'with array schemas' do
       specify 'inline array schemas' do
         schema = Types::Schema.new do |sc|

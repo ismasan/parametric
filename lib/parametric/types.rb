@@ -788,6 +788,11 @@ module Parametric
           policy(:present)
         end
 
+        def required
+          @_type = Types::Nothing.halt(error: 'is required') >> @_type
+          self
+        end
+
         private
 
         attr_reader :registry
