@@ -9,7 +9,23 @@ module Parametric
 
     DEFAULT_METADATA = {}.freeze
 
+    module Resultable
+      def success?
+        true
+      end
+
+      def halt?
+        false
+      end
+
+      def map(fn)
+        fn.call(self)
+      end
+    end
+
     class Result
+      include Resultable
+
       attr_reader :value
 
       class << self
@@ -22,7 +38,7 @@ module Parametric
         end
 
         def wrap(value)
-          return value if value.is_a?(Result)
+          return value if value.is_a?(Resultable)
 
           success(value)
         end
@@ -33,18 +49,6 @@ module Parametric
       end
 
       class Success < self
-        def success?
-          true
-        end
-
-        def halt?
-          false
-        end
-
-        def map(fn)
-          fn.call(self)
-        end
-
         def success(v = value)
           v == value ? self : Result.success(v)
         end
@@ -66,7 +70,7 @@ module Parametric
           false
         end
 
-        def failure?
+        def halt?
           true
         end
 
