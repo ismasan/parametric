@@ -85,6 +85,10 @@ module Parametric
         callable.is_a?(Steppable) ? callable : Step.new(callable)
       end
 
+      def metadata
+        DEFAULT_METADATA
+      end
+
       def call(result = Undefined)
         _call(Result.wrap(result))
       end
@@ -206,8 +210,6 @@ module Parametric
 
       include Steppable
 
-      attr_reader :metadata
-
       def self.registry
         @registry ||= Registry.new
       end
@@ -218,7 +220,6 @@ module Parametric
 
       def initialize(rules)
         @rules = self.class.registry.resolve(rules)
-        @metadata = DEFAULT_METADATA
       end
 
       private def _call(result)
@@ -266,12 +267,9 @@ module Parametric
     class Static
       include Steppable
 
-      attr_reader :metadata
-
       def initialize(value = Undefined, &block)
         @inspect_value = nil
         @value = value == Undefined ? block : -> { value }
-        @metadata = DEFAULT_METADATA
       end
 
       def inspect
