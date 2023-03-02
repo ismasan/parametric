@@ -459,12 +459,12 @@ RSpec.describe Types do
       assert_result(field.call(nil), nil, false)
     end
 
-    # specify 'Field#present' do
-    #   field = Types::Schema::Field.new.present
-    #   # assert_result(field.call('Ismael'), 'Ismael', true)
-    #   # assert_result(field.call(nil), nil, false)
-    #   expect(field.call(nil).error).to eq(1)
-    # end
+    specify 'Field#present' do
+      field = Types::Schema::Field.new.present
+      assert_result(field.call('Ismael'), 'Ismael', true)
+      assert_result(field.call(nil), nil, false)
+      expect(field.call(nil).error).to eq('must be present')
+    end
 
     context 'with array schemas' do
       specify 'inline array schemas' do
