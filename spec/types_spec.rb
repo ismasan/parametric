@@ -134,6 +134,7 @@ RSpec.describe Types do
         assert_result(Types::Integer.rule(eq: 1).call(1), 1, true)
         assert_result(Types::Integer.rule(eq: 1).call(2), 2, false)
         assert_result(Types::Integer.rule(eq: custom.new(1)).call(1), 1, true)
+        expect(Types::Integer.rule(eq: 1).metadata[:eq]).to eq(1)
       end
 
       specify ':not_eq' do
@@ -408,8 +409,16 @@ RSpec.describe Types do
 
     specify 'Field#meta' do
       field = Types::Schema::Field.new.type(:string).meta(foo: 1).meta(bar: 2)
-      expect(field.metadata).to eq(foo: 1, bar: 2)
-      expect(field.meta_data).to eq(foo: 1, bar: 2) # bw comp
+      expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)
+      expect(field.meta_data).to eq(field.metadata)
+    end
+
+    specify 'Field#options' do
+      field = Types::Schema::Field.new.type(:string).options(%w(aa bb cc))
+      assert_result(field.call('aa'), 'aa', true)
+      assert_result(field.call('cc'), 'cc', true)
+      assert_result(field.call('dd'), 'dd', false)
+      expect(field.metadata[:options]).to eq(%w(aa bb cc))
     end
 
     context 'with array schemas' do

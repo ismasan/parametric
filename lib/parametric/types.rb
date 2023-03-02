@@ -189,7 +189,7 @@ module Parametric
         end
       end
 
-      RuleDef = Data.define(:name, :error_tpl, :callable) do
+      RuleDef = Data.define(:name, :error_tpl, :callable, :metadata_key) do
         def error_for(result, value)
           return nil if callable.call(result, value)
 
@@ -201,10 +201,10 @@ module Parametric
         @definitions = {}
       end
 
-      def define(name, error_tpl, callable = nil, &block)
+      def define(name, error_tpl, callable = nil, metadata_key: name, &block)
         name = name.to_sym
         callable ||= block
-        @definitions[name] = RuleDef.new(name:, error_tpl:, callable:)
+        @definitions[name] = RuleDef.new(name:, error_tpl:, callable:, metadata_key:)
       end
 
       def resolve(rules)
@@ -222,8 +222,11 @@ module Parametric
       registry.define(...)
     end
 
+    attr_reader :metadata
+
     def initialize(rules)
       @rules = self.class.registry.resolve(rules)
+      @metadata = @rules.each.with_object({}) { |(ruledef, value), m| m[ruledef.metadata_key] = value }
     end
 
     private def _call(result)
@@ -258,7 +261,7 @@ module Parametric
   Rules.define :format, 'must match format %{value}' do |result, value|
     value === result.value
   end
-  Rules.define :included_in, 'must be included in %{value}' do |result, value|
+  Rules.define :included_in, 'must be included in %{value}', metadata_key: :options do |result, value|
     value.include? result.value
   end
   Rules.define :excluded_from, 'must not be included in %{value}' do |result, value|
@@ -267,7 +270,7 @@ module Parametric
   Rules.define :respond_to, 'must respond to %{value}' do |result, value|
     Array(value).all? { |m| result.value.respond_to?(m) }
   end
-  Rules.define :is_a, 'must be a %{value}' do |result, value|
+  Rules.define :is_a, 'must be a %{value}', metadata_key: :type do |result, value|
     result.value.is_a? value
   end
 
@@ -711,6 +714,11 @@ module Parametric
 
         def meta(md = nil)
           @_type = @_type.meta(md) if md
+          self
+        end
+
+        def options(opts)
+          policy(:included_in, opts)
           self
         end
 
