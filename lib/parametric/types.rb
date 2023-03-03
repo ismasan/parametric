@@ -609,6 +609,7 @@ module Parametric
       ).bundle(name: 'Blank', error: 'must be blank')
 
       Present = Blank.not.bundle(name: 'Present', error: 'must be present')
+      Split = String.transform { |v| v.split(/\s*,\s*/) }
     end
 
     class Lax < self

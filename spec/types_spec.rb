@@ -474,6 +474,12 @@ RSpec.describe Types do
       expect(field.call.error).to eq('is required')
     end
 
+    specify 'Field#policy(:split)' do
+      field = Types::Schema::Field.new.policy(:split)
+      assert_result(field.call('a ,b  ,c'), %w(a b c), true)
+      assert_result(field.call('aa'), %w(aa), true)
+    end
+
     context 'with array schemas' do
       specify 'inline array schemas' do
         schema = Types::Schema.new do |sc|
