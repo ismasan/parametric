@@ -66,6 +66,10 @@ RSpec.describe Types do
 
       assert_result(pipeline.call('10'), '10', true)
       assert_result(pipeline.call(10), 'The number is 10', true)
+
+      pipeline = Types::String | Types::Integer
+      failed = pipeline.call(10.3)
+      expect(failed.error).to eq(['must be a String', 'must be a Integer'])
     end
 
     specify '#meta' do
@@ -293,8 +297,8 @@ RSpec.describe Types do
       Types::Array.of(Types::Boolean).call([true, 'nope', false, 1]).tap do |result|
         expect(result.success?).to be false
         expect(result.value).to eq [true, 'nope', false, 1]
-        expect(result.error[1]).to match(/must be/)
-        expect(result.error[3]).to match(/must be/)
+        expect(result.error[1]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+        expect(result.error[3]).to eq(['must be a TrueClass', 'must be a FalseClass'])
       end
       assert_result(
         Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).call(['a', 'b', 'a']),
@@ -338,7 +342,7 @@ RSpec.describe Types do
         hash.call({title: 'Dr', name: 'Ismael', friend: {}}).tap do |result|
           expect(result.success?).to be false
           expect(result.value).to eq({title: 'Dr', name: 'Ismael', friend: { }})
-          expect(result.error[:age]).to be_a(::String)
+          expect(result.error[:age].any?).to be(true)
           expect(result.error[:friend][:name]).to be_a(::String)
         end
       end

@@ -5,7 +5,12 @@ require 'concurrent'
 require 'forwardable'
 
 module Parametric
-  Undefined = Object.new.freeze
+  class UndefinedClass
+    def inspect
+      %(Undefined)
+    end
+  end
+  Undefined = UndefinedClass.new.freeze
 
   DEFAULT_METADATA = {}.freeze
   DEFAULT_ERROR_MESSAGE = 'is invalid'
@@ -177,7 +182,7 @@ module Parametric
       step = ->(result) {
         type === result.value \
           ? result.success(coercion.call(result.value)) \
-          : result.halt(error: "%s can't be coerced" % result.value )
+          : result.halt(error: "%s can't be coerced" % result.value.inspect )
       }
       self >> step
     end
@@ -393,10 +398,14 @@ module Parametric
 
     private def _call(result)
       left_result = @left.call(result)
-      left_result.success? ? left_result : @right.call(result)
+      return left_result if left_result.success?
+
+      right_result = @right.call(result)
+      right_result.success? ? right_result : result.halt(error: [left_result.error, right_result.error].flatten)
     end
   end
 
+  # Bundle.new(self, name:, error:)
   class Step
     include Steppable
 
