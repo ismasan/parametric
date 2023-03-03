@@ -21,10 +21,12 @@ RSpec.describe Types do
       step1 = Step.new { |r| r.success(r.value + 5) }
       step2 = Step.new { |r| r.success(r.value - 2) }
       step3 = Step.new { |r| r.halt }
+      step4 = ->(minus) { Step.new { |r| r.success(r.value - minus) } }
       pipeline = Types::Any >> step1 >> step2 >> step3 >> ->(r) { r.success(r.value + 1) }
 
       expect(pipeline.call(10).success?).to be(false)
       expect(pipeline.call(10).value).to eq(13)
+      expect((step1 >> step2 >> step4.(1)).call(10).value).to eq(12)
     end
 
     specify '#transform' do
