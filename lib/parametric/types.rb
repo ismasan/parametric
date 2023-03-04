@@ -204,11 +204,27 @@ module Parametric
   class Pipeline
     include Steppable
 
+    class AroundStep
+      include Steppable
+
+      attr_reader :metadata
+
+      def initialize(step, block)
+        @step, @block = step, block
+        @metadata = @step.metadata
+      end
+
+      private def _call(result)
+        @block.call(@step, result)
+      end
+    end
+
     class Config
       attr_reader :type
 
       def initialize(type, &setup)
         @type = type
+        @around_blocks = []
         configure(&setup) if block_given?
       end
 
@@ -216,7 +232,13 @@ module Parametric
         callable ||= block
         raise ArgumentError, "#step expects an interface #call(Result) Result, but got #{callable.inspect}" unless is_a_step?(callable)
 
+        callable = @around_blocks.reduce(callable) { |cl, bl| AroundStep.new(cl, bl) } if @around_blocks.any?
         @type = @type >> callable
+        self
+      end
+
+      def around(callable = nil, &block)
+        @around_blocks << (callable || block)
         self
       end
 

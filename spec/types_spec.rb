@@ -154,8 +154,41 @@ RSpec.describe Types do
         assert_result(pipeline.call('nope'), 'nope', false)
       end
 
-      it 'is a Steppable' do
+      it 'is a Steppable and can be further composed' do
         expect(pipeline).to be_a(Parametric::Steppable)
+        pipeline2 = pipeline.pipeline do |pl|
+          pl.step { |r| r.success(r.value + ' the end') }
+        end
+
+        assert_result(pipeline2.call(2), 'The number is 4 the end', true)
+      end
+    end
+
+    describe Parametric::Pipeline do
+      specify '#around' do
+        list = []
+        counts = 0
+        pipeline = described_class.new do |pl|
+          pl.step Types::Lax::String
+          pl.around do |step, result|
+            list << 'before: %s' % result.value
+            result = step.call(result)
+            list << 'after: %s' % result.value
+            result
+          end
+          pl.step Types::Any.transform { |v| "-#{v}-" }
+          pl.around { |step, result| counts += 1; step.call(result) }
+          pl.step Types::Any.transform { |v| "*#{v}*" }
+        end
+
+        assert_result(pipeline.call(1), '*-1-*', true)
+        expect(list).to eq([
+          'before: 1',
+          'after: -1-',
+          'before: -1-',
+          'after: *-1-*'
+        ])
+        expect(counts).to eq(1)
       end
     end
 
