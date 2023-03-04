@@ -329,6 +329,10 @@ module Parametric
       @metadata = @rules.each.with_object({}) { |(ruledef, value), m| m[ruledef.metadata_key] = value }
     end
 
+    def inspect
+      %(Rules[#{metadata.inspect}])
+    end
+
     private def _call(result)
       errors = @rules.map { |(ruledef, value)| ruledef.error_for(result, value) }.compact
       return result unless errors.any?
