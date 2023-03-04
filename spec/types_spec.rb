@@ -412,6 +412,15 @@ RSpec.describe Types do
         assert_result(union.call(bar: '10'), { bar: '10' }, false)
       end
 
+      specify '#>>' do
+        s1 = Types::Hash.schema(name: Types::String)
+        s2 = Types::Any.transform { |v| "Name is #{v[:name]}" }
+
+        pipe = s1 >> s2
+        assert_result(pipe.call(name: 'Ismael', age: 42), 'Name is Ismael', true)
+        assert_result(pipe.call(age: 42), {}, false)
+      end
+
       specify 'optional keys' do
         hash = Types::Hash.schema(
           title: Types::String.default('Mr'),
@@ -422,7 +431,7 @@ RSpec.describe Types do
         assert_result(hash.call({}), {title: 'Mr'}, true)
       end
 
-      specify '&' do
+      specify '#&' do
         s1 = Types::Hash.schema(name: Types::String)
         s2 = Types::Hash.schema(age: Types::Integer)
         s3 = s1 & s2
