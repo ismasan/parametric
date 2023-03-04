@@ -433,11 +433,11 @@ RSpec.describe Types do
 
       specify '#&' do
         s1 = Types::Hash.schema(name: Types::String)
-        s2 = Types::Hash.schema(age: Types::Integer)
+        s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer)
         s3 = s1 & s2
 
         assert_result(s3.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
-        assert_result(s3.call(age: 42), {age: 42}, false)
+        assert_result(s3.call(age: 42), {age: 42}, true)
       end
     end
   end
@@ -469,6 +469,22 @@ RSpec.describe Types do
       end
 
       assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    end
+
+    specify '#&' do
+      s1 = Types::Schema.new do |sc|
+        sc.field(:name).type(:string)
+      end
+      s2 = Types::Schema.new do |sc|
+        sc.field?(:name).type(:string)
+        sc.field(:age).type(:integer).default(10)
+      end
+      s3 = s1 & s2
+      assert_result(s3.call, { age: 10 }, true)
+      assert_result(s3.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
+
+      s4 = s1.merge(s2)
+      assert_result(s4.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
     end
 
     describe 'Field#policy(step)' do

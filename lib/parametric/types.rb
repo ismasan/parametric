@@ -581,12 +581,24 @@ module Parametric
       @optional = !match[2].nil? ? true : optional
     end
 
+    def hash
+      @key.hash
+    end
+
+    def eql?(other)
+      other.hash == hash
+    end
+
     def to_sym
       @key.to_sym
     end
 
     def optional?
       @optional
+    end
+
+    def inspect
+      "#{@key}#{'?' if @optional}"
     end
   end
 
@@ -602,12 +614,16 @@ module Parametric
       self.class.new(_schema.merge(wrap_keys(hash)))
     end
 
+    # Hash#merge keeps the left-side key in the new hash
+    # if they match via #hash and #eql?
+    # we need to keep the right-side key, because even if the key name is the same,
+    # it's optional flag might have changed
     def &(other)
-      self.class.new(_schema.merge(other._schema))
+      self.class.new(merge_rightmost_keys(_schema, other._schema))
     end
 
     def inspect
-      %(Hash[#{_schema.map{ |(k,v)| [k, v.inspect].join(':') }.join(' ')}])
+      %(Hash[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
     end
 
     protected
@@ -647,6 +663,16 @@ module Parametric
         end
       else
         hash
+      end
+    end
+
+    def merge_rightmost_keys(hash1, hash2)
+      hash2.each.with_object(hash1.clone) do |(k, v), memo|
+        # assigning a key that already exist with #hash and #eql
+        # leaves the original key instance in place.
+        # but we want the hash2 key there, because its optionality could have changed.
+        memo.delete(k) if memo.key?(k)
+        memo[k] = v
       end
     end
   end
@@ -782,13 +808,23 @@ module Parametric
         end
       end
 
-      def call(value)
+      def call(value = {})
         hash.call(value)
       end
 
+      def &(other)
+        self.class.new(registry:).schema(hash & other.hash)
+      end
+
+      alias merge &
+
+      protected
+
+      attr_reader :hash
+
       private
 
-      attr_reader :_schema, :registry, :hash
+      attr_reader :_schema, :registry
 
       class SchemaArray
         def initialize(registry:)
@@ -892,6 +928,10 @@ module Parametric
         def required
           @_type = Types::Nothing.halt(error: 'is required') >> @_type
           self
+        end
+
+        def inspect
+          @_type.inspect
         end
 
         private
