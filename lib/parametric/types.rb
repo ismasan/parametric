@@ -16,6 +16,7 @@ module Parametric
   DEFAULT_ERROR_MESSAGE = 'is invalid'
   BLANK_STRING = ''
   BLANK_ARRAY = [].freeze
+  BLANK_HASH = DEFAULT_METADATA
 
   module Resultable
     def success?
@@ -763,7 +764,7 @@ module Parametric
       def initialize(registry: Types, &block)
         @_schema = {}
         @registry = registry
-        @hash = Types::Hash
+        @_hash = Types::Hash
         setup(&block) if block_given?
       end
 
@@ -776,12 +777,16 @@ module Parametric
         else
           raise ArgumentError, "#{self.class} expects a block with 0 or 1 argument, but got #{block.arity}"
         end
-        @hash = Types::Hash.schema(@_schema)
+        @_hash = Types::Hash.schema(@_schema)
         freeze
       end
 
       def metadata
-        @hash.metadata
+        _hash.metadata
+      end
+
+      def call(value = BLANK_HASH)
+        _hash.call(value)
       end
 
       def freeze
@@ -800,7 +805,7 @@ module Parametric
 
       def schema(sc = nil, &block)
         if sc
-          @hash = sc
+          @_hash = sc
           freeze
           self
         else
@@ -808,19 +813,15 @@ module Parametric
         end
       end
 
-      def call(value = {})
-        hash.call(value)
-      end
-
       def &(other)
-        self.class.new(registry:).schema(hash & other.hash)
+        self.class.new(registry:).schema(_hash & other._hash)
       end
 
       alias merge &
 
       protected
 
-      attr_reader :hash
+      attr_reader :_hash
 
       private
 
