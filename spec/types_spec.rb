@@ -139,6 +139,26 @@ RSpec.describe Types do
       assert_result(Types::Any.coerce(1) { |_| true }.call(1), true, true)
     end
 
+    describe '#pipeline' do
+      let(:pipeline) do
+        Types::Integer.pipeline do |pl|
+          pl.step { |r| r.success(r.value * 2) }
+          pl.step Types::Any.transform(&:to_s)
+          pl.step { |r| r.success('The number is %s' % r.value) }
+        end
+      end
+
+      it 'builds a step composed of many steps' do
+        assert_result(pipeline.call(2), 'The number is 4', true)
+        assert_result(pipeline.transform{ |v| v + '!!' }.call(2), 'The number is 4!!', true)
+        assert_result(pipeline.call('nope'), 'nope', false)
+      end
+
+      it 'is a Steppable' do
+        expect(pipeline).to be_a(Parametric::Steppable)
+      end
+    end
+
     specify '#constructor' do
       custom = Struct.new(:name) do
         def self.build(name)

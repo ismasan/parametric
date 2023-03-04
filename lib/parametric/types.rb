@@ -192,8 +192,66 @@ module Parametric
       self >> ->(result) { result.success(block.call(result.value)) }
     end
 
+    def pipeline(&block)
+      Pipeline.new(self, &block)
+    end
+
     def to_s
       inspect
+    end
+  end
+
+  class Pipeline
+    include Steppable
+
+    class Config
+      attr_reader :type
+
+      def initialize(type, &setup)
+        @type = type
+        configure(&setup) if block_given?
+      end
+
+      def step(callable = nil, &block)
+        callable ||= block
+        raise ArgumentError, "#step expects an interface #call(Result) Result, but got #{callable.inspect}" unless is_a_step?(callable)
+
+        @type = @type >> callable
+        self
+      end
+
+      private
+
+      def configure(&setup)
+        case setup.arity
+        when 1
+          setup.call(self)
+        when 0
+          instance_eval(&setup)
+        else
+          raise ArgumentError, 'setup block must have arity of 0 or 1'
+        end
+      end
+
+      def is_a_step?(callable)
+        return false unless callable.respond_to?(:call)
+
+        true
+      end
+    end
+
+    def initialize(type = Types::Any, &setup)
+      config = Config.new(type, &setup)
+      @type = config.type
+      freeze
+    end
+
+    def metadata
+      @type.metadata
+    end
+
+    def call(result)
+      @type.call(result)
     end
   end
 
