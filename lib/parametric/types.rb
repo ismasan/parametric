@@ -611,8 +611,23 @@ module Parametric
       freeze
     end
 
-    def schema(hash)
-      self.class.new(_schema.merge(wrap_keys(hash)))
+    # A Hash type with a specific schema.
+    # Option 1: a Hash representing schema
+    #
+    #   Types::Hash.schema(name: Types::String.present, age?: Types::Integer)
+    #
+    # Option 2: a Map with pre-defined types for all keys and values
+    #
+    #   Types::Hash.schema(Types::String, Types::Integer)
+    def schema(*args)
+      case args
+      in [::Hash => hash]
+        self.class.new(_schema.merge(wrap_keys(hash)))
+      in [Steppable => key_type, Steppable => value_type]
+        HashMap.new(key_type, value_type)
+      else
+        raise ArgumentError "unexpected value to Types::Hash#schema #{args.inspect}"
+      end
     end
 
     # Hash#merge keeps the left-side key in the new hash
@@ -675,6 +690,31 @@ module Parametric
         memo.delete(k) if memo.key?(k)
         memo[k] = v
       end
+    end
+  end
+
+  class HashMap
+    include Steppable
+
+    def initialize(key_type, value_type)
+      @key_type, @value_type = key_type, value_type
+    end
+
+    private def _call(result)
+      failed = result.value.lazy.filter_map do |key, value|
+        key_r, value_r = @key_type.call(key), @value_type.call(value)
+        if !key_r.success?
+          [:key, key, key_r]
+        elsif !value_r.success?
+          [:value, value, value_r]
+        end
+      end
+      if (first = failed.next)
+        field, val, halt = failed.first
+        return result.halt(error: "#{field} #{val.inspect} #{halt.error}")
+      end
+    rescue StopIteration
+      result
     end
   end
 

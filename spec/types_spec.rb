@@ -439,6 +439,20 @@ RSpec.describe Types do
         assert_result(s3.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
         assert_result(s3.call(age: 42), {age: 42}, true)
       end
+
+      specify '#schema(key_type, value_type)' do
+        s1 = Types::Hash.schema(Types::String, Types::Integer)
+        expect(s1.metadata).to eq({})
+        assert_result(s1.call('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
+        s1.call(a: 1, 'b' => 2).tap do |result|
+          assert_result(result, { a: 1, 'b' => 2 }, false)
+          expect(result.error).to eq('key :a must be a String')
+        end
+        s1.call('a' => 1, 'b' => {}).tap do |result|
+          assert_result(result, { 'a' => 1, 'b' => {} }, false)
+          expect(result.error).to eq('value {} must be a Integer')
+        end
+      end
     end
   end
 
