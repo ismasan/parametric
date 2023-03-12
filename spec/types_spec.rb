@@ -408,10 +408,12 @@ RSpec.describe Types do
     end
 
     describe Types::Hash do
-      specify do
+      specify 'no schema' do
         assert_result(Types::Hash.call({foo: 1}), {foo: 1}, true)
         assert_result(Types::Hash.call(1), 1, false)
+      end
 
+      specify '#schema' do
         hash = Types::Hash.schema(
           title: Types::String.default('Mr'),
           name: Types::String,
@@ -448,6 +450,11 @@ RSpec.describe Types do
         assert_result(pipe.call(age: 42), {}, false)
       end
 
+      specify '#present' do
+        assert_result(Types::Hash.call({}), {}, true)
+        assert_result(Types::Hash.present.call({}), {}, false)
+      end
+
       specify 'optional keys' do
         hash = Types::Hash.schema(
           title: Types::String.default('Mr'),
@@ -467,7 +474,7 @@ RSpec.describe Types do
         assert_result(s3.call(age: 42), {age: 42}, true)
       end
 
-      specify '#schema(key_type, value_type)' do
+      specify '#schema(key_type, value_type) "Map"' do
         s1 = Types::Hash.schema(Types::String, Types::Integer)
         expect(s1.metadata).to eq({})
         assert_result(s1.call('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
@@ -479,6 +486,7 @@ RSpec.describe Types do
           assert_result(result, { 'a' => 1, 'b' => {} }, false)
           expect(result.error).to eq('value {} must be a Integer')
         end
+        assert_result(s1.present.call({}), {}, false)
       end
     end
   end

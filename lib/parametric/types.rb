@@ -537,7 +537,7 @@ module Parametric
     attr_reader :element_type
 
     private def _call(result)
-      return result.halt(error: 'is not an Enumerable') unless result.value.is_a?(::Enumerable)
+      return result.halt(error: 'is not an Array') unless result.value.is_a?(::Enumerable)
 
       list = map_array_elements(result.value)
       errors = list.each.with_object({}).with_index do |(r, memo), idx|
@@ -765,6 +765,7 @@ module Parametric
         Nothing \
         | Nil \
         | String.value(BLANK_STRING) \
+        | Hash.value(BLANK_HASH) \
         | Array.value(BLANK_ARRAY)
       ).bundle(name: 'Blank', error: 'must be blank')
 
