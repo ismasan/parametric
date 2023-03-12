@@ -431,6 +431,15 @@ RSpec.describe Types do
         end
       end
 
+      specify '#[](key)' do
+        title = Types::String.default('Mr')
+        hash = Types::Hash.schema(
+          title: title,
+          name: Types::String,
+        )
+        expect(hash[:title]).to eq(title)
+      end
+
       specify '#|' do
         hash1 = Types::Hash.schema(foo: Types::String)
         hash2 = Types::Hash.schema(bar: Types::Integer)
@@ -439,6 +448,16 @@ RSpec.describe Types do
         assert_result(union.call(foo: 'bar'), { foo: 'bar' }, true)
         assert_result(union.call(bar: 10), { bar: 10 }, true)
         assert_result(union.call(bar: '10'), { bar: '10' }, false)
+      end
+
+      specify '#discriminated' do
+        t1 = Types::Hash.schema(kind: Types::Any.static('t1'), name: Types::String)
+        t2 = Types::Hash.schema(kind: Types::Any.static('t2'), name: Types::String)
+        type = Types::Hash.discriminated(:kind, t1, t2)
+
+        assert_result(type.call(kind: 't1', name: 'T1'), { kind: 't1', name: 'T1' }, true)
+        assert_result(type.call(kind: 't2', name: 'T2'), { kind: 't2', name: 'T2' }, true)
+        assert_result(type.call(kind: 't3', name: 'T2'), { kind: 't3', name: 'T2' }, false)
       end
 
       specify '#>>' do

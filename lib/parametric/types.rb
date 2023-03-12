@@ -153,6 +153,9 @@ module Parametric
     end
 
     def static(val = Undefined, &block)
+      # TODO: it doesn't make sense to validate before static values
+      # perhaps #static shouldn't be chainable, only available as
+      # Types.static('foo')
       self >> Static.new(val, &block)
     end
 
@@ -638,6 +641,14 @@ module Parametric
       self.class.new(merge_rightmost_keys(_schema, other._schema))
     end
 
+    def discriminated(key, *types)
+      DiscriminatedHash.new(self, key, types)
+    end
+
+    def [](a_key)
+      _schema[Key.wrap(a_key)]
+    end
+
     def inspect
       %(Hash[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
     end
@@ -715,6 +726,33 @@ module Parametric
       end
     rescue StopIteration
       result
+    end
+  end
+
+  class DiscriminatedHash
+    include Steppable
+
+    def initialize(hash_type, key, types)
+      @hash_type = hash_type
+      @key = Key.wrap(key)
+      @types = types
+
+      raise ArgumentError, 'all types must be HashClass' if @types.size == 0 || @types.any? { |t| !t.is_a?(HashClass) }
+      raise ArgumentError, "all types must define key #{@key}" unless @types.all? { |t| !!t[@key] }
+      # types are assumed to have static values for the index field :key
+      @index = @types.each.with_object({}) do |t, memo|
+        memo[t[@key].call.value] = t
+      end
+    end
+
+    private def _call(result)
+      result = @hash_type.call(result)
+      return result unless result.success?
+
+      child = @index[result.value[@key.to_sym]]
+      return result.halt(error: "expected :#{@key.to_sym} to be one of #{@index.keys.join(', ')}") unless child
+
+      child.call(result)
     end
   end
 
