@@ -431,6 +431,17 @@ RSpec.describe Types do
         end
       end
 
+      specify '#schema with static values' do
+        hash = Types::Hash.schema(
+          title: Types::String.default('Mr'),
+          name: 'Ismael',
+          age: 45,
+          friend: Types::Hash.schema(name: Types::String)
+        )
+
+        assert_result(hash.call({ friend: { name: 'Joe' } }), { title: 'Mr', name: 'Ismael', age: 45, friend: { name: 'Joe' } }, true)
+      end
+
       specify '#[](key)' do
         title = Types::String.default('Mr')
         hash = Types::Hash.schema(
@@ -451,8 +462,8 @@ RSpec.describe Types do
       end
 
       specify '#discriminated' do
-        t1 = Types::Hash.schema(kind: Types::Any.static('t1'), name: Types::String)
-        t2 = Types::Hash.schema(kind: Types::Any.static('t2'), name: Types::String)
+        t1 = Types::Hash.schema(kind: 't1', name: Types::String)
+        t2 = Types::Hash.schema(kind: 't2', name: Types::String)
         type = Types::Hash.discriminated(:kind, t1, t2)
 
         assert_result(type.call(kind: 't1', name: 'T1'), { kind: 't1', name: 'T1' }, true)

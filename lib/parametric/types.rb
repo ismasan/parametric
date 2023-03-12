@@ -625,7 +625,7 @@ module Parametric
     def schema(*args)
       case args
       in [::Hash => hash]
-        self.class.new(_schema.merge(wrap_keys(hash)))
+        self.class.new(_schema.merge(wrap_keys_and_values(hash)))
       in [Steppable => key_type, Steppable => value_type]
         HashMap.new(key_type, value_type)
       else
@@ -680,16 +680,18 @@ module Parametric
       errors.any? ? result.halt(output, error: errors) : result.success(output)
     end
 
-    def wrap_keys(hash)
+    def wrap_keys_and_values(hash)
       case hash
       when ::Array
-        hash.map { |e| wrap_keys(e) }
+        hash.map { |e| wrap_keys_and_values(e) }
       when ::Hash
         hash.each.with_object({}) do |(k, v), ret|
-          ret[Key.wrap(k)] = wrap_keys(v)
+          ret[Key.wrap(k)] = wrap_keys_and_values(v)
         end
-      else
+      when ::Parametric::Types::Schema::Field, Steppable
         hash
+      else # leaf values
+        Static.new(hash)
       end
     end
 
