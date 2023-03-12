@@ -341,43 +341,70 @@ RSpec.describe Types do
       end
     end
 
-    specify Types::Array do
-      assert_result(Types::Array.call(1), 1, false)
-      assert_result(Types::Array.call([]), [], true)
-      assert_result(
-        Types::Array.of(Types::Boolean).call([true, true, false]),
-        [true, true, false],
-        true
-      )
-      Types::Array.of(Types::Boolean).call([true, 'nope', false, 1]).tap do |result|
-        expect(result.success?).to be false
-        expect(result.value).to eq [true, 'nope', false, 1]
-        expect(result.error[1]).to eq(['must be a TrueClass', 'must be a FalseClass'])
-        expect(result.error[3]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+    describe Types::Array do
+      specify 'no member types defined' do
+        assert_result(Types::Array.call(1), 1, false)
+        assert_result(Types::Array.call([]), [], true)
       end
-      assert_result(
-        Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).call(['a', 'b', 'a']),
-        %w[a b a],
-        true
-      )
-      assert_result(
-        Types::Array.of(Types::Boolean).default([true]).call(Undefined),
-        [true],
-        true
-      )
-    end
 
-    specify 'Types::Array.concurrent' do
-      slow_type = Types::Any.transform { |r| sleep(0.02); r }
-      array = Types::Array.of(slow_type).concurrent
-      assert_result(array.call(1), 1, false)
-      result, elapsed = bench do
-        array.call(%w[a b c])
+      specify '#of' do
+        assert_result(
+          Types::Array.of(Types::Boolean).call([true, true, false]),
+          [true, true, false],
+          true
+        )
+        assert_result(
+          Types::Array.of(Types::Boolean).call([]),
+          [],
+          true
+        )
+        Types::Array.of(Types::Boolean).call([true, 'nope', false, 1]).tap do |result|
+          expect(result.success?).to be false
+          expect(result.value).to eq [true, 'nope', false, 1]
+          expect(result.error[1]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+          expect(result.error[3]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+        end
       end
-      assert_result(result, %w[a b c], true)
-      expect(elapsed).to be < 30
 
-      assert_result(array.optional.call(nil), nil, true)
+      specify '#of with unions' do
+        assert_result(
+          Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).call(['a', 'b', 'a']),
+          %w[a b a],
+          true
+        )
+        assert_result(
+          Types::Array.of(Types::Boolean).default([true]).call(Undefined),
+          [true],
+          true
+        )
+      end
+
+      specify '#present (non-empty)' do
+        non_empty_array = Types::Array.of(Types::Boolean).present
+        assert_result(
+          non_empty_array.call([true, true, false]),
+          [true, true, false],
+          true
+        )
+        assert_result(
+          non_empty_array.call([]),
+          [],
+          false
+        )
+      end
+
+      specify '#concurrent' do
+        slow_type = Types::Any.transform { |r| sleep(0.02); r }
+        array = Types::Array.of(slow_type).concurrent
+        assert_result(array.call(1), 1, false)
+        result, elapsed = bench do
+          array.call(%w[a b c])
+        end
+        assert_result(result, %w[a b c], true)
+        expect(elapsed).to be < 30
+
+        assert_result(array.optional.call(nil), nil, true)
+      end
     end
 
     describe Types::Hash do
