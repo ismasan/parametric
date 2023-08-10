@@ -19,7 +19,7 @@ module Parametric
   #      sc.field(:type).type(:string)
   #
   #      # Use the :one_of policy to select the sub-schema based on the :type field above
-  #      sc.field(:sub).type(:object).one_of do |sub|
+  #      sc.field(:sub).type(:object).tagged_one_of do |sub|
   #        sub.index_by(:type)
   #        sub.on('user', user)
   #        sub.on('company', company)
@@ -32,7 +32,7 @@ module Parametric
   # Instances can also be created separately and used as a policy:
   # @example
   #
-  #   UserOrCompany = Parametric::OneOf.new do |sc, _|
+  #   UserOrCompany = Parametric::TaggedOneOf.new do |sc, _|
   #     sc.index_by(:type)
   #     sc.on('user', user_schema)
   #     sc.on('company', company_schema)
@@ -42,7 +42,7 @@ module Parametric
   #     sc.field(:type).type(:string)
   #     sc.field(:sub).type(:object).policy(UserOrCompany)
   #   end
-  class OneOf
+  class TaggedOneOf
     NOOP_INDEX = ->(payload) { payload }.freeze
     def initialize(index: NOOP_INDEX, matchers: {}, &block)
       @index = index

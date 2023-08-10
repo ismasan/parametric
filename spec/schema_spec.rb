@@ -251,7 +251,7 @@ describe Parametric::Schema do
     end
   end
 
-  describe '#one_of for multiple sub-schemas' do
+  describe '#tagged_one_of for multiple sub-schemas' do
     let(:user_schema) do
       described_class.new do
         field(:name).type(:string).present
@@ -269,7 +269,7 @@ describe Parametric::Schema do
     it 'picks the right sub-schema' do
       schema = described_class.new do |sc, _|
         sc.field(:type).type(:string)
-        sc.field(:sub).type(:object).one_of do |sub|
+        sc.field(:sub).type(:object).tagged_one_of do |sub|
           sub.index_by(:type)
           sub.on('user', user_schema)
           sub.on('company', company_schema)
@@ -293,14 +293,14 @@ describe Parametric::Schema do
     end
 
     it 'can be assigned to instance and reused' do
-      user_or_company = Parametric::OneOf.new do |sub|
+      user_or_company = Parametric::TaggedOneOf.new do |sub|
         sub.on('user', user_schema)
         sub.on('company', company_schema)
       end
 
       schema = described_class.new do |sc, _|
         sc.field(:type).type(:string)
-        sc.field(:sub).type(:object).one_of(user_or_company.index_by(:type))
+        sc.field(:sub).type(:object).tagged_one_of(user_or_company.index_by(:type))
       end
 
       result = schema.resolve(type: 'user', sub: { name: 'Joe', age: 30 })
