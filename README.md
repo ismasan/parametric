@@ -285,60 +285,96 @@ field(:currency).policy(:value, 'gbp') # this field always resolves to 'gbp'
 
 ## Custom policies
 
-You can also register your own custom policy objects. A policy must implement the following methods:
+You can also register your own custom policy objects.
+A policy consist of the following:
+
+* A `PolicyFactory` interface:
 
 ```ruby
 class MyPolicy
-  # Validation error message, if invalid
-  def message
-    'is invalid'
+  # Initializer signature is up to you.
+  # These are the arguments passed to the policy when using in a Field,
+  # ex. field(:name).policy(:my_policy, 'arg1', 'arg2')
+  def initialize(arg1, arg2)
+    @arg1, @arg2 = arg1, arg2
   end
 
-  # Whether or not to validate and coerce this value
-  # if false, no other policies will be run on the field
-  def eligible?(value, key, payload)
-    true
-  end
-
-  # Transform the value
-  def coerce(value, key, context)
-    value
-  end
-
-  # Is the value valid?
-  def valid?(value, key, payload)
-    true
-  end
-
-  # merge this object into the field's meta data
+  # @return [Hash]
   def meta_data
-    {type: :string}
+   { type: :string }
+  end
+
+  # Buld a Policy Runner, which is instantiated
+  # for each field when resolving a schema
+  # @param key [Symbol]
+  # @param value [Any]
+  # @option payload [Hash]
+  # @option context [Parametric::Context]
+  # @return [PolicyRunner]
+  def build(key, value, payload:, context:)
+    MyPolicyRunner.new(key, value, payload, context)
   end
 end
 ```
 
-You can register your policy with:
+* A `PolicyRunner` interface.
 
 ```ruby
-Parametric.policy :my_policy, MyPolicy
+class MyPolicyRunner
+  # Initializer is up to you. See `MyPolicy#build`
+  def initialize(key, value, payload, context)
+
+  end
+
+  # Should this policy run at all?
+  # returning [false] halts the field policy chain.
+  # @return [Boolean]
+  def eligible?
+    true
+  end
+
+  # If [false], add [#message] to result errors and halt processing field.
+  # @return [Boolean]
+  def valid?
+    true
+  end
+
+  # Coerce the value, or return as-is.
+  # @return [Any]
+  def value
+    @value
+  end
+
+  # Error message for this policy
+  # @return [String]
+  def message
+    "#{@value} is invalid"
+  end
+end
+```
+
+Then register your custom policy factory:
+
+```ruby
+Parametric.policy :my_polict, MyPolicy
 ```
 
 And then refer to it by name when declaring your schema fields
 
 ```ruby
-field(:title).policy(:my_policy)
+field(:title).policy(:my_policy, 'arg1', 'arg2')
 ```
 
 You can chain custom policies with other policies.
 
 ```ruby
-field(:title).required.policy(:my_policy)
+field(:title).required.policy(:my_policy, 'arg1', 'arg2')
 ```
 
 Note that you can also register instances.
 
 ```ruby
-Parametric.policy :my_policy, MyPolicy.new
+Parametric.policy :my_policy, MyPolicy.new('arg1', 'arg2')
 ```
 
 For example, a policy that can be configured on a field-by-field basis:
@@ -349,27 +385,34 @@ class AddJobTitle
     @job_title = job_title
   end
 
-  def message
-    'is invalid'
-  end
-
-  # Noop
-  def eligible?(value, key, payload)
-    true
-  end
-
-  # Add job title to value
-  def coerce(value, key, context)
-    "#{value}, #{@job_title}"
-  end
-
-  # Noop
-  def valid?(value, key, payload)
-    true
+  def build(key, value, payload:, context:)
+    Runner.new(@job_title, key, value, payload, context)
   end
 
   def meta_data
     {}
+  end
+
+  class Runner
+    attr_reader :message
+
+    def initialize(job_title, key, value, payload, _context)
+      @job_title = job_title
+      @key, @value, @payload = key, value, payload
+      @message = 'is invalid'
+    end
+
+    def eligible?
+      true
+    end
+
+    def valid?
+      true
+    end
+
+    def value
+      "#{@value}, #{@job_title}"
+    end
   end
 end
 
