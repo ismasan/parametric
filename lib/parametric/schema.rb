@@ -77,7 +77,7 @@ module Parametric
         sc = meta.delete(:schema)
         meta[:structure] = sc.schema.structure if sc
         one_of = meta.delete(:one_of)
-        meta[:one_of] = one_of.each.with_object({}) { |(k, sc), memo| memo[k] = sc.structure } if one_of
+        meta[:one_of] = one_of.values.map(&:structure) if one_of
         obj[field.key] = meta
       end
     end

@@ -322,12 +322,12 @@ describe Parametric::Schema do
       structure = schema.structure
       structure.dig(:sub).tap do |sub|
         expect(sub[:type]).to eq :object
-        expect(sub[:one_of]['user'][:name][:type]).to eq :string
-        expect(sub[:one_of]['user'][:name][:required]).to be true
-        expect(sub[:one_of]['user'][:name][:present]).to be true
-        expect(sub[:one_of]['user'][:age][:type]).to eq :integer
+        expect(sub[:one_of][0][:name][:type]).to eq :string
+        expect(sub[:one_of][0][:name][:required]).to be true
+        expect(sub[:one_of][0][:name][:present]).to be true
+        expect(sub[:one_of][0][:age][:type]).to eq :integer
 
-        expect(sub[:one_of]['company'][:company_code][:type]).to eq :string
+        expect(sub[:one_of][1][:company_code][:type]).to eq :string
       end
     end
   end
