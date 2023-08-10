@@ -251,6 +251,43 @@ describe Parametric::Schema do
     end
   end
 
+  context 'with sub-schema options' do
+    it 'picks the right sub-schema' do
+      user = described_class.new do
+        field(:name).type(:string).present
+        field(:age).type(:integer).present
+      end
+
+      company = described_class.new do
+        field(:name).type(:string).present
+        field(:company_code).type(:string).present
+      end
+
+      schema = described_class.new do |sc, _|
+        sc.field(:type).type(:string)
+        sc.field(:sub).type(:object).one_of do |sub|
+          sub.index_by(:type)
+          sub.on('sub1', user)
+          sub.on('company', company)
+        end
+      end
+
+      result = schema.resolve(type: 'user', sub: { name: 'Joe', age: 30 })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ type: 'user', sub: { name: 'Joe', age: 30 } })
+
+      result = schema.resolve(type: 'company', sub: { name: 'ACME', company_code: 123 })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ type: 'company', sub: { name: 'ACME', company_code: '123' } })
+
+      result = schema.resolve(type: 'company', sub: { name: nil, company_code: 123 })
+      expect(result.valid?).to be false
+
+      result = schema.resolve(type: 'foo', sub: { name: 'ACME', company_code: 123 })
+      expect(result.valid?).to be false
+    end
+  end
+
   describe "#ignore" do
     it "ignores fields" do
       s1 = described_class.new.ignore(:title, :status) do

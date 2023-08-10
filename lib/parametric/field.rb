@@ -3,6 +3,7 @@
 require 'delegate'
 require 'parametric/field_dsl'
 require 'parametric/policy_adapter'
+require 'parametric/one_of'
 
 module Parametric
   class ConfigurationError < StandardError; end
@@ -40,6 +41,16 @@ module Parametric
       self
     end
     alias_method :type, :policy
+
+    # field(:sub_schema).one_of do |sub|
+    #   sub.index_by { |payload| payload[:type]) }
+    #   sub.on('sub1', sub1_schema)
+    #   sub.on('sub2', sub2_schema)
+    # end
+    #
+    def one_of(&block)
+      policy Parametric::OneOf.new(&block)
+    end
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))
