@@ -48,8 +48,8 @@ module Parametric
     #   sub.on('sub2', sub2_schema)
     # end
     #
-    def one_of(&block)
-      policy Parametric::OneOf.new(&block)
+    def one_of(instance = nil, &block)
+      policy(instance || Parametric::OneOf.new(&block))
     end
 
     def schema(sc = nil, &block)
