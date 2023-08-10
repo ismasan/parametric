@@ -3,6 +3,7 @@
 require 'delegate'
 require 'parametric/field_dsl'
 require 'parametric/policy_adapter'
+require 'parametric/tagged_one_of'
 
 module Parametric
   class ConfigurationError < StandardError; end
@@ -40,6 +41,10 @@ module Parametric
       self
     end
     alias_method :type, :policy
+
+    def tagged_one_of(instance = nil, &block)
+      policy(instance || Parametric::TaggedOneOf.new(&block))
+    end
 
     def schema(sc = nil, &block)
       sc = (sc ? sc : Schema.new(&block))

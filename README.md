@@ -127,6 +127,60 @@ person_schema = Parametric::Schema.new do |sc, options|
   sc.field(:friends).type(:array).schema(friends_schema)
 end
 ```
+
+## Tagged One Of (multiple nested schemas, discriminated by payload key).
+
+You can use `Field#tagged_one_of` to resolve a nested schema based on the value of a top-level field.
+
+```ruby
+user_schema = Parametric::Schema.new do |sc, _|
+  field(:name).type(:string).present
+  field(:age).type(:integer).present
+end
+
+company_schema = Parametric::Schema.new do
+  field(:name).type(:string).present
+  field(:company_code).type(:string).present
+end
+
+schema = Parametric::Schema.new do |sc, _|
+  # Use :type field to locate the sub-schema to use for :sub
+  sc.field(:type).type(:string)
+
+  # Use the :one_of policy to select the sub-schema based on the :type field above
+  sc.field(:sub).type(:object).tagged_one_of do |sub|
+    sub.index_by(:type)
+    sub.on('user', user_schema)
+    sub.on('company', company_schema)
+  end
+end
+
+# The schema will now select the correct sub-schema based on the value of :type
+result = schema.resolve(type: 'user', sub: { name: 'Joe', age: 30 })
+
+# Instances can also be created separately and used as a policy:
+
+UserOrCompany = Parametric::TaggedOneOf.new do |sc, _|
+  sc.on('user', user_schema)
+  sc.on('company', company_schema)
+end
+
+schema = Parametric::Schema.new do |sc, _|
+  sc.field(:type).type(:string)
+  sc.field(:sub).type(:object).policy(UserOrCompany.index_by(:type))
+end
+```
+
+`#index_by` can take a block to decide what value to resolve schemas by:
+
+```ruby
+sc.field(:sub).type(:object).tagged_one_of do |sub|
+  sub.index_by { |payload| payload[:entity_type] }
+  sub.on('user', user_schema)
+  sub.on('company', company_schema)
+end
+```
+
 ## Built-in policies
 
 Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.

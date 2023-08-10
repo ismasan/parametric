@@ -251,6 +251,64 @@ describe Parametric::Schema do
     end
   end
 
+  describe '#tagged_one_of for multiple sub-schemas' do
+    let(:user_schema) do
+      described_class.new do
+        field(:name).type(:string).present
+        field(:age).type(:integer).present
+      end
+    end
+
+    let(:company_schema) do
+      described_class.new do
+        field(:name).type(:string).present
+        field(:company_code).type(:string).present
+      end
+    end
+
+    it 'picks the right sub-schema' do
+      schema = described_class.new do |sc, _|
+        sc.field(:type).type(:string)
+        sc.field(:sub).type(:object).tagged_one_of do |sub|
+          sub.index_by(:type)
+          sub.on('user', user_schema)
+          sub.on('company', company_schema)
+        end
+      end
+
+      result = schema.resolve(type: 'user', sub: { name: 'Joe', age: 30 })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ type: 'user', sub: { name: 'Joe', age: 30 } })
+
+      result = schema.resolve(type: 'company', sub: { name: 'ACME', company_code: 123 })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ type: 'company', sub: { name: 'ACME', company_code: '123' } })
+
+      result = schema.resolve(type: 'company', sub: { name: nil, company_code: 123 })
+      expect(result.valid?).to be false
+      expect(result.errors['$.sub.name']).not_to be_empty
+
+      result = schema.resolve(type: 'foo', sub: { name: 'ACME', company_code: 123 })
+      expect(result.valid?).to be false
+    end
+
+    it 'can be assigned to instance and reused' do
+      user_or_company = Parametric::TaggedOneOf.new do |sub|
+        sub.on('user', user_schema)
+        sub.on('company', company_schema)
+      end
+
+      schema = described_class.new do |sc, _|
+        sc.field(:type).type(:string)
+        sc.field(:sub).type(:object).tagged_one_of(user_or_company.index_by(:type))
+      end
+
+      result = schema.resolve(type: 'user', sub: { name: 'Joe', age: 30 })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ type: 'user', sub: { name: 'Joe', age: 30 } })
+    end
+  end
+
   describe "#ignore" do
     it "ignores fields" do
       s1 = described_class.new.ignore(:title, :status) do
