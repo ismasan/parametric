@@ -307,6 +307,29 @@ describe Parametric::Schema do
       expect(result.valid?).to be true
       expect(result.output).to eq({ type: 'user', sub: { name: 'Joe', age: 30 } })
     end
+
+    specify '#structure' do
+      user_or_company = Parametric::TaggedOneOf.new do |sub|
+        sub.on('user', user_schema)
+        sub.on('company', company_schema)
+      end
+
+      schema = described_class.new do |sc, _|
+        sc.field(:type).type(:string)
+        sc.field(:sub).type(:object).tagged_one_of(user_or_company.index_by(:type))
+      end
+
+      structure = schema.structure
+      structure.dig(:sub).tap do |sub|
+        expect(sub[:type]).to eq :object
+        expect(sub[:one_of]['user'][:name][:type]).to eq :string
+        expect(sub[:one_of]['user'][:name][:required]).to be true
+        expect(sub[:one_of]['user'][:name][:present]).to be true
+        expect(sub[:one_of]['user'][:age][:type]).to eq :integer
+
+        expect(sub[:one_of]['company'][:company_code][:type]).to eq :string
+      end
+    end
   end
 
   describe "#ignore" do
