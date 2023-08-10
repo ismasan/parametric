@@ -80,26 +80,26 @@ module Parametric
       end
 
       policies.each do |policy|
-        pol = policy.build(key, value, payload:, context:)
-        if !pol.eligible?
-          eligible = false
-          if has_default?
-            eligible = true
-            value = default_block.call(key, payload, context)
-          end
-          break
-        else
-          begin
+        begin
+          pol = policy.build(key, value, payload:, context:)
+          if !pol.eligible?
+            eligible = false
+            if has_default?
+              eligible = true
+              value = default_block.call(key, payload, context)
+            end
+            break
+          else
             value = pol.value
             if !pol.valid?
               eligible = true # eligible, but has errors
               context.add_error pol.message
               break # only one error at a time
             end
-          rescue StandardError => e
-            context.add_error e.message
-            break
           end
+        rescue StandardError => e
+          context.add_error e.message
+          break
         end
       end
 
