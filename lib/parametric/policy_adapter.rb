@@ -8,6 +8,7 @@ module Parametric
         @policy, @key, @raw_value, @payload, @context = policy, key, value, payload, context
       end
 
+      # The Policy Runner interface
       def eligible?
         @policy.eligible?(@raw_value, @key, @payload)
       end
@@ -29,6 +30,7 @@ module Parametric
       @policy = policy
     end
 
+    # The Policy Factory interface
     def build(key, value, payload:, context:)
       PolicyRunner.new(@policy, key, value, payload, context)
     end
