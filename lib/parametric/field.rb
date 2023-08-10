@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require 'delegate'
-require "parametric/field_dsl"
+require 'parametric/field_dsl'
+require 'parametric/policy_adapter'
 
 module Parametric
   class ConfigurationError < StandardError; end
@@ -79,7 +80,8 @@ module Parametric
       end
 
       policies.each do |policy|
-        if !policy.eligible?(value, key, payload)
+        pol = policy.build(key, value, payload:, context:)
+        if !pol.eligible?
           eligible = false
           if has_default?
             eligible = true
@@ -87,11 +89,16 @@ module Parametric
           end
           break
         else
-          value = resolve_one(policy, value, context)
-          if !policy.valid?(value, key, payload)
-            eligible = true # eligible, but has errors
-            context.add_error policy.message
-            break # only one error at a time
+          begin
+            value = pol.value
+            if !pol.valid?
+              eligible = true # eligible, but has errors
+              context.add_error pol.message
+              break # only one error at a time
+            end
+          rescue StandardError => e
+            context.add_error e.message
+            break
           end
         end
       end
@@ -107,15 +114,6 @@ module Parametric
 
     attr_reader :registry, :default_block
 
-    def resolve_one(policy, value, context)
-      begin
-        policy.coerce(value, key, context)
-      rescue StandardError => e
-        context.add_error e.message
-        value
-      end
-    end
-
     def has_default?
       !!default_block && !meta_data[:skip_default]
     end
@@ -127,6 +125,7 @@ module Parametric
 
       obj = obj.new(*args) if obj.respond_to?(:new)
       obj = PolicyWithKey.new(obj, key)
+      obj = PolicyAdapter.new(obj) unless obj.respond_to?(:build)
 
       obj
     end
