@@ -387,6 +387,12 @@ class MyPolicyRunner
     true
   end
 
+  # If this policy is not eligible, should the key and value be included in the output?
+  # @return [Boolean]
+  def include_non_eligible_in_ouput?
+    true
+  end
+
   # If [false], add [#message] to result errors and halt processing field.
   # @return [Boolean]
   def valid?

@@ -22,5 +22,9 @@ module Parametric
     def options(opts)
       policy :options, opts
     end
+
+    def nullable
+      policy :nullable
+    end
   end
 end
