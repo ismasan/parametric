@@ -88,7 +88,7 @@ module Parametric
         begin
           pol = policy.build(key, value, payload:, context:)
           if !pol.eligible?
-            eligible = false
+            eligible = pol.include_non_eligible_in_ouput?
             if has_default?
               eligible = true
               value = default_block.call(key, payload, context)

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'parametric/nullable_policy'
+
 module Parametric
   module Policies
     class Format
@@ -59,6 +61,7 @@ module Parametric
   Parametric.policy :format, Policies::Format
   Parametric.policy :email, Policies::Format.new(EMAIL_REGEXP, 'invalid email')
   Parametric.policy :value, Policies::Value
+  Parametric.policy :nullable, Parametric::NullablePolicy
 
   Parametric.policy :noop do
     eligible do |value, key, payload|

@@ -14,6 +14,14 @@ module Parametric
         @policy.eligible?(@raw_value, @key, @payload)
       end
 
+      # If a policy is not #eligible?, use this to decide if its key
+      # should still be included in output hash.
+      #
+      # @return [Boolean]
+      def include_non_eligible_in_ouput?
+        false
+      end
+
       # @return [Boolean]
       def valid?
         @policy.valid?(value, @key, @payload)
