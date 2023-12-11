@@ -17,12 +17,17 @@ describe 'nullable policy' do
 
   specify 'with required/present types' do
     schema = Parametric::Schema.new do
-      field(:age).nullable.type(:integer).present
+      field(:age).nullable.type(:integer).present.policy(:gt, 9)
     end
 
     schema.resolve({ age: '10' }).tap do |r|
       expect(r.output[:age]).to eq 10
       expect(r.errors.any?).to be false
+    end
+
+    schema.resolve({ age: '7' }).tap do |r|
+      expect(r.output[:age]).to eq 7
+      expect(r.errors.any?).to be true
     end
 
     schema.resolve({ age: nil }).tap do |r|

@@ -293,6 +293,21 @@ Like `:declared`, it stops the policy chain if a key is not in input, but it als
 field(:name).policy(:declared_no_default).present
 ```
 
+### :nullable
+
+Check that key is present in input. If value is `nil`, processing and validations stop, but key is still included in output.
+
+```ruby
+schema = Parametric::Schema.new do
+  field(:age).nullable.type(:integer).policy(:gt: 21)
+end
+
+schema.resolve(age: '22').output[:age] # 22
+schema.resolve(age: 10).errors[:age] # has error because < 21
+schema.resolve(age: nil).output[:age] # nil, no errors
+schema.resolve({}).output[:age] # nil, no errors
+```
+
 ### :gt
 
 Validate that the value is greater than a number
