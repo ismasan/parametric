@@ -59,6 +59,24 @@ describe Parametric::Field do
     end
   end
 
+  describe '#==' do
+    it 'compares by key' do
+      field_a = described_class.new(:a_key, registry)
+      field_b = described_class.new(:a_key, registry)
+      field_c = described_class.new(:another_key, registry)
+      expect(field_a).to eq(field_b)
+      expect(field_a).not_to eq(field_c)
+    end
+
+    it 'compares by policies' do
+      field_a = described_class.new(:a_key, registry).type(:integer)
+      field_b = described_class.new(:a_key, registry).type(:integer)
+      field_c = described_class.new(:a_key, registry).type(:integer).options([1,2,3])
+      expect(field_a).to eq(field_b)
+      expect(field_a).not_to eq(field_c)
+    end
+  end
+
   describe "#policy" do
     it "coerces integer" do
       subject.policy(:integer)

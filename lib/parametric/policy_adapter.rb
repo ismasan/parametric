@@ -61,5 +61,9 @@ module Parametric
     def key
       @policy.key
     end
+
+    def ==(other)
+      key == other.key && meta_data == other.meta_data
+    end
   end
 end

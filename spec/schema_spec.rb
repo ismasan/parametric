@@ -46,6 +46,29 @@ describe Parametric::Schema do
     end
   end
 
+  specify '#==' do
+    schema2 = described_class.new do
+      field(:title).policy(:string).present
+      field(:price).policy(:integer).meta(label: "A price")
+      field(:status).policy(:string).options(['visible', 'hidden'])
+      field(:tags).policy(:split).policy(:array)
+      field(:description).policy(:string)
+      field(:variants).policy(:array).schema do
+        field(:name).policy(:string).present
+        field(:sku)
+        field(:stock).policy(:integer).default(1)
+        field(:available_if_no_stock).policy(:boolean).policy(:flexible_bool).default(false)
+      end
+    end
+
+    schema3 = described_class.new do
+      field(:title).policy(:string).present
+    end
+
+    expect(subject).to eq schema2
+    expect(subject).not_to eq schema3
+  end
+
   def resolve(schema, payload, &block)
     yield schema.resolve(payload)
   end
