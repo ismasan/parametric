@@ -18,6 +18,10 @@ module Parametric
       @after_hooks = []
     end
 
+    def ==(other)
+      other.is_a?(Schema) && fields == other.fields
+    end
+
     def schema
       self
     end

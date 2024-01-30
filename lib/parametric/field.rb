@@ -23,6 +23,10 @@ module Parametric
       @policies = []
     end
 
+    def ==(other)
+      other.is_a?(Field) && key == other.key && policies == other.policies && meta_data == other.meta_data
+    end
+
     def meta(hash = nil)
       @meta_data = @meta_data.merge(hash) if hash.is_a?(Hash)
       self
