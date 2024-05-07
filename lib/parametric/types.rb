@@ -437,7 +437,7 @@ module Parametric
     end
 
     def inspect
-      %(#{@name}[#{@step.inspect}])
+      @name
     end
 
     private def _call(result)
@@ -792,8 +792,8 @@ module Parametric
     define do
       Any = Step.new { |r| r }
       Nothing = Any.rule(eq: Undefined)
-      String = Any.is_a(::String)
-      Numeric = Any.is_a(::Numeric)
+      String = Any.is_a(::String).bundle(name: 'String', error: 'must be a String')
+      Numeric = Any.is_a(::Numeric).bundle(name: 'Numeric', error: 'must be a Numeric')
       Integer = Any.is_a(::Integer)
       Nil = Any.is_a(::NilClass)
       True = Any.is_a(::TrueClass)
