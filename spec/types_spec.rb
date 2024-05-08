@@ -558,7 +558,7 @@ RSpec.describe Types do
       assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
     end
 
-    specify '#&' do
+    specify 'merge with #&' do
       s1 = Types::Schema.new do |sc|
         sc.field(:name).type(:string)
       end
@@ -685,6 +685,15 @@ RSpec.describe Types do
       specify 'array.of' do
         schema = Types::Schema.new do |sc|
           sc.field(:numbers).type(:array).of(Types::Integer | Types::String.transform(&:to_i))
+        end
+
+        assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
+      end
+
+      specify 'self-contained Array type' do
+        array_type = Types::Array.of(Types::Integer | Types::String.transform(&:to_i))
+        schema = Types::Schema.new do |sc|
+          sc.field(:numbers).type(array_type)
         end
 
         assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
