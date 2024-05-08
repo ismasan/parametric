@@ -143,7 +143,7 @@ RSpec.describe Types do
 
     describe '#pipeline' do
       let(:pipeline) do
-        Types::Integer.pipeline do |pl|
+        Types::Lax::Integer.pipeline do |pl|
           pl.step { |r| r.success(r.value * 2) }
           pl.step Types::Any.transform(&:to_s)
           pl.step { |r| r.success('The number is %s' % r.value) }
@@ -152,6 +152,7 @@ RSpec.describe Types do
 
       it 'builds a step composed of many steps' do
         assert_result(pipeline.call(2), 'The number is 4', true)
+        assert_result(pipeline.call('2'), 'The number is 4', true)
         assert_result(pipeline.transform{ |v| v + '!!' }.call(2), 'The number is 4!!', true)
         assert_result(pipeline.call('nope'), 'nope', false)
       end
@@ -163,6 +164,11 @@ RSpec.describe Types do
         end
 
         assert_result(pipeline2.call(2), 'The number is 4 the end', true)
+      end
+
+      it 'is chainable' do
+        type = Types::Any.transform { |v| v + 5 } >> pipeline
+        assert_result(type.call(2), 'The number is 14', true)
       end
     end
 
