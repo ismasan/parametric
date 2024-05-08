@@ -698,6 +698,15 @@ RSpec.describe Types do
 
         assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
       end
+
+      specify '#of followed by #policy' do
+        schema = Types::Schema.new do |sc|
+          sc.field(:numbers).type(:array).of(Types::Integer).policy(:size, 3)
+        end
+
+        assert_result(schema.call(numbers: [1, 2, 3]), {numbers: [1, 2, 3]}, true)
+        assert_result(schema.call(numbers: [1, 2, 3, 4]), {numbers: [1, 2, 3, 4]}, false)
+      end
     end
   end
 

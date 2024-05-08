@@ -381,6 +381,9 @@ module Parametric
   Rules.define :is_a, 'must be a %{value}', metadata_key: :type do |result, value|
     result.value.is_a? value
   end
+  Rules.define :size, 'must be of size %{value}', metadata_key: :size do |result, value|
+    value === result.value.size
+  end
 
   class Static
     include Steppable
@@ -922,6 +925,11 @@ module Parametric
           self
         end
 
+        def rule(...)
+          @_type = @_type.rule(...)
+          self
+        end
+
         def of(*args, &block)
           schema(*args, &block)
         end
@@ -960,8 +968,20 @@ module Parametric
             @_type = SchemaArray.new(registry: registry)
           else
             @_type = registry[type_symbol]
-            self
           end
+          self
+        end
+
+        def of(element_type)
+          raise ArgumentError, 'expected an Array type' unless _type.is_a?(SchemaArray)
+
+          @_type = @_type.of(element_type)
+          self
+        end
+
+        def schema(...)
+          @_type = @_type.schema(...)
+          self
         end
 
         def policy(*args)
