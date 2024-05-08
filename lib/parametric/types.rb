@@ -758,12 +758,12 @@ module Parametric
     end
   end
 
-  class TypeRegistry
-    def self.mapping
+  module TypeRegistry
+    def mapping
       @mapping ||= {}
     end
 
-    def self.define(&)
+    def types(&)
       yield
 
       @mapping = constants(false).each.with_object({}) do |const_name, memo|
@@ -772,15 +772,15 @@ module Parametric
       end
     end
 
-    def self.[](key)
+    def [](key)
       mapping.fetch(key) { ancestors[1].mapping.fetch(key) }
     end
 
-    def self.keys
+    def keys
       (mapping.keys + ancestors[1].mapping.keys).uniq
     end
 
-    def self.underscore(str)
+    def underscore(str)
       str.gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
         .gsub(/([a-z\d])([A-Z])/,'\1_\2')
         .tr('-', '_')
@@ -788,8 +788,10 @@ module Parametric
     end
   end
 
-  class Types < TypeRegistry
-    define do
+  module Types
+    extend TypeRegistry
+
+    types do
       Any = Step.new { |r| r }
       Nothing = Any.rule(eq: Undefined)
       String = Any.is_a(::String).bundle(name: 'String', error: 'must be a String')
@@ -813,8 +815,10 @@ module Parametric
       Split = String.transform { |v| v.split(/\s*,\s*/) }
     end
 
-    class Lax < self
-      define do
+    module Lax
+      extend TypeRegistry
+
+      types do
         String = Types::String \
                  | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
                  | Any.coerce(::Numeric, &:to_s)
@@ -825,8 +829,10 @@ module Parametric
       end
     end
 
-    class Forms < self
-      define do
+    class Forms
+      extend TypeRegistry
+
+      types do
         True = Types::True \
                | Types::String >> Any.coerce(/^true$/i) { |_| true } \
                | Any.coerce('1') { |_| true } \

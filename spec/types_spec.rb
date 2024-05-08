@@ -262,14 +262,16 @@ RSpec.describe Types do
       end
     end
 
-    class self::TestRegistry < TypeRegistry
-      define do
+    class self::TestRegistry
+      extend TypeRegistry
+
+      types do
         Foo = 'foo'
         Bar = 'bar'
       end
 
       class Child < self
-        define do
+        types do
           Bar = 'child::bar'
         end
       end
