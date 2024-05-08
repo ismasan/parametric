@@ -516,6 +516,37 @@ module Parametric
     end
   end
 
+  class TupleClass
+    include Steppable
+
+    attr_reader :metadata
+
+    def initialize(*types)
+      @types = types.map { |t| t.is_a?(Steppable) ? t : Types::Any.value(t) }
+      @metadata = @types.map(&:metadata).reduce({}, :merge).merge(type: 'Tuple')
+    end
+
+    def of(*types)
+      self.class.new(*types)
+    end
+
+    private def _call(result)
+      return result.halt(error: 'must be an Array') unless result.value.is_a?(::Array)
+      return result.halt(error: 'must have the same size') unless result.value.size == @types.size
+
+      errors = {}
+      values = @types.map.with_index do |type, idx|
+        r = type.call(result.value[idx])
+        errors[idx] = r.error unless r.success?
+        r.value
+      end
+
+      return result.success(values) unless errors.any?
+
+      result.halt(error: errors)
+    end
+  end
+
   class ArrayClass
     include Steppable
 
@@ -805,6 +836,7 @@ module Parametric
       False = Any.is_a(::FalseClass)
       Boolean = True | False
       Array = ArrayClass.new
+      Tuple = TupleClass.new
       Hash = HashClass.new
       Blank = (
         Nothing \

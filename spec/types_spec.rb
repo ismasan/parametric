@@ -349,6 +349,53 @@ RSpec.describe Types do
       end
     end
 
+    describe Types::Tuple do
+      specify 'no member types defined' do
+        assert_result(Types::Tuple.call(1), 1, false)
+      end
+
+      specify '#of' do
+        type = Types::Tuple.of(
+          Types::Any.value('ok') | Types::Any.value('error'),
+          Types::Boolean,
+          Types::String
+        )
+
+        assert_result(
+          type.call(['ok', true, 'Hi!']),
+          ['ok', true, 'Hi!'],
+          true
+        )
+
+        assert_result(
+          type.call(['ok', 'nope', 'Hi!']),
+          ['ok', 'nope', 'Hi!'],
+          false
+        )
+
+        assert_result(
+          type.call(['ok', true, 'Hi!', 'nope']),
+          ['ok', true, 'Hi!', 'nope'],
+          false
+        )
+
+      end
+
+      specify 'with primitives' do
+        type = Types::Tuple.of(2, Types::String)
+        assert_result(
+          type.call([2, 'yup']),
+          [2, 'yup'],
+          true
+        )
+        assert_result(
+          type.call(['nope', 'yup']),
+          ['nope', 'yup'],
+          false
+        )
+      end
+    end
+
     describe Types::Array do
       specify 'no member types defined' do
         assert_result(Types::Array.call(1), 1, false)
