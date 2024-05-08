@@ -312,6 +312,11 @@ RSpec.describe Types do
         assert_result(Types::Boolean.call('true'), 'true', false)
       end
 
+      specify Types::Lax::Boolean do
+        assert_result(Types::Lax::Boolean.call(true), true, true)
+        assert_result(Types::Lax[:boolean].call(true), true, true)
+      end
+
       specify Types::Lax::String do
         assert_result(Types::Lax::String.call('aa'), 'aa', true)
         assert_result(Types::Lax::String.call(11), '11', true)
@@ -332,6 +337,7 @@ RSpec.describe Types do
         assert_result(Types::Forms::Boolean.call(true), true, true)
         assert_result(Types::Forms::Boolean.call(false), false, true)
         assert_result(Types::Forms::Boolean.call('true'), true, true)
+        assert_result(Types::Forms[:boolean].call('true'), true, true)
 
         assert_result(Types::Forms::Boolean.call('false'), false, true)
         assert_result(Types::Forms::Boolean.call('1'), true, true)

@@ -788,7 +788,7 @@ module Parametric
     end
   end
 
-  module Types
+  class Types
     extend TypeRegistry
 
     types do
@@ -815,9 +815,7 @@ module Parametric
       Split = String.transform { |v| v.split(/\s*,\s*/) }
     end
 
-    module Lax
-      extend TypeRegistry
-
+    class Lax < self
       types do
         String = Types::String \
                  | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
@@ -829,9 +827,7 @@ module Parametric
       end
     end
 
-    class Forms
-      extend TypeRegistry
-
+    class Forms < self
       types do
         True = Types::True \
                | Types::String >> Any.coerce(/^true$/i) { |_| true } \
