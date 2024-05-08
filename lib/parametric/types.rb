@@ -152,13 +152,6 @@ module Parametric
       check(error) { |v| val === v }
     end
 
-    def static(val = Undefined, &block)
-      # TODO: it doesn't make sense to validate before static values
-      # perhaps #static shouldn't be chainable, only available as
-      # Types.static('foo')
-      self >> Static.new(val, &block)
-    end
-
     def default(val = Undefined, &block)
       (Types::Nothing >> Static.new(val, &block)) | self
     end
@@ -848,6 +841,14 @@ module Parametric
 
       Present = Blank.not.bundle(name: 'Present', error: 'must be present')
       Split = String.transform { |v| v.split(/\s*,\s*/) }
+    end
+
+    def self.static(val = Undefined, &block)
+      Static.new(val, &block)
+    end
+
+    def self.value(...)
+      Any.value(...)
     end
 
     class Lax < self

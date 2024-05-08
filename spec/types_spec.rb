@@ -99,14 +99,16 @@ RSpec.describe Types do
     end
 
     specify '#value' do
-      assert_result(Types::Any.value('hello').call('hello'), 'hello', true)
-      assert_result(Types::Any.value('hello').call('nope'), 'nope', false)
+      assert_result(Types.value('hello').call('hello'), 'hello', true)
+      assert_result(Types.value('hello').call('nope'), 'nope', false)
+      assert_result(Types::Lax::String.value('10').call(10), '10', true)
+      assert_result(Types::Lax::String.value('11').call(10), '10', false)
     end
 
-    specify '#static' do
-      assert_result(Types::Any.static('hello').call('hello'), 'hello', true)
-      assert_result(Types::Any.static('hello').call('nope'), 'hello', true)
-      assert_result(Types::Any.static { |_| 'hello' }.call('nope'), 'hello', true)
+    specify '.static' do
+      assert_result(Types.static('hello').call('hello'), 'hello', true)
+      assert_result(Types.static('hello').call('nope'), 'hello', true)
+      assert_result(Types.static { |_| 'hello' }.call('nope'), 'hello', true)
     end
 
     specify '#default' do
@@ -356,7 +358,7 @@ RSpec.describe Types do
 
       specify '#of' do
         type = Types::Tuple.of(
-          Types::Any.value('ok') | Types::Any.value('error'),
+          Types.value('ok') | Types.value('error'),
           Types::Boolean,
           Types::String
         )
@@ -423,7 +425,7 @@ RSpec.describe Types do
 
       specify '#of with unions' do
         assert_result(
-          Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).call(['a', 'b', 'a']),
+          Types::Array.of(Types.value('a') | Types.value('b')).call(['a', 'b', 'a']),
           %w[a b a],
           true
         )
