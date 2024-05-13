@@ -58,6 +58,12 @@ RSpec.describe Parametric::V2::Types do
       assert_result(pipeline.call('nope'), 'nope', false)
     end
 
+    specify '#cast' do
+      integer = Types::Any.is_a(::Integer)
+      expect { integer.cast('10') }.to raise_error(Parametric::V2::TypeError)
+      expect(integer.cast(10)).to eq(10)
+    end
+
     specify '#|' do
       integer = Types::Any.is_a(::Integer)
       string = Types::Any.is_a(::String)

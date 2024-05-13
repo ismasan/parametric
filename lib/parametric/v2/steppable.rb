@@ -13,7 +13,7 @@ module Parametric
         DEFAULT_METADATA
       end
 
-      def [](value)
+      def cast(value)
         result = call(value)
         raise TypeError, result.error if result.halt?
 
