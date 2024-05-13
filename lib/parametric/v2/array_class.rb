@@ -20,6 +20,8 @@ module Parametric
         self.class.new(element_type:)
       end
 
+      alias_method :[], :of
+
       def concurrent
         ConcurrentArrayClass.new(element_type:)
       end

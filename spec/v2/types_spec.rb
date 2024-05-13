@@ -378,7 +378,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#of' do
         assert_result(
-          Types::Array.of(Types::Boolean).call([true, true, false]),
+          Types::Array[Types::Boolean].call([true, true, false]),
           [true, true, false],
           true
         )
