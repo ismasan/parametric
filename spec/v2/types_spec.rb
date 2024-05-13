@@ -471,15 +471,6 @@ RSpec.describe Parametric::V2::Types do
         assert_result(hash.call({ friend: { name: 'Joe' } }), { title: 'Mr', name: 'Ismael', age: 45, friend: { name: 'Joe' } }, true)
       end
 
-      specify '#[](key)' do
-        title = Types::String.default('Mr')
-        hash = Types::Hash.schema(
-          title: title,
-          name: Types::String,
-        )
-        expect(hash[:title]).to eq(title)
-      end
-
       specify '#|' do
         hash1 = Types::Hash.schema(foo: Types::String)
         hash2 = Types::Hash.schema(bar: Types::Integer)
@@ -546,6 +537,12 @@ RSpec.describe Parametric::V2::Types do
           expect(result.error).to eq('value {} must be a Integer')
         end
         assert_result(s1.present.call({}), {}, false)
+      end
+
+      specify '#[] alias to #schema' do
+        s1 = Types::Hash[Types::String, Types::Integer]
+        expect(s1.metadata).to eq({})
+        assert_result(s1.call('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
       end
     end
   end

@@ -13,10 +13,10 @@ module Parametric
         @types = types
 
         raise ArgumentError, 'all types must be HashClass' if @types.size == 0 || @types.any? { |t| !t.is_a?(HashClass) }
-        raise ArgumentError, "all types must define key #{@key}" unless @types.all? { |t| !!t[@key] }
+        raise ArgumentError, "all types must define key #{@key}" unless @types.all? { |t| !!t.at_key(@key) }
         # types are assumed to have static values for the index field :key
         @index = @types.each.with_object({}) do |t, memo|
-          memo[t[@key].call.value] = t
+          memo[t.at_key(@key).call.value] = t
         end
       end
 

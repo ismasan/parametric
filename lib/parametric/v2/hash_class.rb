@@ -35,6 +35,8 @@ module Parametric
         end
       end
 
+      alias_method :[], :schema
+
       # Hash#merge keeps the left-side key in the new hash
       # if they match via #hash and #eql?
       # we need to keep the right-side key, because even if the key name is the same,
@@ -47,7 +49,7 @@ module Parametric
         DiscriminatedHash.new(self, key, types)
       end
 
-      def [](a_key)
+      def at_key(a_key)
         _schema[Key.wrap(a_key)]
       end
 
