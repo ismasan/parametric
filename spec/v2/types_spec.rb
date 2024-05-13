@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'parametric/types'
+require 'parametric/v2/types'
 
-include Parametric
+include Parametric::V2
 
-RSpec.describe Types do
+RSpec.describe Parametric::V2::Types do
   describe 'Result' do
     specify 'piping results with #map' do
       init = Result.wrap(10)
@@ -118,12 +118,6 @@ RSpec.describe Types do
       assert_result(Types::String.default('hello').call(Undefined), 'hello', true)
     end
 
-    specify '#bundle' do
-      type = (Types::String.value('foo') | Types::String.value('bar')).bundle(error: 'expected foo or bar, but got %s')
-      assert_result(type.call('foo'), 'foo', true)
-      expect(type.call('nope').error).to eq('expected foo or bar, but got nope')
-    end
-
     specify '#optional' do
       assert_result(Types::String.optional.call('bye'), 'bye', true)
       assert_result(Types::String.call(nil), nil, false)
@@ -158,7 +152,7 @@ RSpec.describe Types do
       end
 
       it 'is a Steppable and can be further composed' do
-        expect(pipeline).to be_a(Parametric::Steppable)
+        expect(pipeline).to be_a(Parametric::V2::Steppable)
         pipeline2 = pipeline.pipeline do |pl|
           pl.step { |r| r.success(r.value + ' the end') }
         end
@@ -172,7 +166,7 @@ RSpec.describe Types do
       end
     end
 
-    describe Parametric::Pipeline do
+    describe Parametric::V2::Pipeline do
       specify '#around' do
         list = []
         counts = 0
@@ -270,34 +264,6 @@ RSpec.describe Types do
       end
     end
 
-    class self::TestRegistry
-      extend TypeRegistry
-
-      types do
-        Foo = 'foo'
-        Bar = 'bar'
-      end
-
-      class Child < self
-        types do
-          Bar = 'child::bar'
-        end
-      end
-    end
-
-    describe TypeRegistry do
-      specify do
-        expect(self.class::TestRegistry::Foo).to eq('foo')
-        expect(self.class::TestRegistry::Bar).to eq('bar')
-        expect(self.class::TestRegistry[:foo]).to eq('foo')
-
-        expect(self.class::TestRegistry::Child::Foo).to eq('foo')
-        expect(self.class::TestRegistry::Child::Bar).to eq('child::bar')
-        expect(self.class::TestRegistry::Child[:foo]).to eq('foo')
-        expect(self.class::TestRegistry::Child[:bar]).to eq('child::bar')
-      end
-    end
-
     describe 'built-in types' do
       specify Types::String do
         assert_result(Types::String.call('aa'), 'aa', true)
@@ -320,11 +286,6 @@ RSpec.describe Types do
         assert_result(Types::Boolean.call('true'), 'true', false)
       end
 
-      specify Types::Lax::Boolean do
-        assert_result(Types::Lax::Boolean.call(true), true, true)
-        assert_result(Types::Lax[:boolean].call(true), true, true)
-      end
-
       specify Types::Lax::String do
         assert_result(Types::Lax::String.call('aa'), 'aa', true)
         assert_result(Types::Lax::String.call(11), '11', true)
@@ -345,7 +306,6 @@ RSpec.describe Types do
         assert_result(Types::Forms::Boolean.call(true), true, true)
         assert_result(Types::Forms::Boolean.call(false), false, true)
         assert_result(Types::Forms::Boolean.call('true'), true, true)
-        assert_result(Types::Forms[:boolean].call('true'), true, true)
 
         assert_result(Types::Forms::Boolean.call('false'), false, true)
         assert_result(Types::Forms::Boolean.call('1'), true, true)
@@ -580,187 +540,6 @@ RSpec.describe Types do
           expect(result.error).to eq('value {} must be a Integer')
         end
         assert_result(s1.present.call({}), {}, false)
-      end
-    end
-  end
-
-  describe Types::Schema do
-    specify 'defining a nested schema' do
-      schema = Types::Schema.new do |sc|
-        sc.field(:title).type(:string).default('Mr')
-        sc.field(:name).type(:string)
-        sc.field?(:age).type(Types::Lax::Integer)
-        sc.field(:friend).type(:hash).schema do |s|
-          s.field(:name).type(:string)
-        end
-      end
-
-      assert_result(schema.call({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
-    end
-
-    specify 'reusing schemas' do
-      friend_schema = Types::Schema.new do |s|
-        s.field(:name).type(:string)
-      end
-
-      schema = Types::Schema.new do |sc|
-        sc.field(:title).type(:string).default('Mr')
-        sc.field(:name).type(:string)
-        sc.field?(:age).type(:integer)
-        sc.field(:friend).type(:hash).schema friend_schema
-      end
-
-      assert_result(schema.call({name: 'Ismael', age: 42, friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
-    end
-
-    specify 'merge with #&' do
-      s1 = Types::Schema.new do |sc|
-        sc.field(:name).type(:string)
-      end
-      s2 = Types::Schema.new do |sc|
-        sc.field?(:name).type(:string)
-        sc.field(:age).type(:integer).default(10)
-      end
-      s3 = s1 & s2
-      assert_result(s3.call, { age: 10 }, true)
-      assert_result(s3.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
-
-      s4 = s1.merge(s2)
-      assert_result(s4.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
-    end
-
-    describe 'Field#policy(step)' do
-      it 'takes steps as objects or registry symbols' do
-        email = Types::Any.rule(match: /\w+@\w+\.\w{3}/)
-        field = Types::Schema::Field.new
-          .type(:string)
-          .policy(email)
-          .policy(Types::String.transform{ |v| "<#{v}>"})
-
-        assert_result(field.call('user@email.com'), '<user@email.com>', true)
-        assert_result(field.call('nope'), 'nope', false)
-        assert_result(field.call(1), 1, false)
-      end
-
-      it 'takes rule as :rule_name, matcher' do
-        field = Types::Schema::Field.new.type(:string).policy(:format, /^Mr\s/)
-        assert_result(field.call('Mr Ismael'), 'Mr Ismael', true)
-        assert_result(field.call('Ismael'), 'Ismael', false)
-      end
-
-      it 'takes rules as hash' do
-        field = Types::Schema::Field.new.type(:integer).policy(gte: 10, lte: 20)
-        assert_result(field.call(11), 11, true)
-        assert_result(field.call(9), 9, false)
-        assert_result(field.call(21), 21, false)
-      end
-    end
-
-    specify 'Field#meta' do
-      field = Types::Schema::Field.new.type(:string).meta(foo: 1).meta(bar: 2)
-      expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)
-      expect(field.meta_data).to eq(field.metadata)
-    end
-
-    specify 'Field#options' do
-      field = Types::Schema::Field.new.type(:string).options(%w(aa bb cc))
-      assert_result(field.call('aa'), 'aa', true)
-      assert_result(field.call('cc'), 'cc', true)
-      assert_result(field.call('dd'), 'dd', false)
-      expect(field.metadata[:options]).to eq(%w(aa bb cc))
-    end
-
-    specify 'Field#declared' do
-      field = Types::Schema::Field.new.type(:string).declared.policy(Types::Any.transform { |v| 'Hello %s' % v })
-      assert_result(field.call('Ismael'), 'Hello Ismael', true)
-      assert_result(field.call(Undefined), Undefined, false)
-
-      with_default = Types::Schema::Field.new.type(:string).declared.default('no')
-      assert_result(with_default.call('Ismael'), 'Ismael', true)
-      assert_result(with_default.call(Undefined), 'no', true)
-    end
-
-    specify 'Field#optional' do
-      field = Types::Schema::Field.new.type(:string).optional.policy(Types::Any.transform { |v| 'Hello %s' % v })
-      assert_result(field.call('Ismael'), 'Hello Ismael', true)
-      assert_result(field.call(nil), nil, false)
-    end
-
-    specify 'Field#present' do
-      field = Types::Schema::Field.new.present
-      assert_result(field.call('Ismael'), 'Ismael', true)
-      assert_result(field.call(nil), nil, false)
-      expect(field.call(nil).error).to eq('must be present')
-    end
-
-    specify 'Field#required' do
-      field = Types::Schema::Field.new.required
-      assert_result(field.call, Undefined, false)
-      assert_result(field.call(nil), nil, true)
-      expect(field.call.error).to eq('is required')
-    end
-
-    specify 'Field#policy(:split)' do
-      field = Types::Schema::Field.new.policy(:split)
-      assert_result(field.call('a ,b  ,c'), %w(a b c), true)
-      assert_result(field.call('aa'), %w(aa), true)
-    end
-
-    context 'with array schemas' do
-      specify 'inline array schemas' do
-        schema = Types::Schema.new do |sc|
-          sc.field(:friends).type(:array).schema do |f|
-            f.field(:name).type(:string)
-          end
-        end
-
-        input = {friends: [{name: 'Joe'}, {name: 'Joan'}]}
-
-        assert_result(schema.call(input), input, true)
-      end
-
-      specify 'reusable array schemas' do
-        friend_schema = Types::Schema.new do |s|
-          s.field(:name).type(:string)
-        end
-
-        schema = Types::Schema.new do |sc|
-          sc.field(:friends).type(:array).schema friend_schema
-        end
-
-        input = {friends: [{name: 'Joe'}, {name: 'Joan'}]}
-
-        assert_result(schema.call(input), input, true)
-        schema.call({friends: [{name: 'Joan'}, {}]}).tap do |result|
-          expect(result.success?).to be false
-          expect(result.error[:friends][1][:name]).not_to be_nil
-        end
-      end
-
-      specify 'array.of' do
-        schema = Types::Schema.new do |sc|
-          sc.field(:numbers).type(:array).of(Types::Integer | Types::String.transform(&:to_i))
-        end
-
-        assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
-      end
-
-      specify 'self-contained Array type' do
-        array_type = Types::Array.of(Types::Integer | Types::String.transform(&:to_i))
-        schema = Types::Schema.new do |sc|
-          sc.field(:numbers).type(array_type)
-        end
-
-        assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
-      end
-
-      specify '#of followed by #policy' do
-        schema = Types::Schema.new do |sc|
-          sc.field(:numbers).type(:array).of(Types::Integer).policy(:size, 3)
-        end
-
-        assert_result(schema.call(numbers: [1, 2, 3]), {numbers: [1, 2, 3]}, true)
-        assert_result(schema.call(numbers: [1, 2, 3, 4]), {numbers: [1, 2, 3, 4]}, false)
       end
     end
   end
