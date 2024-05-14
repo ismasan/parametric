@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'bigdecimal'
-require 'forwardable'
 require 'parametric/v2/result'
 require 'parametric/v2/type_registry'
 require 'parametric/v2/steppable'

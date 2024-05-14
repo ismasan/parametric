@@ -22,52 +22,10 @@ module Parametric
         end
       end
 
-      class Config
-        attr_reader :type
-
-        def initialize(type, &setup)
-          @type = type
-          @around_blocks = []
-          configure(&setup) if block_given?
-        end
-
-        def step(callable = nil, &block)
-          callable ||= block
-          raise ArgumentError, "#step expects an interface #call(Result) Result, but got #{callable.inspect}" unless is_a_step?(callable)
-
-          callable = @around_blocks.reduce(callable) { |cl, bl| AroundStep.new(cl, bl) } if @around_blocks.any?
-          @type = @type >> callable
-          self
-        end
-
-        def around(callable = nil, &block)
-          @around_blocks << (callable || block)
-          self
-        end
-
-        private
-
-        def configure(&setup)
-          case setup.arity
-          when 1
-            setup.call(self)
-          when 0
-            instance_eval(&setup)
-          else
-            raise ArgumentError, 'setup block must have arity of 0 or 1'
-          end
-        end
-
-        def is_a_step?(callable)
-          return false unless callable.respond_to?(:call)
-
-          true
-        end
-      end
-
       def initialize(type = Types::Any, &setup)
-        config = Config.new(type, &setup)
-        @type = config.type
+        @type = type
+        @around_blocks = []
+        configure(&setup) if block_given?
         freeze
       end
 
@@ -77,6 +35,39 @@ module Parametric
 
       def call(result)
         @type.call(result)
+      end
+
+      def step(callable = nil, &block)
+        callable ||= block
+        raise ArgumentError, "#step expects an interface #call(Result) Result, but got #{callable.inspect}" unless is_a_step?(callable)
+
+        callable = @around_blocks.reduce(callable) { |cl, bl| AroundStep.new(cl, bl) } if @around_blocks.any?
+        @type = @type >> callable
+        self
+      end
+
+      def around(callable = nil, &block)
+        @around_blocks << (callable || block)
+        self
+      end
+
+      private
+
+      def configure(&setup)
+        case setup.arity
+        when 1
+          setup.call(self)
+        when 0
+          instance_eval(&setup)
+        else
+          raise ArgumentError, 'setup block must have arity of 0 or 1'
+        end
+      end
+
+      def is_a_step?(callable)
+        return false unless callable.respond_to?(:call)
+
+        true
       end
     end
   end

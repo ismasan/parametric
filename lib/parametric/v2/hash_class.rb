@@ -31,7 +31,7 @@ module Parametric
         in [Steppable => key_type, Steppable => value_type]
           HashMap.new(key_type, value_type)
         else
-          raise ArgumentError "unexpected value to Types::Hash#schema #{args.inspect}"
+          raise ::ArgumentError, "unexpected value to Types::Hash#schema #{args.inspect}"
         end
       end
 
