@@ -2,29 +2,27 @@
 
 require 'spec_helper'
 require 'parametric/v2/type_registry'
-
-class Steppable
-end
+require 'parametric/v2/step'
 
 module Tests
   module TestRegistry
     extend Parametric::V2::TypeRegistry
 
-    Foo = Steppable.new
-    Bar = Steppable.new
+    Foo = Parametric::V2::Step.new
+    Bar = Parametric::V2::Step.new
 
     module Child
-      Bar = Steppable.new
+      Bar = Parametric::V2::Step.new
     end
   end
 
   module Host
     include TestRegistry
 
-    MyString = Steppable.new
+    MyString = Parametric::V2::Step.new
 
     module Child
-      MyBar = Steppable.new
+      MyBar = Parametric::V2::Step.new
     end
   end
 
