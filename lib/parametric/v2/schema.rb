@@ -51,7 +51,7 @@ module Parametric
 
       def freeze
         super
-        @_schema.freeze
+        @_schema.clear.freeze
         @_hash.freeze
         self
       end
