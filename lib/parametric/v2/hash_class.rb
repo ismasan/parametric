@@ -92,7 +92,7 @@ module Parametric
           hash.each.with_object({}) do |(k, v), ret|
             ret[Key.wrap(k)] = wrap_keys_and_values(v)
           end
-        when Steppable
+        when Callable
           hash
         else # leaf values
           Static.new(hash)

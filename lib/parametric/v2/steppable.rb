@@ -4,13 +4,21 @@ module Parametric
   module V2
     TypeError = Class.new(::TypeError)
 
-    module Steppable
-      def self.wrap(callable)
-        callable.is_a?(Steppable) ? callable : Step.new(callable)
-      end
-
+    module Callable
       def metadata
         DEFAULT_METADATA
+      end
+
+      def call(result = Undefined)
+        _call(Result.wrap(result))
+      end
+    end
+
+    module Steppable
+      include Callable
+
+      def self.wrap(callable)
+        callable.is_a?(Steppable) ? callable : Step.new(callable)
       end
 
       def cast(value)
@@ -18,10 +26,6 @@ module Parametric
         raise TypeError, result.error if result.halt?
 
         result.value
-      end
-
-      def call(result = Undefined)
-        _call(Result.wrap(result))
       end
 
       def >>(other)
