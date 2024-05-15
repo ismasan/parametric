@@ -25,8 +25,10 @@ module Parametric
       def initialize(type = Types::Any, &setup)
         @type = type
         @around_blocks = []
-        configure(&setup) if block_given?
-        freeze
+        if block_given?
+          configure(&setup)
+          freeze
+        end
       end
 
       def metadata
