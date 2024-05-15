@@ -515,10 +515,10 @@ RSpec.describe Parametric::V2::Types do
         assert_result(hash.call({}), {title: 'Mr'}, true)
       end
 
-      specify '#&' do
+      specify '#+' do
         s1 = Types::Hash.schema(name: Types::String)
         s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer)
-        s3 = s1 & s2
+        s3 = s1 + s2
 
         assert_result(s3.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
         assert_result(s3.call(age: 42), {age: 42}, true)

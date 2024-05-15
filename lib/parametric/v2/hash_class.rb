@@ -41,7 +41,7 @@ module Parametric
       # if they match via #hash and #eql?
       # we need to keep the right-side key, because even if the key name is the same,
       # it's optional flag might have changed
-      def &(other)
+      def +(other)
         self.class.new(merge_rightmost_keys(_schema, other._schema))
       end
 
