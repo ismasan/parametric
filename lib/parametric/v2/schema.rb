@@ -24,7 +24,10 @@ module Parametric
       def initialize(&block)
         @_schema = {}
         @_hash = Types::Hash
-        setup(&block) if block_given?
+        if block_given?
+          setup(&block)
+          freeze
+        end
       end
 
       private def setup(&block)
@@ -37,7 +40,7 @@ module Parametric
           raise ::ArgumentError, "#{self.class} expects a block with 0 or 1 argument, but got #{block.arity}"
         end
         @_hash = Types::Hash.schema(@_schema)
-        freeze
+        self
       end
 
       def metadata = _hash.metadata
@@ -49,6 +52,7 @@ module Parametric
       def freeze
         super
         @_schema.freeze
+        @_hash.freeze
         self
       end
 
@@ -72,11 +76,11 @@ module Parametric
         end
       end
 
-      def &(other)
-        self.class.new.schema(_hash & other._hash)
+      def +(other)
+        self.class.new.schema(_hash + other._hash)
       end
 
-      alias merge &
+      alias merge +
 
       protected
 
@@ -128,12 +132,12 @@ module Parametric
         end
 
         def options(opts)
-          @_type = @_type.rule(:included_in, opts)
+          @_type = @_type.rule(included_in: opts)
           self
         end
 
         def optional
-          @_type = Types::Nil.not | @_type
+          @_type = Types::Nil | @_type
           self
         end
 

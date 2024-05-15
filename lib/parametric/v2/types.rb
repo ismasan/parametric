@@ -93,7 +93,7 @@ module Parametric
         | Array.value(BLANK_ARRAY)
       )
 
-      Present = Blank.not
+      Present = Blank.halt(error: 'must be present')
       Split = String.transform { |v| v.split(/\s*,\s*/) }
 
       def self.static(val = Undefined, &block)
