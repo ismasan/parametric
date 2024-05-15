@@ -16,6 +16,8 @@ module Parametric
         @optional = !match[2].nil? ? true : optional
       end
 
+      def to_s = @key
+
       def hash
         @key.hash
       end
