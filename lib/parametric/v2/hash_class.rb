@@ -53,6 +53,8 @@ module Parametric
         _schema[Key.wrap(a_key)]
       end
 
+      def to_h = _schema
+
       def inspect
         %(Hash[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
       end

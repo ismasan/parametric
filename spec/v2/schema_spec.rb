@@ -11,48 +11,64 @@ module Test
 end
 
 RSpec.describe Parametric::V2::Schema do
-  specify 'defining a nested schema' do
-    schema = described_class.new do |sc|
-      sc.field(:title).type(Test::Types::String).default('Mr')
-      sc.field(:name).type(Test::Types::String)
-      sc.field?(:age).type(Test::Types::Lax::Integer)
-      sc.field(:friend).schema do |s|
-        s.field(:name).type(Test::Types::String)
-      end
-      sc.field(:friends).array do |f|
-        f.field(:name).type(Test::Types::String).default('Anonymous')
-        f.field(:age).type(Test::Types::Lax::Integer)
+  describe 'a schema with nested schemas' do
+    subject(:schema) do
+      described_class.new do |sc|
+        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field(:name).type(Test::Types::String)
+        sc.field?(:age).type(Test::Types::Lax::Integer)
+        sc.field(:friend).schema do |s|
+          s.field(:name).type(Test::Types::String)
+        end
+        sc.field(:friends).array do |f|
+          f.field(:name).type(Test::Types::String).default('Anonymous')
+          f.field(:age).type(Test::Types::Lax::Integer)
+        end
       end
     end
 
-    payload = {
-      name: 'Ismael',
-      age: '42',
-      friend: {
-        name: 'Joe'
-      },
-      friends: [
-        { name: 'Joan', age: 44 },
-        { age: '45' }
-      ]
-    }
-
-    assert_result(
-      schema.call(payload),
-      {
-        title: 'Mr',
+    it 'coerces a nested data structure' do
+      payload = {
         name: 'Ismael',
-        age: 42,
+        age: '42',
         friend: {
           name: 'Joe'
         },
         friends: [
           { name: 'Joan', age: 44 },
-          { name: 'Anonymous', age: 45 }
+          { age: '45' }
         ]
-      },
-      true
-    )
+      }
+
+      assert_result(
+        schema.call(payload),
+        {
+          title: 'Mr',
+          name: 'Ismael',
+          age: 42,
+          friend: {
+            name: 'Joe'
+          },
+          friends: [
+            { name: 'Joan', age: 44 },
+            { name: 'Anonymous', age: 45 }
+          ]
+        },
+        true
+      )
+    end
+
+    it 'returns errors for invalid data' do
+      result = schema.call({ friend: {} })
+      expect(result.success?).to be false
+      expect(result.error[:name]).to eq('must be a String')
+      expect(result.error[:friend][:name]).to eq('must be a String')
+    end
+
+    specify '#fields' do
+      field = schema.fields[:name]
+      expect(field.key).to eq(:name)
+    end
   end
 
   specify 'optional keys' do

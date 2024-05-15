@@ -21,9 +21,13 @@ module Parametric
         new(&block)
       end
 
+      attr_reader :fields
+
       def initialize(&block)
         @_schema = {}
         @_hash = Types::Hash
+        @fields = {}
+
         if block_given?
           setup(&block)
           freeze
@@ -50,6 +54,7 @@ module Parametric
       end
 
       def freeze
+        @fields = SymbolAccessHash.new(_hash.to_h)
         super
         @_schema.clear.freeze
         @_hash.freeze
@@ -89,6 +94,12 @@ module Parametric
       private
 
       attr_reader :_schema
+
+      class SymbolAccessHash < SimpleDelegator
+        def [](key)
+          __getobj__[Key.wrap(key)]
+        end
+      end
 
       class Field
         include Callable
