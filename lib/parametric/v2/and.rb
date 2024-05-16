@@ -4,7 +4,7 @@ require 'parametric/v2/steppable'
 
 module Parametric
   module V2
-    class Chain
+    class And
       include Steppable
 
       def initialize(left, right)

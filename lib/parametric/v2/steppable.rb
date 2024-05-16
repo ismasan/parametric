@@ -29,7 +29,11 @@ module Parametric
       end
 
       def >>(other)
-        Chain.new(self, Steppable.wrap(other))
+        And.new(self, Steppable.wrap(other))
+      end
+
+      def |(other)
+        Or.new(self, Steppable.wrap(other))
       end
 
       def transform(callable = nil, &block)
@@ -48,10 +52,6 @@ module Parametric
         }
 
         self >> a_check
-      end
-
-      def |(other)
-        Or.new(self, Steppable.wrap(other))
       end
 
       def meta(data = {})

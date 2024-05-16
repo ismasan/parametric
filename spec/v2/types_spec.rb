@@ -27,6 +27,7 @@ RSpec.describe Parametric::V2::Types do
       expect(pipeline.call(10).success?).to be(false)
       expect(pipeline.call(10).value).to eq(13)
       expect((step1 >> step2 >> step4.(1)).call(10).value).to eq(12)
+      expect((step1 >> ->(r) { r.success(r.value.to_s)}).call(10).value).to eq('15')
     end
 
     specify '#transform' do
