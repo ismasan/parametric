@@ -361,12 +361,12 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Tuple.call(1), 1, false)
       end
 
-      specify '#of' do
-        type = Types::Tuple.of(
+      specify '#[]' do
+        type = Types::Tuple[
           Types.value('ok') | Types.value('error'),
           Types::Boolean,
           Types::String
-        )
+        ]
 
         assert_result(
           type.call(['ok', true, 'Hi!']),
@@ -388,8 +388,8 @@ RSpec.describe Parametric::V2::Types do
 
       end
 
-      specify 'with primitives' do
-        type = Types::Tuple.of(2, Types::String)
+      specify 'with static values' do
+        type = Types::Tuple[2, Types::String]
         assert_result(
           type.call([2, 'yup']),
           [2, 'yup'],
