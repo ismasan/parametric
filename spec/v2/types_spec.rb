@@ -37,6 +37,32 @@ RSpec.describe Parametric::V2::Types do
       expect(pipeline.call('5').value).to eq(15)
     end
 
+    specify '#ast' do
+      type = (
+        (Types::String.transform(&:to_i) | Types::Integer) \
+        >> Types::Integer.transform { |v| v + 5 }
+      )
+
+      expect(type.ast).to eq(
+        [:and, {}, [
+          [:or, {}, [
+            [:and, {}, [
+              [:rules, {}, [
+                [:is_a, {:type=>String}, []]]],
+                [:leaf, {}, []]]],
+                [:rules, {}, [
+                  [:is_a, {:type=>Integer}, []]
+                ]
+                ]
+          ]
+          ], [:and, {}, [[:rules, {}, [[:is_a, {:type=>Integer}, []]]], [:leaf, {}, []]]]]])
+    end
+
+    specify '#with_ast' do
+      type = Types::Any.transform(&:to_i).with_ast([:foo, { type: 'bar' }, []])
+      expect(type.ast).to eq([:foo, { type: 'bar' }, []])
+    end
+
     specify '#check' do
       is_a_string = Types::Any.check('not a string') { |value| value.is_a?(::String) }
       expect(is_a_string.call('yup').success?).to be(true)
