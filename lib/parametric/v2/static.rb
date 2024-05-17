@@ -8,12 +8,16 @@ module Parametric
       include Steppable
 
       def initialize(value = Undefined, &block)
-        @inspect_value = nil
         @value = value == Undefined ? block : -> { value }
       end
 
       def inspect
         %(Static[value:#{@value}])
+      end
+
+      def ast
+        value = @value.call
+        [:static, { default: value, const: value, type: value.class.name.downcase }, []]
       end
 
       private def _call(result)

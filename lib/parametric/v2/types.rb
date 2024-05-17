@@ -9,6 +9,7 @@ require 'parametric/v2/and'
 require 'parametric/v2/pipeline'
 require 'parametric/v2/rules'
 require 'parametric/v2/static'
+require 'parametric/v2/value'
 require 'parametric/v2/not'
 require 'parametric/v2/or'
 require 'parametric/v2/tuple'
@@ -70,10 +71,28 @@ module Parametric
       value === result.value.size
     end
 
+    class AnyClass
+      include Steppable
+
+      def ast
+        [:any, {}, []]
+      end
+
+      def >>(steppable)
+        Steppable.wrap(steppable)
+      end
+
+      def |(other)
+        Steppable.wrap(other)
+      end
+
+      private def _call(result) = result
+    end
+
     module Types
       extend TypeRegistry
 
-      Any = Step.new { |r| r }
+      Any = AnyClass.new
       Nothing = Any.rule(eq: Undefined)
       String = Any.is_a(::String)
       Numeric = Any.is_a(::Numeric)
@@ -81,7 +100,7 @@ module Parametric
       Nil = Any.is_a(::NilClass)
       True = Any.is_a(::TrueClass)
       False = Any.is_a(::FalseClass)
-      Boolean = True | False
+      Boolean = (True | False).with_ast([:boolean, { type: 'boolean'}, []])
       Array = ArrayClass.new
       Tuple = TupleClass.new
       Hash = HashClass.new

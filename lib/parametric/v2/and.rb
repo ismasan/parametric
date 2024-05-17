@@ -12,12 +12,12 @@ module Parametric
         @right = right
       end
 
-      def metadata
-        @left.metadata.merge(@right.metadata)
-      end
-
       def inspect
         %((#{@left.inspect} >> #{@right.inspect}))
+      end
+
+      def ast
+        [:and, {}, [@left.ast, @right.ast]]
       end
 
       private def _call(result)

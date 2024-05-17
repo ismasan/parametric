@@ -28,6 +28,10 @@ module Parametric
         result.value
       end
 
+      def ast
+        [:custom, metadata, [self]]
+      end
+
       def >>(other)
         And.new(self, Steppable.wrap(other))
       end
@@ -54,8 +58,23 @@ module Parametric
         self >> a_check
       end
 
+      class Metadata
+        include Steppable
+
+        attr_reader :metadata
+        def initialize(metadata)
+          @metadata = metadata
+        end
+
+        def ast
+          [:metadata, metadata, []]
+        end
+
+        private def _call(result) = result
+      end
+
       def meta(data = {})
-        Step.new(self, metadata: metadata.merge(data))
+        self >> Metadata.new(data)
       end
 
       def not(other = self)
@@ -67,11 +86,30 @@ module Parametric
       end
 
       def value(val, error = 'invalid value')
-        check(error) { |v| val === v }
+        self >> Value.new(val, error)
       end
 
       def default(val = Undefined, &block)
-        (Types::Nothing >> Static.new(val, &block)) | self
+        ((Types::Nothing >> Static.new(val, &block)) | self).with_ast(
+          [:default, { default: val }, [self.ast]]
+        )
+      end
+
+      class AST
+        include Steppable
+
+        attr_reader :ast
+
+        def initialize(steppable, ast)
+          @steppable = steppable
+          @ast = ast
+        end
+
+        private def _call(result) = @steppable.call(result)
+      end
+
+      def with_ast(a)
+        AST.new(self, a)
       end
 
       def optional
@@ -80,6 +118,10 @@ module Parametric
 
       def present
         Types::Present >> self
+      end
+
+      def options(opts = [])
+        rule(included_in: opts)
       end
 
       def rule(rules = {})

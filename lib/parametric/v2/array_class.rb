@@ -30,6 +30,10 @@ module Parametric
         %(Array<#{element_type}>)
       end
 
+      def ast
+        [:array, {}, [element_type.ast]]
+      end
+
       private
 
       attr_reader :element_type

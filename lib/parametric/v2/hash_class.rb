@@ -37,6 +37,16 @@ module Parametric
 
       alias_method :[], :schema
 
+      def ast
+        [
+          :hash,
+          {},
+          _schema.map { |(k, v)|
+            [k.ast, v.ast]
+          }
+        ]
+      end
+
       # Hash#merge keeps the left-side key in the new hash
       # if they match via #hash and #eql?
       # we need to keep the right-side key, because even if the key name is the same,

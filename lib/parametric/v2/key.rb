@@ -18,6 +18,10 @@ module Parametric
 
       def to_s = @key
 
+      def ast
+        [:key, { name: @key, optional: @optional }, []]
+      end
+
       def hash
         @key.hash
       end

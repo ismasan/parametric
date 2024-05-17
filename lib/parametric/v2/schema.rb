@@ -4,6 +4,7 @@ require 'forwardable'
 require 'parametric/v2/pipeline'
 require 'parametric/v2/types'
 require 'parametric/v2/key'
+require 'parametric/v2/json_schema_visitor'
 
 module Parametric
   module V2
@@ -32,6 +33,12 @@ module Parametric
           setup(&block)
           freeze
         end
+      end
+
+      def ast = _hash.ast
+
+      def json_schema
+        V2::JSONSchemaVisitor.call(ast).to_h
       end
 
       private def setup(&block)
@@ -114,6 +121,8 @@ module Parametric
           @key = key
           @_type = Types::Any
         end
+
+        def ast = _type.ast
 
         def type(steppable)
           raise ArgumentError, "expected a Parametric type, but got #{steppable.inspect}" unless steppable.respond_to?(:call)

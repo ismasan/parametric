@@ -11,6 +11,10 @@ module Parametric
         @key_type, @value_type = key_type, value_type
       end
 
+      def ast
+        [:hash_map, {}, [@key_type.ast, @value_type.ast]]
+      end
+
       private def _call(result)
         failed = result.value.lazy.filter_map do |key, value|
           key_r, value_r = @key_type.call(key), @value_type.call(value)
