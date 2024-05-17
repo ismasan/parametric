@@ -31,10 +31,11 @@ module Parametric
         description: Noop,
         enum: Noop,
         items: Noop,
+        prefixItems: Noop,
         required: Noop,
         const: Noop,
         default: Noop,
-        pattern: Noop,
+        pattern: Noop
       }.freeze
 
       def self.call(ast)
@@ -159,6 +160,15 @@ module Parametric
         {
           type: 'array',
           items: items
+        }
+      end
+
+      def visit_tuple(node, _prop = {})
+        items = node[2].map { |child| visit(child) }
+
+        {
+          type: 'array',
+          prefixItems: items
         }
       end
 

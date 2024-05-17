@@ -11,6 +11,7 @@ module Parametric
 
       def initialize(*types)
         @types = types.map { |t| t.is_a?(Steppable) ? t : Types::Any.value(t) }
+        # TODO: deprecate metadata
         @metadata = @types.map(&:metadata).reduce({}, :merge).merge(type: 'Tuple')
       end
 
@@ -19,6 +20,10 @@ module Parametric
       end
 
       alias_method :[], :of
+
+      def ast
+        [:tuple, {}, @types.map(&:ast)]
+      end
 
       private def _call(result)
         return result.halt(error: 'must be an Array') unless result.value.is_a?(::Array)
