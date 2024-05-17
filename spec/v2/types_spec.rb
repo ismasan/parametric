@@ -63,6 +63,12 @@ RSpec.describe Parametric::V2::Types do
       expect(type.ast).to eq([:foo, { type: 'bar' }, []])
     end
 
+    specify '#format' do
+      type = Types::Any.format(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/, error: 'invalid phone number')
+      expect(type.call('(888)555-1212x').success?).to be(false)
+      expect(type.call('(888)555-1212').success?).to be(true)
+    end
+
     specify '#check' do
       is_a_string = Types::Any.check('not a string') { |value| value.is_a?(::String) }
       expect(is_a_string.call('yup').success?).to be(true)

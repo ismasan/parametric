@@ -130,6 +130,10 @@ module Parametric
         self >> Rules.new(rules)
       end
 
+      def format(pattern, error = 'invalid format')
+        self >> Format.new(pattern, error)
+      end
+
       def is_a(klass)
         rule(is_a: klass)
       end

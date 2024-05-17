@@ -34,6 +34,7 @@ module Parametric
         required: Noop,
         const: Noop,
         default: Noop,
+        pattern: Noop,
       }.freeze
 
       def self.call(ast)
@@ -159,6 +160,12 @@ module Parametric
           type: 'array',
           items: items
         }
+      end
+
+      def visit_format(node, prop = {})
+        pattern = node[1][:pattern]
+        pattern = pattern.respond_to?(:source) ? pattern.source : pattern.to_s
+        prop.merge(pattern:)
       end
     end
   end
