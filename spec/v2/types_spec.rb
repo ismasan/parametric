@@ -552,6 +552,24 @@ RSpec.describe Parametric::V2::Types do
         assert_result(union.call(bar: '10'), { bar: '10' }, false)
       end
 
+      specify '#+' do
+        s1 = Types::Hash.schema(name: Types::String)
+        s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer)
+        s3 = s1 + s2
+
+        assert_result(s3.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
+        assert_result(s3.call(age: 42), {age: 42}, true)
+      end
+
+      specify '#&' do
+        s1 = Types::Hash.schema(name: Types::String, age: Types::Integer, company: Types::String)
+        s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer, email: Types::String)
+        s3 = s1 & s2
+
+        assert_result(s3.call(name: 'Ismael', age: 42, company: 'ACME', email: 'me@acme.com'), {name: 'Ismael', age: 42}, true)
+        assert_result(s3.call(age: 42), {age: 42}, true)
+      end
+
       specify '#tagged_by' do
         t1 = Types::Hash[kind: 't1', name: Types::String]
         t2 = Types::Hash[kind: 't2', name: Types::String]
@@ -584,15 +602,6 @@ RSpec.describe Parametric::V2::Types do
         )
 
         assert_result(hash.call({}), {title: 'Mr'}, true)
-      end
-
-      specify '#+' do
-        s1 = Types::Hash.schema(name: Types::String)
-        s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer)
-        s3 = s1 + s2
-
-        assert_result(s3.call(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
-        assert_result(s3.call(age: 42), {age: 42}, true)
       end
 
       specify '#schema(key_type, value_type) "Map"' do

@@ -52,7 +52,20 @@ module Parametric
       # we need to keep the right-side key, because even if the key name is the same,
       # it's optional flag might have changed
       def +(other)
+        raise ArgumentError, "expected a HashClass, got #{other.class}" unless other.is_a?(HashClass)
+
         self.class.new(merge_rightmost_keys(_schema, other._schema))
+      end
+
+      def &(other)
+        raise ArgumentError, "expected a HashClass, got #{other.class}" unless other.is_a?(HashClass)
+
+        intersected_keys = other._schema.keys & _schema.keys
+        intersected = intersected_keys.each.with_object({}) do |k, memo|
+          memo[k] = other.at_key(k)
+        end
+
+        self.class.new(intersected)
       end
 
       def tagged_by(key, *types)

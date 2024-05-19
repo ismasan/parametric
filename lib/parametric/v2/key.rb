@@ -9,10 +9,13 @@ module Parametric
         key.is_a?(Key) ? key : new(key)
       end
 
+      attr_reader :to_sym
+
       def initialize(key, optional: false)
         key_s = key.to_s
         match = OPTIONAL_EXP.match(key_s)
         @key = match[1]
+        @to_sym = @key.to_sym
         @optional = !match[2].nil? ? true : optional
       end
 
@@ -28,10 +31,6 @@ module Parametric
 
       def eql?(other)
         other.hash == hash
-      end
-
-      def to_sym
-        @key.to_sym
       end
 
       def optional?
