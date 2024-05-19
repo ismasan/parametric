@@ -37,6 +37,12 @@ RSpec.describe Parametric::V2::Types do
       expect(pipeline.call('5').value).to eq(15)
     end
 
+    specify Types::Static do
+      assert_result(Types::Static['hello'].call('hello'), 'hello', true)
+      assert_result(Types::Static['hello'].call('nope'), 'hello', true)
+      expect(Types::Static['hello'].ast).to eq([:static, { default: 'hello', const: 'hello', type: 'string' }, []])
+    end
+
     specify '#ast' do
       type = (
         (Types::String.transform(&:to_i) | Types::Integer) \
@@ -142,12 +148,6 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types.value('hello').call('nope'), 'nope', false)
       assert_result(Types::Lax::String.value('10').call(10), '10', true)
       assert_result(Types::Lax::String.value('11').call(10), '10', false)
-    end
-
-    specify '.static' do
-      assert_result(Types.static('hello').call('hello'), 'hello', true)
-      assert_result(Types.static('hello').call('nope'), 'hello', true)
-      assert_result(Types.static { |_| 'hello' }.call('nope'), 'hello', true)
     end
 
     specify '#default' do

@@ -90,7 +90,8 @@ module Parametric
       end
 
       def default(val = Undefined, &block)
-        ((Types::Nothing >> Static.new(val, &block)) | self).with_ast(
+        val_type = val == Undefined ? Types::Any.transform(&block) : Types::Static[val]
+        ((Types::Nothing >> val_type) | self).with_ast(
           [:default, { default: val }, [self.ast]]
         )
       end

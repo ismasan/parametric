@@ -2,7 +2,7 @@
 
 require 'parametric/v2/steppable'
 require 'parametric/v2/key'
-require 'parametric/v2/static'
+require 'parametric/v2/static_class'
 require 'parametric/v2/hash_map'
 require 'parametric/v2/discriminated_hash'
 
@@ -107,7 +107,7 @@ module Parametric
         when Callable
           hash
         else # leaf values
-          Static.new(hash)
+          StaticClass.new(hash)
         end
       end
 
