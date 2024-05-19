@@ -85,8 +85,8 @@ module Parametric
         Not.new(self, error:)
       end
 
-      def value(val, error = 'invalid value')
-        self >> Value.new(val, error)
+      def value(val)
+        self >> Types::Value[val]
       end
 
       def default(val = Undefined, &block)

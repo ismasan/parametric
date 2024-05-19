@@ -9,7 +9,7 @@ require 'parametric/v2/and'
 require 'parametric/v2/pipeline'
 require 'parametric/v2/rules'
 require 'parametric/v2/static_class'
-require 'parametric/v2/value'
+require 'parametric/v2/value_class'
 require 'parametric/v2/format'
 require 'parametric/v2/not'
 require 'parametric/v2/or'
@@ -99,6 +99,7 @@ module Parametric
       Numeric = Any.is_a(::Numeric)
       Integer = Any.is_a(::Integer)
       Static = StaticClass.new
+      Value = ValueClass.new
       Nil = Any.is_a(::NilClass)
       True = Any.is_a(::TrueClass)
       False = Any.is_a(::FalseClass)
@@ -116,10 +117,6 @@ module Parametric
 
       Present = Blank.halt(error: 'must be present')
       Split = String.transform { |v| v.split(/\s*,\s*/) }
-
-      def self.value(...)
-        Any.value(...)
-      end
 
       module Lax
         String = Types::String \

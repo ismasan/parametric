@@ -143,9 +143,9 @@ RSpec.describe Parametric::V2::Types do
       expect(type.call(9).error).to eq('nope')
     end
 
-    specify '#value' do
-      assert_result(Types.value('hello').call('hello'), 'hello', true)
-      assert_result(Types.value('hello').call('nope'), 'nope', false)
+    specify 'Types::Value' do
+      assert_result(Types::Value['hello'].call('hello'), 'hello', true)
+      assert_result(Types::Value['hello'].call('nope'), 'nope', false)
       assert_result(Types::Lax::String.value('10').call(10), '10', true)
       assert_result(Types::Lax::String.value('11').call(10), '10', false)
     end
@@ -363,7 +363,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#[]' do
         type = Types::Tuple[
-          Types.value('ok') | Types.value('error'),
+          Types::Any.value('ok') | Types::Any.value('error'),
           Types::Boolean,
           Types::String
         ]
@@ -430,7 +430,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#of with unions' do
         assert_result(
-          Types::Array.of(Types.value('a') | Types.value('b')).call(['a', 'b', 'a']),
+          Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).call(['a', 'b', 'a']),
           %w[a b a],
           true
         )

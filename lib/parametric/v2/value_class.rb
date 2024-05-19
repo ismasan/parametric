@@ -4,16 +4,20 @@ require 'parametric/v2/steppable'
 
 module Parametric
   module V2
-    class Value
+    class ValueClass
       include Steppable
 
-      def initialize(value, error = 'does not match the value')
+      def initialize(value = Undefined)
         @value = value
-        @error = error
+        @error = "must be equal to #{@value}"
+      end
+
+      def [](value)
+        self.class.new(value)
       end
 
       def inspect
-        %(Value[value:#{@value}])
+        %(Value[#{@value}])
       end
 
       def ast
