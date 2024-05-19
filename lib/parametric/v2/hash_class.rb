@@ -4,7 +4,7 @@ require 'parametric/v2/steppable'
 require 'parametric/v2/key'
 require 'parametric/v2/static_class'
 require 'parametric/v2/hash_map'
-require 'parametric/v2/discriminated_hash'
+require 'parametric/v2/tagged_hash'
 
 module Parametric
   module V2
@@ -55,8 +55,8 @@ module Parametric
         self.class.new(merge_rightmost_keys(_schema, other._schema))
       end
 
-      def discriminated(key, *types)
-        DiscriminatedHash.new(self, key, types)
+      def tagged_by(key, *types)
+        TaggedHash.new(self, key, types)
       end
 
       def at_key(a_key)

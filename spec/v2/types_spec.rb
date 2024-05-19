@@ -527,10 +527,10 @@ RSpec.describe Parametric::V2::Types do
         assert_result(union.call(bar: '10'), { bar: '10' }, false)
       end
 
-      specify '#discriminated' do
-        t1 = Types::Hash.schema(kind: 't1', name: Types::String)
-        t2 = Types::Hash.schema(kind: 't2', name: Types::String)
-        type = Types::Hash.discriminated(:kind, t1, t2)
+      specify '#tagged_by' do
+        t1 = Types::Hash[kind: 't1', name: Types::String]
+        t2 = Types::Hash[kind: 't2', name: Types::String]
+        type = Types::Hash.tagged_by(:kind, t1, t2)
 
         assert_result(type.call(kind: 't1', name: 'T1'), { kind: 't1', name: 'T1' }, true)
         assert_result(type.call(kind: 't2', name: 'T2'), { kind: 't2', name: 'T2' }, true)

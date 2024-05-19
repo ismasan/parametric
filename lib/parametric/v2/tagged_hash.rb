@@ -4,7 +4,7 @@ require 'parametric/v2/steppable'
 
 module Parametric
   module V2
-    class DiscriminatedHash
+    class TaggedHash
       include Steppable
 
       def initialize(hash_type, key, types)
