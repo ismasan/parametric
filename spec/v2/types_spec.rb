@@ -597,7 +597,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#schema(key_type, value_type) "Map"' do
         s1 = Types::Hash.schema(Types::String, Types::Integer)
-        expect(s1.metadata).to eq({})
+        expect(s1.metadata).to eq(type: 'hash')
         assert_result(s1.call('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
         s1.call(a: 1, 'b' => 2).tap do |result|
           assert_result(result, { a: 1, 'b' => 2 }, false)
@@ -612,7 +612,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#[] alias to #schema' do
         s1 = Types::Hash[Types::String, Types::Integer]
-        expect(s1.metadata).to eq({})
+        expect(s1.metadata).to eq(type: 'hash')
         assert_result(s1.call('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
       end
     end

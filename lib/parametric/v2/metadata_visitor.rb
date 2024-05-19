@@ -15,6 +15,12 @@ module Parametric
           visit_and(node, prop)
         when :or
           visit_or(node, prop)
+        when :hash
+          visit_with_type(node, prop, 'hash')
+        when :hash_map
+          visit_with_type(node, prop, 'hash')
+        when :array
+          visit_with_type(node, prop, 'array')
         else
           visit_default(node, prop)
         end
@@ -43,6 +49,10 @@ module Parametric
         node[2].reduce(prop) do |acc, child|
           acc.merge(visit(child))
         end
+      end
+
+      def visit_with_type(node, prop, type)
+        visit_default(node, prop).merge(type:)
       end
     end
   end
