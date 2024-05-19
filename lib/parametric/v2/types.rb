@@ -14,7 +14,7 @@ require 'parametric/v2/value_class'
 require 'parametric/v2/format'
 require 'parametric/v2/not'
 require 'parametric/v2/or'
-require 'parametric/v2/tuple'
+require 'parametric/v2/tuple_class'
 require 'parametric/v2/array_class'
 require 'parametric/v2/hash_class'
 

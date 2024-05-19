@@ -21,6 +21,10 @@ module Parametric
         [:tuple, { type: 'array' }, @types.map(&:ast)]
       end
 
+      def inspect
+        "Tuple[#{@types.map(&:inspect).join(', ')}]"
+      end
+
       private def _call(result)
         return result.halt(error: 'must be an Array') unless result.value.is_a?(::Array)
         return result.halt(error: 'must have the same size') unless result.value.size == @types.size
