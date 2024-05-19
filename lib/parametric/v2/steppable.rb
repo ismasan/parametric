@@ -89,6 +89,8 @@ module Parametric
         self >> Types::Value[val]
       end
 
+      def [](val) = value(val)
+
       def default(val = Undefined, &block)
         val_type = val == Undefined ? Types::Any.transform(&block) : Types::Static[val]
         ((Types::Nothing >> val_type) | self).with_ast(

@@ -91,6 +91,15 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types::Any.present.call(nil), nil, false)
     end
 
+    specify '#[](value)' do
+      type = Types::String['hello']
+      assert_result(type.call('hello'), 'hello', true)
+      assert_result(type.call('nope'), 'nope', false)
+
+      type = Types::Lax::String['10']
+      assert_result(type.call(10), '10', true)
+    end
+
     specify '#is_a' do
       pipeline = Types::Any.is_a(::Integer).transform { |v| v + 5 }
       assert_result(pipeline.call(10), 15, true)
