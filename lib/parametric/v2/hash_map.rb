@@ -12,7 +12,7 @@ module Parametric
       end
 
       def ast
-        [:hash_map, {}, [@key_type.ast, @value_type.ast]]
+        [:hash_map, BLANK_HASH, [@key_type.ast, @value_type.ast]]
       end
 
       private def _call(result)

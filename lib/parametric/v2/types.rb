@@ -4,6 +4,7 @@ require 'bigdecimal'
 require 'parametric/v2/result'
 require 'parametric/v2/type_registry'
 require 'parametric/v2/steppable'
+require 'parametric/v2/any_class'
 require 'parametric/v2/step'
 require 'parametric/v2/and'
 require 'parametric/v2/pipeline'
@@ -57,24 +58,6 @@ module Parametric
     end
     Rules.define :size, 'must be of size %{value}', metadata_key: :size do |result, value|
       value === result.value.size
-    end
-
-    class AnyClass
-      include Steppable
-
-      def ast
-        [:any, {}, []]
-      end
-
-      def >>(steppable)
-        Steppable.wrap(steppable)
-      end
-
-      def |(other)
-        Steppable.wrap(other)
-      end
-
-      private def _call(result) = result
     end
 
     module Types

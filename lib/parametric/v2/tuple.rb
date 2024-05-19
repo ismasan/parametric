@@ -22,7 +22,7 @@ module Parametric
       alias_method :[], :of
 
       def ast
-        [:tuple, {}, @types.map(&:ast)]
+        [:tuple, BLANK_HASH, @types.map(&:ast)]
       end
 
       private def _call(result)

@@ -17,7 +17,7 @@ module Parametric
       end
 
       def ast
-        [:and, {}, [@left.ast, @right.ast]]
+        [:and, BLANK_HASH, [@left.ast, @right.ast]]
       end
 
       private def _call(result)

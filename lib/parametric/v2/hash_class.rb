@@ -40,7 +40,7 @@ module Parametric
       def ast
         [
           :hash,
-          {},
+          BLANK_HASH,
           _schema.map { |(k, v)|
             [k.ast, v.ast]
           }

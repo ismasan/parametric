@@ -20,7 +20,7 @@ module Parametric
       end
 
       def ast
-        [:not, {}, [@step.ast]]
+        [:not, BLANK_HASH, [@step.ast]]
       end
 
       private def _call(result)

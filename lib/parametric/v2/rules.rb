@@ -63,7 +63,7 @@ module Parametric
       def ast
         [
           :rules,
-          {},
+          BLANK_HASH,
           @rules.map { |(ruledef, value)| [ruledef.name, { ruledef.metadata_key => value }, []] }
         ]
       end

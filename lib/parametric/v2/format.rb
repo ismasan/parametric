@@ -15,7 +15,7 @@ module Parametric
       end
 
       def ast
-        [:format, { pattern: @pattern }, []]
+        [:format, { pattern: @pattern }, BLANK_ARRAY]
       end
 
       private def _call(result)
