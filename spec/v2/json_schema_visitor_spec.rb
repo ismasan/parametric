@@ -177,5 +177,28 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
         ]
       )
     end
+
+    specify 'recursive type' do
+      type = Parametric::V2::Types::Hash[
+        value: Parametric::V2::Types::String,
+        next: Parametric::V2::Types::Any.defer { linked_list } | Parametric::V2::Types::Nil
+      ]
+
+      # TODO: figure out how
+      # to represent recursive types in JSON Schema
+      expect(visitor.visit(type.ast)).to eq(
+        type: 'object',
+        properties: {
+          'next' => {
+            anyOf: [
+              {},
+              { type: 'null' }
+            ]
+          },
+          'value' => { type: 'string' }
+        },
+        required: ['value', 'next'],
+      )
+    end
   end
 end

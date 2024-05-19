@@ -60,6 +60,12 @@ module Parametric
         normalize_props(send(method_name, node, prop))
       end
 
+      # TODO: figure out how
+      # to represent recursive types in JSON Schema
+      def visit_deferred(node, prop = BLANK_HASH)
+        BLANK_HASH
+      end
+
       def visit_hash(node, _prop = BLANK_HASH)
         result = {
           type: 'object',

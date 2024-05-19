@@ -569,7 +569,7 @@ RSpec.describe Parametric::V2::Types do
       specify '#defer' do
         linked_list = Types::Hash[
           value: Types::Any,
-          next: Types::Any.defer { linked_list | Types::Nil }
+          next: Types::Any.defer { linked_list } | Types::Nil
         ]
         assert_result(
           linked_list.call(value: 1, next: { value: 2, next: { value: 3, next: nil } }),
@@ -577,6 +577,24 @@ RSpec.describe Parametric::V2::Types do
           true
         )
         expect(linked_list.metadata).to eq(type: 'hash')
+      end
+
+      specify '#defer with Tuple' do
+        type = Types::Tuple[
+          Types::String,
+          Types::Hash,
+          Types::Array[Types::Any.defer { type }]
+        ]
+        assert_result(
+          type.call(['hello', { foo: 'bar' }, [['ok', {}, []]]]),
+          ['hello', { foo: 'bar' }, [['ok', {}, []]]],
+          true
+        )
+        assert_result(
+          type.call(['hello', { foo: 'bar' }, [['ok', {}, 1]]]),
+          ['hello', { foo: 'bar' }, [['ok', {}, 1]]],
+          false
+        )
       end
 
       specify '#&' do
