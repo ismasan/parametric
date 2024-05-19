@@ -493,6 +493,11 @@ RSpec.describe Parametric::V2::Types do
         )
       end
 
+      specify '#metadata' do
+        type = Types::Array[Types::Boolean].meta(foo: 1)
+        expect(type.metadata).to eq(type: 'array', foo: 1)
+      end
+
       specify '#concurrent' do
         slow_type = Types::Any.transform { |r| sleep(0.02); r }
         array = Types::Array.of(slow_type).concurrent
