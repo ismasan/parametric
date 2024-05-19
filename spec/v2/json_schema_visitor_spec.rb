@@ -121,6 +121,51 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       )
     end
 
+    specify 'Types::Hash.tagged_by' do
+      t1 = Parametric::V2::Types::Hash[kind: 't1', name: Parametric::V2::Types::String, age: Parametric::V2::Types::Integer]
+      t2 = Parametric::V2::Types::Hash[kind: 't2', name: Parametric::V2::Types::String]
+      type = Parametric::V2::Types::Hash.tagged_by(:kind, t1, t2)
+
+      expect(visitor.visit(type.ast)).to eq(
+        type: 'object',
+        properties: {
+          'kind' => { type: 'string', enum: %w[t1 t2] },
+        },
+        required: ['kind'],
+        allOf: [
+          {
+            :if => {
+              properties: {
+                'kind' => { const: 't1', type: 'string' },
+              }
+            },
+            :then => {
+              properties: {
+                'kind' => { type: 'string', default: 't1', const: 't1'},
+                'name' => { type: 'string' },
+                'age' => { type: 'integer' }
+              },
+              required: ['kind', 'name', 'age']
+            }
+          },
+          {
+            :if => {
+              properties: {
+                'kind' => { const: 't2', type: 'string' },
+              }
+            },
+            :then => {
+              properties: {
+                'kind' => { type: 'string', default: 't2', const: 't2'},
+                'name' => { type: 'string' }
+              },
+              required: ['kind', 'name']
+            }
+          }
+        ]
+      )
+    end
+
     specify 'complex type with AND and OR branches' do
       type = Parametric::V2::Types::String \
         | (Parametric::V2::Types::Integer >> Parametric::V2::Types::Any).options(%w[foo bar])

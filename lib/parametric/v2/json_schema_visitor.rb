@@ -28,6 +28,7 @@ module Parametric
         patternProperties: Noop,
         not: Noop,
         anyOf: Noop,
+        allOf: Noop,
         description: Noop,
         enum: Noop,
         items: Noop,
@@ -54,12 +55,12 @@ module Parametric
         end
       end
 
-      def visit(node, prop = {})
+      def visit(node, prop = BLANK_HASH)
         method_name = "visit_#{node[0]}"
         normalize_props(send(method_name, node, prop))
       end
 
-      def visit_hash(node, _prop = {})
+      def visit_hash(node, _prop = BLANK_HASH)
         result = {
           type: 'object',
           required: [],
@@ -76,7 +77,7 @@ module Parametric
         result
       end
 
-      def visit_hash_map(node, _prop = {})
+      def visit_hash_map(node, _prop = BLANK_HASH)
         result = {
           type: 'object',
           patternProperties: {
@@ -85,15 +86,43 @@ module Parametric
         }
       end
 
-      def visit_metadata(node, prop = {})
+      # https://json-schema.org/understanding-json-schema/reference/conditionals
+      def visit_tagged_hash(node, _prop = BLANK_HASH)
+        result = {
+          type: 'object',
+          required: [],
+          properties: {}
+        }
+
+        key = node[1][:key].to_s
+        children = node[2].map { |child| visit(child) }
+        key_enum = children.map { |child| child[:properties][key][:const] }
+        key_type = children.map { |child| child[:properties][key][:type] }
+        result[:required] << key
+        result[:properties][key] = { type: key_type.first, enum: key_enum }
+        result[:allOf] = children.map do |child|
+          child_prop = child[:properties][key]
+
+          {
+            if: {
+              properties: { key => { const: child_prop[:const], type: child_prop[:type] } }
+            },
+            then: child.except(:type)
+          }
+        end
+
+        result
+      end
+
+      def visit_metadata(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
 
-      def visit_leaf(node, prop = {})
+      def visit_leaf(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
 
-      def visit_any(node, prop = {})
+      def visit_any(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
 
@@ -101,32 +130,32 @@ module Parametric
         node[1][:name]
       end
 
-      def visit_rules(node, prop = {})
+      def visit_rules(node, prop = BLANK_HASH)
         node[2].reduce(prop) do |acc, child|
           acc.merge(visit(child))
         end
       end
 
-      def visit_is_a(node, prop = {})
+      def visit_is_a(node, prop = BLANK_HASH)
         prop.merge(type: node[1][:type].to_s.downcase)
       end
 
-      def visit_included_in(node, prop = {})
+      def visit_included_in(node, prop = BLANK_HASH)
         prop.merge(enum: node[1][:options])
       end
 
-      def visit_eq(node, prop = {})
+      def visit_eq(node, prop = BLANK_HASH)
         prop.merge(enum: node[1])
         value = node[1][:eq]
         (value == Parametric::V2::Undefined) ? prop : prop.merge(type: value.class.name.downcase, const: value)
       end
 
-      def visit_or(node, prop = {})
+      def visit_or(node, prop = BLANK_HASH)
         any_of = node[2].map { |child| visit(child) }
         prop.merge(anyOf: any_of)
       end
 
-      def visit_and(node, prop = {})
+      def visit_and(node, prop = BLANK_HASH)
         left = visit(node[2][0])
         right = visit(node[2][1])
         type = right[:type] || left[:type]
@@ -135,27 +164,27 @@ module Parametric
         prop
       end
 
-      def visit_not(node, prop = {})
+      def visit_not(node, prop = BLANK_HASH)
         prop.merge(not: visit(node[2][0]))
       end
 
-      def visit_static(node, prop = {})
+      def visit_static(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
 
-      def visit_value(node, prop = {})
+      def visit_value(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
 
-      def visit_default(node, prop = {})
+      def visit_default(node, prop = BLANK_HASH)
         prop.merge(node[1]).merge(visit(node[2].first))
       end
 
-      def visit_boolean(node, prop = {})
+      def visit_boolean(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
 
-      def visit_array(node, _prop = {})
+      def visit_array(node, _prop = BLANK_HASH)
         items = visit(node[2].first)
         {
           type: 'array',
@@ -163,7 +192,7 @@ module Parametric
         }
       end
 
-      def visit_tuple(node, _prop = {})
+      def visit_tuple(node, _prop = BLANK_HASH)
         items = node[2].map { |child| visit(child) }
 
         {
@@ -172,7 +201,7 @@ module Parametric
         }
       end
 
-      def visit_format(node, prop = {})
+      def visit_format(node, prop = BLANK_HASH)
         pattern = node[1][:pattern]
         pattern = pattern.respond_to?(:source) ? pattern.source : pattern.to_s
         prop.merge(pattern:)

@@ -41,7 +41,7 @@ module Parametric
       end
 
       def ast
-        [:custom, BLANK_HASH, [self]]
+        raise NotImplementedError, "Implement #ast in #{self.class}"
       end
 
       def >>(other)

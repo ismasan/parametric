@@ -20,6 +20,14 @@ module Parametric
         end
       end
 
+      def ast
+        [
+          :tagged_hash,
+          { key: @key.to_sym },
+          @types.map(&:ast)
+        ]
+      end
+
       private def _call(result)
         result = @hash_type.call(result)
         return result unless result.success?
