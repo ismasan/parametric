@@ -7,20 +7,18 @@ module Parametric
     class Step
       include Steppable
 
-      attr_reader :metadata
-
-      def initialize(callable = nil, metadata: DEFAULT_METADATA, &block)
-        @metadata = callable.respond_to?(:metadata) ? callable.metadata : metadata
+      def initialize(callable = nil, &block)
+        @_metadata = callable.respond_to?(:metadata) ? callable.metadata : BLANK_HASH
         @callable = callable || block
         @type = @callable.respond_to?(:new) ? @callable : @callable.class
       end
 
       def inspect
-        %(Step[#{metadata.map { |(k,v)| "#{k}:#{v}" }.join(', ')}])
+        %(Step[#{@_metadata.map { |(k,v)| "#{k}:#{v}" }.join(', ')}])
       end
 
       def ast
-        [:leaf, metadata, []]
+        [:leaf, @_metadata, []]
       end
 
       private def _call(result)

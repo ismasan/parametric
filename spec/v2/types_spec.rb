@@ -67,6 +67,10 @@ RSpec.describe Parametric::V2::Types do
     specify '#with_ast' do
       type = Types::Any.transform(&:to_i).with_ast([:foo, { type: 'bar' }, []])
       expect(type.ast).to eq([:foo, { type: 'bar' }, []])
+
+      expect {
+        Types::Any.with_ast([:foo, { type: 'bar' }])
+      }.to raise_error(ArgumentError)
     end
 
     specify '#format' do

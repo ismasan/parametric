@@ -19,19 +19,6 @@ require 'parametric/v2/hash_class'
 
 module Parametric
   module V2
-    class UndefinedClass
-      def inspect
-        %(Undefined)
-      end
-    end
-    Undefined = UndefinedClass.new.freeze
-
-    DEFAULT_METADATA = {}.freeze
-    DEFAULT_ERROR_MESSAGE = 'is invalid'
-    BLANK_STRING = ''
-    BLANK_ARRAY = [].freeze
-    BLANK_HASH = DEFAULT_METADATA
-
     Rules.define :eq, 'must be equal to %{value}' do |result, value|
       value == result.value
     end

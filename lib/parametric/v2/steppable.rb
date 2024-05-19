@@ -2,11 +2,23 @@
 
 module Parametric
   module V2
+    class UndefinedClass
+      def inspect
+        %(Undefined)
+      end
+    end
+
     TypeError = Class.new(::TypeError)
+    Undefined = UndefinedClass.new.freeze
+
+    BLANK_STRING = ''
+    BLANK_ARRAY = [].freeze
+    BLANK_HASH = {}.freeze
+
 
     module Callable
       def metadata
-        DEFAULT_METADATA
+        BLANK_HASH
       end
 
       def call(result = Undefined)
@@ -29,7 +41,7 @@ module Parametric
       end
 
       def ast
-        [:custom, metadata, [self]]
+        [:custom, BLANK_HASH, [self]]
       end
 
       def >>(other)
@@ -104,6 +116,14 @@ module Parametric
         attr_reader :ast
 
         def initialize(steppable, ast)
+          if !ast.is_a?(::Array) \
+            || ast.size != 3 \
+            || !ast[0].is_a?(::Symbol) \
+            || !ast[1].is_a?(::Hash) \
+            || !ast[2].is_a?(::Array)
+            raise ArgumentError, "expected an Array<Symbol, Hash, Array>, but got #{ast.inspect}"
+          end
+
           @steppable = steppable
           @ast = ast
         end
