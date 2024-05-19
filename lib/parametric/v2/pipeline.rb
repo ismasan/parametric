@@ -10,11 +10,8 @@ module Parametric
       class AroundStep
         include Steppable
 
-        attr_reader :metadata
-
         def initialize(step, block)
           @step, @block = step, block
-          @metadata = @step.metadata
         end
 
         private def _call(result)
@@ -29,10 +26,6 @@ module Parametric
           configure(&setup)
           freeze
         end
-      end
-
-      def metadata
-        @type.metadata
       end
 
       def call(result)

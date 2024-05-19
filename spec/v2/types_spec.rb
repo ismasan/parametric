@@ -141,6 +141,26 @@ RSpec.describe Parametric::V2::Types do
       expect(pipe.metadata[:foo]).to eq('bar')
     end
 
+    describe '#metadata' do
+      specify 'AND (>>) chains' do
+        type = Types::String >> Types::Integer.meta(foo: 'bar')
+        expect(type.metadata).to eq({ type: ::Integer, foo: 'bar'})
+      end
+
+      specify 'OR (|) chains' do
+        type = Types::String | Types::Integer.meta(foo: 'bar')
+        expect(type.metadata).to eq({ type: [::String, ::Integer], foo: 'bar'})
+      end
+
+      specify 'AND (>>) with OR (|)' do
+        type = Types::String >> (Types::Integer | Types::Boolean).meta(foo: 'bar')
+        expect(type.metadata).to eq({ type: [::Integer, 'boolean'], foo: 'bar'})
+
+        type = Types::String | (Types::Integer >> Types::Boolean).meta(foo: 'bar')
+        expect(type.metadata).to eq({ type: [::String, 'boolean'], foo: 'bar'})
+      end
+    end
+
     specify '#not' do
       string = Types::Any.check('not a string') { |v| v.is_a?(::String) }
       assert_result(Types::Any.not(string).call(10), 10, true)

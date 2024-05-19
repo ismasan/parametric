@@ -54,8 +54,6 @@ module Parametric
         self
       end
 
-      def metadata = _hash.metadata
-
       def call(value = BLANK_HASH)
         _hash.call(value)
       end
@@ -114,8 +112,7 @@ module Parametric
 
         attr_reader :_type, :key
 
-        def_delegators :_type, :call, :metadata
-        alias meta_data metadata # bw compatibility
+        def_delegators :_type, :call
 
         def initialize(key)
           @key = key

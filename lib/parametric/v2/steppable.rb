@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'parametric/v2/metadata_visitor'
+
 module Parametric
   module V2
     class UndefinedClass
@@ -18,7 +20,7 @@ module Parametric
 
     module Callable
       def metadata
-        BLANK_HASH
+        MetadataVisitor.call(ast)
       end
 
       def call(result = Undefined)

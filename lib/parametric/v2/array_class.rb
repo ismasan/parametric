@@ -9,11 +9,8 @@ module Parametric
     class ArrayClass
       include Steppable
 
-      attr_reader :metadata
-
       def initialize(element_type: Types::Any)
         @element_type = element_type
-        @metadata = @element_type.metadata.merge(type: 'Array')
       end
 
       def of(element_type)
@@ -31,7 +28,7 @@ module Parametric
       end
 
       def ast
-        [:array, {}, [element_type.ast]]
+        [:array, { type: 'array' }, [element_type.ast]]
       end
 
       private

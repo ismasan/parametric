@@ -7,12 +7,8 @@ module Parametric
     class TupleClass
       include Steppable
 
-      attr_reader :metadata
-
       def initialize(*types)
         @types = types.map { |t| t.is_a?(Steppable) ? t : Types::Any.value(t) }
-        # TODO: deprecate metadata
-        @metadata = @types.map(&:metadata).reduce({}, :merge).merge(type: 'Tuple')
       end
 
       def of(*types)
@@ -22,7 +18,7 @@ module Parametric
       alias_method :[], :of
 
       def ast
-        [:tuple, BLANK_HASH, @types.map(&:ast)]
+        [:tuple, { type: 'array' }, @types.map(&:ast)]
       end
 
       private def _call(result)

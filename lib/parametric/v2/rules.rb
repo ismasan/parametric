@@ -49,15 +49,12 @@ module Parametric
         registry.define(...)
       end
 
-      attr_reader :metadata
-
       def initialize(rules)
         @rules = self.class.registry.resolve(rules)
-        @metadata = @rules.each.with_object({}) { |(ruledef, value), m| m[ruledef.metadata_key] = value }
       end
 
       def inspect
-        %(Rules[#{metadata.inspect}])
+        %(Rules)
       end
 
       def ast
