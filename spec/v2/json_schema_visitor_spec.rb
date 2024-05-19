@@ -104,6 +104,23 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       )
     end
 
+    specify 'Types::Tuple' do
+      type = Parametric::V2::Types::Tuple[
+        'ok',
+        Parametric::V2::Types::String,
+        Parametric::V2::Types::Integer
+      ]
+
+      expect(visitor.visit(type.ast)).to eq(
+        type: 'array',
+        prefixItems: [
+          { const: 'ok', type: 'string' },
+          { type: 'string' },
+          { type: 'integer' }
+        ]
+      )
+    end
+
     specify 'complex type with AND and OR branches' do
       type = Parametric::V2::Types::String \
         | (Parametric::V2::Types::Integer >> Parametric::V2::Types::Any).options(%w[foo bar])
