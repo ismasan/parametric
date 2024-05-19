@@ -10,7 +10,7 @@ module Parametric
           obj.extend TypeRegistry
         when Steppable
           anc = [self.name, const_name].join('::')
-          obj.define_singleton_method(:inspect) do
+          obj.define_singleton_method(:name) do
             anc
           end
         end
@@ -31,7 +31,7 @@ module Parametric
             host.const_set(const_name, child_mod)
           when Steppable
             type = const.dup
-            type.define_singleton_method(:inspect) do
+            type.define_singleton_method(:name) do
               anc
             end
             host.const_set(const_name, type)

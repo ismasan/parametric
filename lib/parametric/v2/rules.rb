@@ -53,10 +53,6 @@ module Parametric
         @rules = self.class.registry.resolve(rules)
       end
 
-      def inspect
-        %(Rules)
-      end
-
       def ast
         [
           :rules,

@@ -79,7 +79,7 @@ module Parametric
       def to_h = _schema
 
       def inspect
-        %(Hash[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
+        %(#{name}[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
       end
 
       protected

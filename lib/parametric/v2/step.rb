@@ -13,10 +13,6 @@ module Parametric
         @type = @callable.respond_to?(:new) ? @callable : @callable.class
       end
 
-      def inspect
-        %(Step[#{@_metadata.map { |(k,v)| "#{k}:#{v}" }.join(', ')}])
-      end
-
       def ast
         [:leaf, @_metadata, []]
       end

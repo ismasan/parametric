@@ -35,6 +35,12 @@ module Parametric
         callable.is_a?(Steppable) ? callable : Step.new(callable)
       end
 
+      def name
+        self.class.name
+      end
+
+      def inspect = name
+
       def cast(value)
         result = call(value)
         raise TypeError, result.error if result.halt?

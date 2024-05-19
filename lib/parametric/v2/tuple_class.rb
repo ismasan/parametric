@@ -22,7 +22,7 @@ module Parametric
       end
 
       def inspect
-        "Tuple[#{@types.map(&:inspect).join(', ')}]"
+        "#{name}[#{@types.map(&:inspect).join(', ')}]"
       end
 
       private def _call(result)

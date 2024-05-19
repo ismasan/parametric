@@ -17,7 +17,7 @@ module Parametric
       end
 
       def inspect
-        %(Value[#{@value}])
+        %(#{name}[#{@value.inspect}])
       end
 
       def ast

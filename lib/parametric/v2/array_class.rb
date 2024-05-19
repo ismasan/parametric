@@ -24,7 +24,7 @@ module Parametric
       end
 
       def inspect
-        %(Array<#{element_type}>)
+        %(#{name}[#{element_type}])
       end
 
       def ast
