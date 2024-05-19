@@ -28,6 +28,8 @@ module Parametric
         end
       end
 
+      def ast = @type.ast
+
       def call(result)
         @type.call(result)
       end

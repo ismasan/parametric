@@ -32,6 +32,7 @@ module Parametric
       def visit_or(node, prop)
         child_metas = node[2].map { |child| visit(child) }
         types = child_metas.map { |child| child[:type] }.flatten.compact
+        types = types.first if types.size == 1
         child_metas.reduce(prop) do |acc, child|
           acc.merge(child)
         end.merge(type: types)
