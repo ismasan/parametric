@@ -27,6 +27,23 @@ RSpec.describe Parametric::V2::Schema do
       end
     end
 
+    specify '#json_schema' do
+      schema = described_class.new do |sc|
+        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field?(:age).type(Test::Types::Integer)
+      end
+      data = schema.json_schema
+      expect(data).to eq({
+        '$schema' => 'http://json-schema.org/draft-08/schema#',
+        type: 'object',
+        properties: {
+          'title' => { type: 'string', default: 'Mr' },
+          'age' => { type: 'integer' }
+        },
+        required: %w[title],
+      })
+    end
+
     it 'coerces a nested data structure' do
       payload = {
         name: 'Ismael',
@@ -115,7 +132,7 @@ RSpec.describe Parametric::V2::Schema do
   specify 'Field#meta' do
     field = described_class::Field.new(:name).type(Test::Types::String).meta(foo: 1).meta(bar: 2)
     expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)
-    expect(field.meta_data).to eq(field.metadata)
+    expect(field.metadata).to eq(field.metadata)
   end
 
   specify 'Field#options' do
