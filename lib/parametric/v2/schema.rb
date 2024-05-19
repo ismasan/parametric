@@ -31,7 +31,7 @@ module Parametric
 
         if block_given?
           setup(&block)
-          freeze
+          finish
         end
       end
 
@@ -58,12 +58,10 @@ module Parametric
         _hash.call(value)
       end
 
-      def freeze
+      private def finish
         @fields = SymbolAccessHash.new(_hash.to_h)
-        super
         @_schema.clear.freeze
         @_hash.freeze
-        self
       end
 
       def field(key)
