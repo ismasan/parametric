@@ -216,6 +216,11 @@ RSpec.describe Parametric::V2::Types do
         end
       end
 
+      specify '#metadata' do
+        pipe = pipeline.meta(foo: 'bar')
+        expect(pipe.metadata).to eq({ type: ::Numeric, foo: 'bar' })
+      end
+
       it 'builds a step composed of many steps' do
         assert_result(pipeline.call(2), 'The number is 4', true)
         assert_result(pipeline.call('2'), 'The number is 4', true)
