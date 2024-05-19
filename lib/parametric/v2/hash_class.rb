@@ -19,11 +19,11 @@ module Parametric
       # A Hash type with a specific schema.
       # Option 1: a Hash representing schema
       #
-      #   Types::Hash.schema(name: Types::String.present, age?: Types::Integer)
+      #   Types::Hash[name: Types::String.present, age?: Types::Integer]
       #
       # Option 2: a Map with pre-defined types for all keys and values
       #
-      #   Types::Hash.schema(Types::String, Types::Integer)
+      #   Types::Hash[Types::String, Types::Integer]
       def schema(*args)
         case args
         in [::Hash => hash]
