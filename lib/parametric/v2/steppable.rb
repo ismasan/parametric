@@ -52,6 +52,10 @@ module Parametric
         raise NotImplementedError, "Implement #ast in #{self.class}"
       end
 
+      def defer(definition = nil, &block)
+        Deferred.new(definition || block)
+      end
+
       def >>(other)
         And.new(self, Steppable.wrap(other))
       end
@@ -194,3 +198,5 @@ module Parametric
     end
   end
 end
+
+require 'parametric/v2/deferred'

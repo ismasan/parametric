@@ -566,6 +566,19 @@ RSpec.describe Parametric::V2::Types do
         assert_result(s3.call(age: 42), {age: 42}, true)
       end
 
+      specify '#defer' do
+        linked_list = Types::Hash[
+          value: Types::Any,
+          next: Types::Any.defer { linked_list | Types::Nil }
+        ]
+        assert_result(
+          linked_list.call(value: 1, next: { value: 2, next: { value: 3, next: nil } }),
+          { value: 1, next: { value: 2, next: { value: 3, next: nil } } },
+          true
+        )
+        expect(linked_list.metadata).to eq(type: 'hash')
+      end
+
       specify '#&' do
         s1 = Types::Hash.schema(name: Types::String, age: Types::Integer, company: Types::String)
         s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer, email: Types::String)
