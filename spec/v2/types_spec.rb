@@ -570,6 +570,11 @@ RSpec.describe Parametric::V2::Types do
         assert_result(s3.call(age: 42), {age: 42}, true)
       end
 
+      specify '#metadata' do
+        s1 = Types::Hash.schema(name: Types::String, age: Types::Integer, company: Types::String)
+        expect(s1.metadata).to eq(type: 'hash')
+      end
+
       specify '#tagged_by' do
         t1 = Types::Hash[kind: 't1', name: Types::String]
         t2 = Types::Hash[kind: 't2', name: Types::String]
