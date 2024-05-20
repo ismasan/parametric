@@ -7,11 +7,8 @@ module Parametric
     class Not
       include Steppable
 
-      attr_reader :metadata
-
       def initialize(step, error: nil)
         @step = step
-        @metadata = step.metadata
         @error = error
       end
 
