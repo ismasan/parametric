@@ -597,6 +597,20 @@ RSpec.describe Parametric::V2::Types do
         )
       end
 
+      specify '#defer with Array' do
+        type = Types::Array[Types::Any.defer { Types::String }]
+        assert_result(
+          type.call(['hello']),
+          ['hello'],
+          true
+        )
+        expect(type.metadata).to eq(type: 'array')
+        # TODO: Deferred #ast cannot delegate to the deferred type
+        # to avoid infinite recursion. Deferred should only be used
+        # for recursive types such as Linked Lists, Trees, etc.
+        # expect(type.ast).to eq([:array, {}, [:string, {}]])
+      end
+
       specify '#&' do
         s1 = Types::Hash.schema(name: Types::String, age: Types::Integer, company: Types::String)
         s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer, email: Types::String)
