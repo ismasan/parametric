@@ -66,6 +66,7 @@ module Parametric
       Any = AnyClass.new
       Nothing = Any.rule(eq: Undefined)
       String = Any.is_a(::String)
+      Symbol = Any.is_a(::Symbol)
       Numeric = Any.is_a(::Numeric)
       Integer = Any.is_a(::Integer)
       Static = StaticClass.new
@@ -92,6 +93,9 @@ module Parametric
         String = Types::String \
                  | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
                  | Any.coerce(::Numeric, &:to_s)
+
+        Symbol = Types::Symbol \
+          | Any.coerce(::String, &:to_sym)
 
         Integer = Types::Numeric.transform(&:to_i) \
                   | Any.coerce(/^\d+$/, &:to_i) \
