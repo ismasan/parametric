@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 require 'forwardable'
-require 'parametric/v2/pipeline'
-require 'parametric/v2/types'
-require 'parametric/v2/key'
 require 'parametric/v2/json_schema_visitor'
 
 module Parametric

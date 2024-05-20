@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'parametric/v2/schema'
-require 'parametric/v2/types'
+require 'parametric/v2'
 
 module Test
   module Types

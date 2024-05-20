@@ -2,8 +2,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'parametric/v2'
 require 'parametric/v2/json_schema_visitor'
-require 'parametric/v2/types'
 
 RSpec.describe Parametric::V2::JSONSchemaVisitor do
   subject(:visitor) { described_class.new }
