@@ -85,6 +85,11 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(visitor.visit(type.ast)).to eq(type: 'numeric', not: { enum: [1,2,4] })
     end
 
+    specify '#not' do
+      type = Parametric::V2::Types::String.not
+      expect(visitor.visit(type.ast)).to eq(not: { type: 'string' })
+    end
+
     specify '#options' do
       type = Parametric::V2::Types::String.options(%w[foo bar])
       expect(visitor.visit(type.ast)).to eq(type: 'string', enum: %w[foo bar])
