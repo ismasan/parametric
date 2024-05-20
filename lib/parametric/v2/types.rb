@@ -11,7 +11,6 @@ require 'parametric/v2/pipeline'
 require 'parametric/v2/rules'
 require 'parametric/v2/static_class'
 require 'parametric/v2/value_class'
-require 'parametric/v2/format'
 require 'parametric/v2/not'
 require 'parametric/v2/or'
 require 'parametric/v2/tuple_class'
@@ -38,7 +37,7 @@ module Parametric
     Rules.define :lte, 'must be greater or equal to %{value}' do |result, value|
       value >= result.value
     end
-    Rules.define :match, 'must match %{value}' do |result, value|
+    Rules.define :match, 'must match %{value}', metadata_key: :pattern do |result, value|
       value === result.value
     end
     Rules.define :format, 'must match format %{value}' do |result, value|

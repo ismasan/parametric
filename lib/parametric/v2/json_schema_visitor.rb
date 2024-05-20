@@ -21,6 +21,7 @@ module Parametric
       end
 
       Noop = ->(value) { value }
+      RegexpToString = ->(value) { value.respond_to?(:source) ? value.source : value.to_s}
 
       KNOWN_KEYS = {
         type: NormalizeType,
@@ -36,7 +37,7 @@ module Parametric
         required: Noop,
         const: Noop,
         default: Noop,
-        pattern: Noop
+        pattern: RegexpToString,
       }.freeze
 
       def self.call(ast)
@@ -57,7 +58,11 @@ module Parametric
 
       def visit(node, prop = BLANK_HASH)
         method_name = "visit_#{node[0]}"
-        normalize_props(send(method_name, node, prop))
+        if respond_to?(method_name)
+          normalize_props(send(method_name, node, prop))
+        else
+          normalize_props(visit_metadata(node, prop))
+        end
       end
 
       # TODO: figure out how

@@ -165,8 +165,8 @@ module Parametric
         self >> Rules.new(rules)
       end
 
-      def format(pattern, error = 'invalid format')
-        self >> Format.new(pattern, error)
+      def format(pattern)
+        rule(match: pattern)
       end
 
       def is_a(klass)

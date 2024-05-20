@@ -55,6 +55,11 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(visitor.visit(type.ast)).to eq(type: 'string', pattern: '[a-z]+')
     end
 
+    specify ':match rule' do
+      type = Parametric::V2::Types::String.rule(match: /[a-z]+/)
+      expect(visitor.visit(type.ast)).to eq(type: 'string', pattern: '[a-z]+')
+    end
+
     specify '#options' do
       type = Parametric::V2::Types::String.options(%w[foo bar])
       expect(visitor.visit(type.ast)).to eq(type: 'string', enum: %w[foo bar])

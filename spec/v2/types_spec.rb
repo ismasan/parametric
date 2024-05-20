@@ -74,7 +74,7 @@ RSpec.describe Parametric::V2::Types do
     end
 
     specify '#format' do
-      type = Types::Any.format(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/, error: 'invalid phone number')
+      type = Types::Any.format(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/)
       expect(type.call('(888)555-1212x').success?).to be(false)
       expect(type.call('(888)555-1212').success?).to be(true)
     end
