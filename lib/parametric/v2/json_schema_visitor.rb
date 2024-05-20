@@ -159,6 +159,12 @@ module Parametric
         prop.merge(enum: node[1][:options])
       end
 
+      def visit_excluded_from(node, prop = BLANK_HASH)
+        negation = prop[:not] || {}
+        negation = negation.merge(enum: node[1][:excluded_from])
+        prop.merge(not: negation)
+      end
+
       def visit_gt(node, prop = BLANK_HASH)
         prop.merge(exclusiveMinimum: node[1][:gt])
       end

@@ -80,6 +80,11 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(visitor.visit(type.ast)).to eq(type: 'numeric', maximum: 10.20)
     end
 
+    specify ':excluded_from rule' do
+      type = Parametric::V2::Types::Numeric.rule(excluded_from: [1,2,4])
+      expect(visitor.visit(type.ast)).to eq(type: 'numeric', not: { enum: [1,2,4] })
+    end
+
     specify '#options' do
       type = Parametric::V2::Types::String.options(%w[foo bar])
       expect(visitor.visit(type.ast)).to eq(type: 'string', enum: %w[foo bar])
