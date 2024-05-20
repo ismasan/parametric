@@ -185,7 +185,9 @@ module Parametric
 
       def constructor(cns, factory_method = :new, &block)
         block ||= ->(value) { cns.send(factory_method, value) }
-        self >> ->(result) { result.success(block.call(result.value)) }
+        (self >> ->(result) { result.success(block.call(result.value)) }).with_ast(
+          [:constructor, { constructor: cns, factory_method: factory_method }, [self.ast]]
+        )
       end
 
       def pipeline(&block)

@@ -205,6 +205,12 @@ module Parametric
         prop.merge(not: visit(node[2][0]))
       end
 
+      def visit_constructor(node, prop = BLANK_HASH)
+        prop.merge(
+          type: node[1][:constructor].name.downcase
+        )
+      end
+
       def visit_static(node, prop = BLANK_HASH)
         prop.merge(node[1])
       end
