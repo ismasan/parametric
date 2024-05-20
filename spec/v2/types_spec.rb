@@ -176,13 +176,6 @@ RSpec.describe Parametric::V2::Types do
       expect(type.call(9).error).to eq('nope')
     end
 
-    specify 'Types::Value' do
-      assert_result(Types::Value['hello'].call('hello'), 'hello', true)
-      assert_result(Types::Value['hello'].call('nope'), 'nope', false)
-      assert_result(Types::Lax::String.value('10').call(10), '10', true)
-      assert_result(Types::Lax::String.value('11').call(10), '10', false)
-    end
-
     specify '#default' do
       assert_result(Types::Any.default('hello').call('bye'), 'bye', true)
       assert_result(Types::Any.default('hello').call(nil), nil, true)
@@ -361,6 +354,13 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Boolean.call(true), true, true)
         assert_result(Types::Boolean.call(false), false, true)
         assert_result(Types::Boolean.call('true'), 'true', false)
+      end
+
+      specify Types::Value do
+        assert_result(Types::Value['hello'].call('hello'), 'hello', true)
+        assert_result(Types::Value['hello'].call('nope'), 'nope', false)
+        assert_result(Types::Lax::String.value('10').call(10), '10', true)
+        assert_result(Types::Lax::String.value('11').call(10), '10', false)
       end
 
       specify Types::Interface do
