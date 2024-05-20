@@ -363,6 +363,22 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Boolean.call('true'), 'true', false)
       end
 
+      specify Types::Interface do
+        obj = Data.define(:name, :age) do
+          def test(foo, bar = 1, opt: 2)
+            [foo, bar, opt]
+          end
+        end.new(name: 'Ismael', age: 42)
+
+        assert_result(Types::Interface[:name, :age].call(obj), obj, true)
+        assert_result(Types::Interface[:name, :age, :test].call(obj), obj, true)
+        assert_result(Types::Interface[:name, :nope, :test].call(obj), obj, false)
+
+        expect(Types::Interface[:name, :age].ast).to eq(
+          [:interface, { method_names: %i[name age] }, []]
+        )
+      end
+
       specify Types::Lax::String do
         assert_result(Types::Lax::String.call('aa'), 'aa', true)
         assert_result(Types::Lax::String.call(11), '11', true)

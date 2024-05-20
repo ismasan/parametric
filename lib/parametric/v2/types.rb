@@ -16,6 +16,7 @@ require 'parametric/v2/or'
 require 'parametric/v2/tuple_class'
 require 'parametric/v2/array_class'
 require 'parametric/v2/hash_class'
+require 'parametric/v2/interface_class'
 
 module Parametric
   module V2
@@ -77,6 +78,7 @@ module Parametric
       Array = ArrayClass.new
       Tuple = TupleClass.new
       Hash = HashClass.new
+      Interface = InterfaceClass.new
       Blank = (
         Nothing \
         | Nil \
