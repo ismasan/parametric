@@ -60,6 +60,26 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(visitor.visit(type.ast)).to eq(type: 'string', pattern: '[a-z]+')
     end
 
+    specify ':gt rule' do
+      type = Parametric::V2::Types::Integer.rule(gt: 10)
+      expect(visitor.visit(type.ast)).to eq(type: 'integer', exclusiveMinimum: 10)
+    end
+
+    specify ':gte rule' do
+      type = Parametric::V2::Types::Integer.rule(gte: 10)
+      expect(visitor.visit(type.ast)).to eq(type: 'integer', minimum: 10)
+    end
+
+    specify ':lt rule' do
+      type = Parametric::V2::Types::Integer.rule(lt: 10)
+      expect(visitor.visit(type.ast)).to eq(type: 'integer', exclusiveMaximum: 10)
+    end
+
+    specify ':lte rule' do
+      type = Parametric::V2::Types::Numeric.rule(lte: 10.20)
+      expect(visitor.visit(type.ast)).to eq(type: 'numeric', maximum: 10.20)
+    end
+
     specify '#options' do
       type = Parametric::V2::Types::String.options(%w[foo bar])
       expect(visitor.visit(type.ast)).to eq(type: 'string', enum: %w[foo bar])

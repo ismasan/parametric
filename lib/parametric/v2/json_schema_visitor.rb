@@ -38,6 +38,10 @@ module Parametric
         const: Noop,
         default: Noop,
         pattern: RegexpToString,
+        exclusiveMinimum: Noop,
+        exclusiveMaximum: Noop,
+        minimum: Noop,
+        maximum: Noop,
       }.freeze
 
       def self.call(ast)
@@ -153,6 +157,22 @@ module Parametric
 
       def visit_included_in(node, prop = BLANK_HASH)
         prop.merge(enum: node[1][:options])
+      end
+
+      def visit_gt(node, prop = BLANK_HASH)
+        prop.merge(exclusiveMinimum: node[1][:gt])
+      end
+
+      def visit_gte(node, prop = BLANK_HASH)
+        prop.merge(minimum: node[1][:gte])
+      end
+
+      def visit_lt(node, prop = BLANK_HASH)
+        prop.merge(exclusiveMaximum: node[1][:lt])
+      end
+
+      def visit_lte(node, prop = BLANK_HASH)
+        prop.merge(maximum: node[1][:lte])
       end
 
       def visit_eq(node, prop = BLANK_HASH)
