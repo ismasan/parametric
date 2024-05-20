@@ -128,6 +128,17 @@ RSpec.describe Parametric::V2::Schema do
     assert_result(s4.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
   end
 
+  specify '#merge' do
+    s1 = described_class.new do |sc|
+      sc.field(:name).type(Test::Types::String)
+    end
+    s2 = s1.merge do |sc|
+      sc.field?(:age).type(Test::Types::Integer)
+    end
+    assert_result(s2.call(name: 'Joe'), { name: 'Joe' }, true)
+    assert_result(s2.call(name: 'Joe', age: 20), { name: 'Joe', age: 20 }, true)
+  end
+
   specify 'Field#meta' do
     field = described_class::Field.new(:name).type(Test::Types::String).meta(foo: 1).meta(bar: 2)
     expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)

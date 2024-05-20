@@ -85,7 +85,10 @@ module Parametric
         self.class.new.schema(_hash + other._hash)
       end
 
-      alias merge +
+      def merge(other = nil, &block)
+        other = self.class.wrap(other, &block)
+        self + other
+      end
 
       protected
 
