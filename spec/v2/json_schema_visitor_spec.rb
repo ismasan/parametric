@@ -50,8 +50,8 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(visitor.visit(type.ast)).to eq(type: 'string', default: 'foo')
     end
 
-    specify '#format' do
-      type = Parametric::V2::Types::String.format(/[a-z]+/)
+    specify '#match' do
+      type = Parametric::V2::Types::String.match(/[a-z]+/)
       expect(visitor.visit(type.ast)).to eq(type: 'string', pattern: '[a-z]+')
     end
 

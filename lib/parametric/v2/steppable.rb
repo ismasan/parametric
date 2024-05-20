@@ -165,7 +165,7 @@ module Parametric
         self >> Rules.new(rules)
       end
 
-      def format(pattern)
+      def match(pattern)
         rule(match: pattern)
       end
 
