@@ -139,6 +139,23 @@ RSpec.describe Parametric::V2::Schema do
     assert_result(s2.call(name: 'Joe', age: 20), { name: 'Joe', age: 20 }, true)
   end
 
+  specify '#&' do
+    s1 = described_class.new do |sc|
+      sc.field(:name).type(Test::Types::String)
+      sc.field?(:title).type(Test::Types::String)
+      sc.field?(:age).type(Test::Types::Integer)
+    end
+
+    s2 = described_class.new do |sc|
+      sc.field(:name).type(Test::Types::String)
+      sc.field?(:age).type(Test::Types::Integer)
+      sc.field?(:email).type(Test::Types::String)
+    end
+
+    s3 = s1 & s2
+    assert_result(s3.call(name: 'Joe', age: 20, title: 'Mr', email: 'email@me.com'), { name: 'Joe', age: 20 }, true)
+  end
+
   specify 'Field#meta' do
     field = described_class::Field.new(:name).type(Test::Types::String).meta(foo: 1).meta(bar: 2)
     expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)

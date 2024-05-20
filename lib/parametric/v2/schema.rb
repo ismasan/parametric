@@ -21,15 +21,16 @@ module Parametric
 
       attr_reader :fields
 
-      def initialize(&block)
+      def initialize(hash = Types::Hash, &block)
         @_schema = {}
-        @_hash = Types::Hash
+        @_hash = hash
         @fields = {}
 
         if block_given?
           setup(&block)
-          finish
         end
+
+        finish
       end
 
       def ast = _hash.ast
@@ -83,6 +84,10 @@ module Parametric
 
       def +(other)
         self.class.new.schema(_hash + other._hash)
+      end
+
+      def &(other)
+        self.class.new(_hash & other._hash)
       end
 
       def merge(other = nil, &block)
