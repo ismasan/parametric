@@ -24,7 +24,7 @@ module Parametric
       def initialize(hash = Types::Hash, &block)
         @_schema = {}
         @_hash = hash
-        @fields = {}
+        @fields = SymbolAccessHash.new({})
 
         if block_given?
           setup(&block)
@@ -52,38 +52,29 @@ module Parametric
         else
           raise ::ArgumentError, "#{self.class} expects a block with 0 or 1 argument, but got #{block.arity}"
         end
-        @_hash = Types::Hash.schema(@_schema)
+        @_hash = Types::Hash.schema(@fields.transform_values(&:_type))
         self
       end
 
       private def finish
-        @fields = SymbolAccessHash.new(_hash.to_h)
+        # @fields = SymbolAccessHash.new(_hash.to_h)
         @_schema.clear.freeze
         @_hash.freeze
+        freeze
       end
 
       def field(key)
-        key = key.to_sym
-        _schema[Key.new(key)] = Field.new(key)
+        key = Key.new(key.to_sym)
+        @fields[key] = Field.new(key)
       end
 
       def field?(key)
-        key = key.to_sym
-        _schema[Key.new(key, optional: true)] = Field.new(key)
-      end
-
-      def schema(sc = nil, &block)
-        if sc
-          @_hash = sc
-          freeze
-          self
-        else
-          setup(&block) if block_given?
-        end
+        key = Key.new(key.to_sym, optional: true)
+        @fields[key] = Field.new(key)
       end
 
       def +(other)
-        self.class.new.schema(_hash + other._hash)
+        self.class.new(_hash + other._hash)
       end
 
       def &(other)
@@ -115,7 +106,7 @@ module Parametric
         attr_reader :_type, :key
 
         def initialize(key)
-          @key = key
+          @key = key.to_sym
           @_type = Types::Any
         end
 
