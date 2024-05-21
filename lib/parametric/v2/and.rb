@@ -20,7 +20,7 @@ module Parametric
         [:and, BLANK_HASH, [@left.ast, @right.ast]]
       end
 
-      private def _call(result)
+      def call(result)
         result = @left.call(result)
         result.success? ? @right.call(result) : result
       end

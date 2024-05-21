@@ -39,6 +39,10 @@ module Parametric
         V2::JSONSchemaVisitor.call(ast).to_h
       end
 
+      def call(result)
+        _hash.call(result)
+      end
+
       private def setup(&block)
         case block.arity
         when 1
@@ -50,10 +54,6 @@ module Parametric
         end
         @_hash = Types::Hash.schema(@_schema)
         self
-      end
-
-      def call(value = BLANK_HASH)
-        _hash.call(value)
       end
 
       private def finish

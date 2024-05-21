@@ -17,6 +17,10 @@ module Parametric
         [:deferred, BLANK_HASH, BLANK_ARRAY]
       end
 
+      def call(result)
+        cached_type.call(result)
+      end
+
       private def cached_type
         @lock.synchronize do
           @cached_type = @definition.call
@@ -25,10 +29,6 @@ module Parametric
           end
           @cached_type
         end
-      end
-
-      private def _call(result)
-        cached_type.call(result)
       end
     end
   end

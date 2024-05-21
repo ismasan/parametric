@@ -16,15 +16,26 @@ module Parametric
     BLANK_STRING = ''
     BLANK_ARRAY = [].freeze
     BLANK_HASH = {}.freeze
-
+    BLANK_RESULT = Result.wrap(Undefined)
 
     module Callable
       def metadata
         MetadataVisitor.call(ast)
       end
 
-      def call(result = Undefined)
-        _call(Result.wrap(result))
+      def resolve(value = Undefined)
+        call(Result.wrap(value))
+      end
+
+      def cast(value)
+        result = resolve(value)
+        raise TypeError, result.error if result.halt?
+
+        result.value
+      end
+
+      def call(result)
+        raise NotImplementedError, "Implement #call(Result) => Result in #{self.class}"
       end
     end
 
@@ -40,13 +51,6 @@ module Parametric
       end
 
       def inspect = name
-
-      def cast(value)
-        result = call(value)
-        raise TypeError, result.error if result.halt?
-
-        result.value
-      end
 
       def ast
         raise NotImplementedError, "Implement #ast in #{self.class}"
@@ -140,7 +144,7 @@ module Parametric
           @ast = ast
         end
 
-        private def _call(result) = @steppable.call(result)
+        def call(result) = @steppable.call(result)
       end
 
       def with_ast(a)

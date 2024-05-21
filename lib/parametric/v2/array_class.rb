@@ -31,11 +31,7 @@ module Parametric
         [:array, { type: 'array' }, [element_type.ast]]
       end
 
-      private
-
-      attr_reader :element_type
-
-      private def _call(result)
+      def call(result)
         return result.halt(error: 'is not an Array') unless result.value.is_a?(::Enumerable)
 
         list = map_array_elements(result.value)
@@ -49,8 +45,12 @@ module Parametric
         result.halt(error: errors)
       end
 
+      private
+
+      attr_reader :element_type
+
       def map_array_elements(list)
-        list.map { |e| element_type.call(e) }
+        list.map { |e| element_type.resolve(e) }
       end
 
       class ConcurrentArrayClass < self
@@ -58,7 +58,7 @@ module Parametric
 
         def map_array_elements(list)
           list
-            .map { |e| Concurrent::Future.execute { element_type.call(e) } }
+            .map { |e| Concurrent::Future.execute { element_type.resolve(e) } }
             .map do |f|
               val = f.value
               f.rejected? ? Result.halt(error: f.reason) : val

@@ -14,7 +14,7 @@ module Parametric
           @step, @block = step, block
         end
 
-        private def _call(result)
+        def call(result)
           @block.call(@step, result)
         end
       end

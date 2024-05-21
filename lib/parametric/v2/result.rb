@@ -34,6 +34,13 @@ module Parametric
         %(<#{self.class}[#{success? ? 'success' : 'halt'}]##{object_id} value:#{value.inspect}>)
       end
 
+      def reset(val)
+        @value = val
+        @success = true
+        @error = nil
+        self
+      end
+
       def success(val = value)
         if val == value
           @value = val

@@ -25,14 +25,14 @@ module Parametric
         "#{name}[#{@types.map(&:inspect).join(', ')}]"
       end
 
-      private def _call(result)
+      def call(result)
         return result.halt(error: 'must be an Array') unless result.value.is_a?(::Array)
         return result.halt(error: 'must have the same size') unless result.value.size == @types.size
 
         errors = {}
         values = @types.map.with_index do |type, idx|
           val = result.value[idx]
-          r = type.call(val)
+          r = type.resolve(val)
           errors[idx] = ["expected #{type.inspect}, got #{val.inspect}", r.error].flatten unless r.success?
           r.value
         end

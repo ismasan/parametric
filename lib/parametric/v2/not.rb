@@ -20,7 +20,7 @@ module Parametric
         [:not, BLANK_HASH, [@step.ast]]
       end
 
-      private def _call(result)
+      def call(result)
         result = @step.call(result)
         result.success? ? result.halt(error: @error) : result.success
       end

@@ -26,7 +26,7 @@ module Parametric
         [:interface, { method_names: @method_names }, BLANK_ARRAY]
       end
 
-      private def _call(result)
+      def call(result)
         obj = result.value
         missing_methods = @method_names.reject { |m| obj.respond_to?(m) }
         return result.halt(error: "missing methods: #{missing_methods.join(', ')}") if missing_methods.any?

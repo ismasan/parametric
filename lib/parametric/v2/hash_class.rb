@@ -82,25 +82,20 @@ module Parametric
         %(#{name}[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
       end
 
-      protected
-
-      attr_reader :_schema
-
-      private
-
-      def _call(result)
+      def call(result)
         return result.halt(error: 'must be a Hash') unless result.value.is_a?(::Hash)
         return result unless _schema.any?
 
         input = result.value
         errors = {}
+        field_result = BLANK_RESULT.dup
         output = _schema.each.with_object({}) do |(key, field), ret|
           if input.key?(key.to_sym)
-            r = field.call(input[key.to_sym])
+            r = field.call(field_result.reset(input[key.to_sym]))
             errors[key.to_sym] = r.error unless r.success?
             ret[key.to_sym] = r.value
           elsif !key.optional?
-            r = field.call(Undefined)
+            r = field.call(BLANK_RESULT)
             errors[key.to_sym] = r.error unless r.success?
             ret[key.to_sym] = r.value unless r.value == Undefined
           end
@@ -108,6 +103,12 @@ module Parametric
 
         errors.any? ? result.halt(output, error: errors) : result.success(output)
       end
+
+      protected
+
+      attr_reader :_schema
+
+      private
 
       def wrap_keys_and_values(hash)
         case hash

@@ -23,7 +23,7 @@ module Parametric
         [:static, { default: @value, const: @value, type: @value.class.name.downcase }, BLANK_ARRAY]
       end
 
-      private def _call(result)
+      def call(result)
         result.success(@value)
       end
     end

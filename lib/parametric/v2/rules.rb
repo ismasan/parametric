@@ -61,7 +61,7 @@ module Parametric
         ]
       end
 
-      private def _call(result)
+      def call(result)
         errors = @rules.map { |(ruledef, value)| ruledef.error_for(result, value) }.compact
         return result unless errors.any?
 

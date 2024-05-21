@@ -22,9 +22,11 @@ data = {
   foo: 'bar'
 }
 
+# result = Parametric::V2::Result.wrap(data)
+
 profile = RubyProf::Profile.new(measure_mode: RubyProf::ALLOCATIONS, track_allocations: true)
 result = profile.profile do
-  V2Schema.call(data)
+  V2Schema.resolve(data)
 end
 
 # printer = RubyProf::GraphPrinter.new(result)

@@ -17,7 +17,7 @@ module Parametric
         [:leaf, @_metadata, []]
       end
 
-      private def _call(result)
+      def call(result)
         @callable.call(result)
       end
     end

@@ -15,9 +15,9 @@ module Parametric
         [:hash_map, BLANK_HASH, [@key_type.ast, @value_type.ast]]
       end
 
-      private def _call(result)
+      def call(result)
         failed = result.value.lazy.filter_map do |key, value|
-          key_r, value_r = @key_type.call(key), @value_type.call(value)
+          key_r, value_r = @key_type.resolve(key), @value_type.resolve(value)
           if !key_r.success?
             [:key, key, key_r]
           elsif !value_r.success?

@@ -19,7 +19,7 @@ module Parametric
         Steppable.wrap(other)
       end
 
-      private def _call(result) = result
+      def call(result) = result
     end
   end
 end

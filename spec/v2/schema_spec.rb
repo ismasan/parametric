@@ -57,7 +57,7 @@ RSpec.describe Parametric::V2::Schema do
       }
 
       assert_result(
-        schema.call(payload),
+        schema.resolve(payload),
         {
           title: 'Mr',
           name: 'Ismael',
@@ -75,7 +75,7 @@ RSpec.describe Parametric::V2::Schema do
     end
 
     it 'returns errors for invalid data' do
-      result = schema.call({ friend: {} })
+      result = schema.resolve({ friend: {} })
       expect(result.success?).to be false
       expect(result.error[:name]).to eq('must be a String')
       expect(result.error[:friend][:name]).to eq('must be a String')
@@ -93,8 +93,8 @@ RSpec.describe Parametric::V2::Schema do
       s.field?(:age).type(Test::Types::Lax::Integer)
     end
 
-    assert_result(schema.call({name: 'Ismael', age: '42'}), {name: 'Ismael', age: 42}, true)
-    assert_result(schema.call({name: 'Ismael'}), {name: 'Ismael'}, true)
+    assert_result(schema.resolve({name: 'Ismael', age: '42'}), {name: 'Ismael', age: 42}, true)
+    assert_result(schema.resolve({name: 'Ismael'}), {name: 'Ismael'}, true)
   end
 
   specify 'reusing schemas' do
@@ -109,7 +109,7 @@ RSpec.describe Parametric::V2::Schema do
       sc.field(:friend).schema friend_schema
     end
 
-    assert_result(schema.call({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    assert_result(schema.resolve({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
   end
 
   specify 'merge with #+' do
@@ -121,11 +121,11 @@ RSpec.describe Parametric::V2::Schema do
       sc.field(:age).type(Test::Types::Integer).default(10)
     end
     s3 = s1 + s2
-    assert_result(s3.call, { age: 10 }, true)
-    assert_result(s3.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
+    assert_result(s3.resolve({}), { age: 10 }, true)
+    assert_result(s3.resolve(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
 
     s4 = s1.merge(s2)
-    assert_result(s4.call(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
+    assert_result(s4.resolve(name: 'Joe', foo: 1), { name: 'Joe', age: 10 }, true)
   end
 
   specify '#merge' do
@@ -135,8 +135,8 @@ RSpec.describe Parametric::V2::Schema do
     s2 = s1.merge do |sc|
       sc.field?(:age).type(Test::Types::Integer)
     end
-    assert_result(s2.call(name: 'Joe'), { name: 'Joe' }, true)
-    assert_result(s2.call(name: 'Joe', age: 20), { name: 'Joe', age: 20 }, true)
+    assert_result(s2.resolve(name: 'Joe'), { name: 'Joe' }, true)
+    assert_result(s2.resolve(name: 'Joe', age: 20), { name: 'Joe', age: 20 }, true)
   end
 
   specify '#&' do
@@ -153,7 +153,7 @@ RSpec.describe Parametric::V2::Schema do
     end
 
     s3 = s1 & s2
-    assert_result(s3.call(name: 'Joe', age: 20, title: 'Mr', email: 'email@me.com'), { name: 'Joe', age: 20 }, true)
+    assert_result(s3.resolve(name: 'Joe', age: 20, title: 'Mr', email: 'email@me.com'), { name: 'Joe', age: 20 }, true)
   end
 
   specify 'Field#meta' do
@@ -164,30 +164,30 @@ RSpec.describe Parametric::V2::Schema do
 
   specify 'Field#options' do
     field = described_class::Field.new(:name).type(Test::Types::String).options(%w(aa bb cc))
-    assert_result(field.call('aa'), 'aa', true)
-    assert_result(field.call('cc'), 'cc', true)
-    assert_result(field.call('dd'), 'dd', false)
+    assert_result(field.resolve('aa'), 'aa', true)
+    assert_result(field.resolve('cc'), 'cc', true)
+    assert_result(field.resolve('dd'), 'dd', false)
     expect(field.metadata[:options]).to eq(%w(aa bb cc))
   end
 
   specify 'Field#optional' do
     field = described_class::Field.new(:name).type(Test::Types::String.transform { |v| "Hello #{v}" }).optional
-    assert_result(field.call('Ismael'), 'Hello Ismael', true)
-    assert_result(field.call(nil), nil, true)
+    assert_result(field.resolve('Ismael'), 'Hello Ismael', true)
+    assert_result(field.resolve(nil), nil, true)
   end
 
   specify 'Field#present' do
     field = described_class::Field.new(:name).present
-    assert_result(field.call('Ismael'), 'Ismael', true)
-    assert_result(field.call(nil), nil, false)
-    expect(field.call(nil).error).to eq('must be present')
+    assert_result(field.resolve('Ismael'), 'Ismael', true)
+    assert_result(field.resolve(nil), nil, false)
+    expect(field.resolve(nil).error).to eq('must be present')
   end
 
   specify 'Field#required' do
     field = described_class::Field.new(:name).required
-    assert_result(field.call, Parametric::V2::Undefined, false)
-    assert_result(field.call(nil), nil, true)
-    expect(field.call.error).to eq('is required')
+    assert_result(field.resolve, Parametric::V2::Undefined, false)
+    assert_result(field.resolve(nil), nil, true)
+    expect(field.resolve.error).to eq('is required')
   end
 
   specify 'self-contained Array type' do
@@ -196,7 +196,7 @@ RSpec.describe Parametric::V2::Schema do
       sc.field(:numbers).type(array_type)
     end
 
-    assert_result(schema.call(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
+    assert_result(schema.resolve(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
   end
 
   private

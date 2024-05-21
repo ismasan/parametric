@@ -19,7 +19,7 @@ module Parametric
         [:or, BLANK_HASH, [@left.ast, @right.ast]]
       end
 
-      private def _call(result)
+      def call(result)
         left_result = @left.call(result)
         return left_result if left_result.success?
 

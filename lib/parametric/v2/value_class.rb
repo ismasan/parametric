@@ -24,7 +24,7 @@ module Parametric
         [:value, { const: @value, type: @value.class.name.downcase }, BLANK_ARRAY]
       end
 
-      private def _call(result)
+      def call(result)
         result.value === @value ? result.success(@value) : result.halt(error: @error)
       end
     end
