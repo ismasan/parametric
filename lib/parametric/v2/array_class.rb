@@ -34,12 +34,7 @@ module Parametric
       def call(result)
         return result.halt(error: 'is not an Array') unless result.value.is_a?(::Enumerable)
 
-        list, errors = map_array_elements(result.value)
-        # errors = list.each.with_object({}).with_index do |(r, memo), idx|
-        #   memo[idx] = r.error unless r.success?
-        # end
-
-        values = list.map(&:value)
+        values, errors = map_array_elements(result.value)
         return result.success(values) unless errors.any?
 
         result.halt(error: errors)
@@ -52,17 +47,17 @@ module Parametric
       def map_array_elements(list)
         # Reuse the same result object for each element
         # to decrease object allocation.
-        # We still want to make sure to map element results
-        # to an array of different objects (in case a step returns the same result instance)
+        # Steps might return the same result instance, so we map the values directly
+        # separate from the errors.
         element_result = BLANK_RESULT.dup
         errors = {}
-        results = list.map.with_index do |e, idx|
+        values = list.map.with_index do |e, idx|
           re = element_type.call(element_result.reset(e))
           errors[idx] = re.error unless re.success?
-          re.object_id == element_result.object_id ? re.dup : re
+          re.value
         end
 
-        [results, errors]
+        [values, errors]
       end
 
       class ConcurrentArrayClass < self
@@ -71,20 +66,17 @@ module Parametric
         def map_array_elements(list)
           errors = {}
 
-          results = list
+          values = list
             .map { |e| Concurrent::Future.execute { element_type.resolve(e) } }
             .map.with_index do |f, idx|
-              val = f.value
+              re = f.value
               if f.rejected?
                 errors[idx] = f.reason
-                Result.halt(error: f.reason)
-              else
-                val
               end
-              # f.rejected? ? Result.halt(error: f.reason) : val
+              re.value
             end
 
-          [results, errors]
+          [values, errors]
         end
       end
     end
