@@ -54,14 +54,14 @@ data = {
 # p result
 # p V2Schema.call(result)
 Benchmark.ips do |x|
-  x.report('Parametric::Schema') {
-    LegacySchema.resolve(data)
-  }
+  # x.report('Parametric::Schema') {
+  #   LegacySchema.resolve(data)
+  # }
   x.report('Parametric::V2::Schema') {
     V2Schema.resolve(data)
   }
-  # x.report('Parametric::V2::Hash') {
-  #   V2Hash.resolve(data)
-  # }
+  x.report('Parametric::V2::Hash') {
+    V2Hash.resolve(data)
+  }
   x.compare!
 end
