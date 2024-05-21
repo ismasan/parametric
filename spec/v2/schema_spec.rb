@@ -202,7 +202,7 @@ RSpec.describe Parametric::V2::Schema do
   private
 
   def assert_result(result, value, is_success, debug: false)
-    byebug if debug
+    debugger if debug
     expect(result.value).to eq value
     expect(result.success?).to be is_success
   end
