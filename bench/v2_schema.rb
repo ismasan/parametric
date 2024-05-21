@@ -33,6 +33,9 @@ V2Hash = Types::Hash[
   friend: Types::Hash[
     name: Types::String,
     age: Types::Lax::Integer
+  ],
+  companies: Types::Array[
+    Types::Hash[name: Types::String]
   ]
 ]
 
