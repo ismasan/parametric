@@ -12,6 +12,9 @@ LegacySchema = Parametric::Schema.new do |sc, _|
     s.field(:name).type(:string)
     s.field(:age).type(:integer)
   end
+  sc.field(:companies).type(:array).schema do |s|
+    s.field(:name).type(:string)
+  end
 end
 
 V2Schema = Parametric::V2::Schema.new do |sc|
@@ -19,6 +22,9 @@ V2Schema = Parametric::V2::Schema.new do |sc|
   sc.field(:friend).schema do |s|
     s.field(:name).type(Types::String)
     s.field(:age).type(Types::Lax::Integer)
+  end
+  sc.field(:companies).array do |f|
+    f.field(:name).type(Types::String)
   end
 end
 
@@ -36,6 +42,10 @@ data = {
     name: 'Joe',
     age: '42'
   },
+  companies: [
+    { name: 'Foo' },
+    { name: 'Bar' }
+  ],
   foo: 'bar'
 }
 

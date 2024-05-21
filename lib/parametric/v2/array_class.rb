@@ -50,7 +50,15 @@ module Parametric
       attr_reader :element_type
 
       def map_array_elements(list)
-        list.map { |e| element_type.resolve(e) }
+        # Reuse the same result object for each element
+        # to decrease object allocation.
+        # We still want to make sure to map element results
+        # to an array of different objects (in case a step returns the same result instance)
+        element_result = BLANK_RESULT.dup
+        list.map do |e|
+          re = element_type.call(element_result.reset(e))
+          re.object_id == element_result.object_id ? re.dup : re
+        end
       end
 
       class ConcurrentArrayClass < self

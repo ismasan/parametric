@@ -11,6 +11,9 @@ V2Schema = Parametric::V2::Schema.new do |sc|
     s.field(:name).type(Types::String)
     s.field(:age).type(Types::Lax::Integer)
   end
+  sc.field(:companies).array do |f|
+    f.field(:name).type(Types::String)
+  end
 end
 
 data = {
@@ -19,6 +22,10 @@ data = {
     name: 'Joe',
     age: '42'
   },
+  companies: [
+    { name: 'Foo' },
+    { name: 'Bar' }
+  ],
   foo: 'bar'
 }
 
