@@ -7,12 +7,16 @@ include Parametric::V2
 
 RSpec.describe Parametric::V2::Types do
   describe 'Result' do
-    specify 'piping results with #map' do
-      init = Result.wrap(10)
-      add_tax = ->(r) { r.success(r.value + 5) }
-      halt = ->(r) { r.halt }
-      result = init.map(add_tax).map(halt).map(add_tax)
-      expect(result.value).to eq(15)
+    specify '#success and #halt' do
+      result = Result.wrap(10)
+      expect(result.success?).to be(true)
+      expect(result.value).to eq(10)
+      result = result.success(20)
+      expect(result.value).to eq(20)
+      result = result.halt(error: 'nope')
+      expect(result.success?).to be(false)
+      expect(result.halt?).to be(true)
+      expect(result.error).to eq('nope')
     end
   end
 
@@ -703,7 +707,7 @@ RSpec.describe Parametric::V2::Types do
   def assert_result(result, value, is_success, debug: false)
     byebug if debug
     expect(result.value).to eq value
-    expect(result.success?).to be is_success
+    expect(result.success?).to be(is_success)
   end
 
   def bench(&block)

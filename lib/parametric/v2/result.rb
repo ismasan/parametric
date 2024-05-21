@@ -3,15 +3,13 @@
 module Parametric
   module V2
     class Result
-      attr_reader :value
-
       class << self
         def success(value)
-          Success.new(value)
+          new(value)
         end
 
         def halt(value = nil, error: nil)
-          Halt.new(value, error:)
+          new(value, success: false, error:)
         end
 
         def wrap(value)
@@ -21,44 +19,39 @@ module Parametric
         end
       end
 
-      def initialize(value)
+      attr_reader :value, :error
+
+      def initialize(value, success: true, error: nil)
         @value = value
+        @success = success
+        @error = error
       end
 
-      class Success < self
-        def success(v = value)
-          v == value ? self : Result.success(v)
-        end
+      def success? = @success
+      def halt? = !@success
 
-        def success? = true
-        def halt? = false
-
-        def halt(val = value, error: nil)
-          Result.halt(val, error:)
-        end
-
-        def map(fn)
-          fn.call(self)
-        end
+      def inspect
+        %(<#{self.class}[#{success? ? 'success' : 'halt'}]##{object_id} value:#{value.inspect}>)
       end
 
-      class Halt < self
-        attr_reader :error
-
-        def initialize(value, error: nil)
-          @error = error
-          super value
-        end
-
-        def success? = false
-        def halt? = true
-
-        def map(_)
+      def success(val = value)
+        if val == value
+          @value = val
+          @success = true
           self
+        else
+          self.class.success(val)
         end
+      end
 
-        def success
-          Result.success(value)
+      def halt(val = value, error: nil)
+        if val == value && error == @error
+          @value = val
+          @error = error
+          @success = false
+          self
+        else
+          self.class.halt(val, error: error)
         end
       end
     end
