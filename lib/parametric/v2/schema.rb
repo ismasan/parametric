@@ -111,16 +111,16 @@ module Parametric
 
       class Field
         include Callable
-        extend Forwardable
 
         attr_reader :_type, :key
-
-        def_delegators :_type, :call, :ast
 
         def initialize(key)
           @key = key
           @_type = Types::Any
         end
+
+        def ast = _type.ast
+        def call(result) = _type.call(result)
 
         def type(steppable)
           raise ArgumentError, "expected a Parametric type, but got #{steppable.inspect}" unless steppable.respond_to?(:call)
