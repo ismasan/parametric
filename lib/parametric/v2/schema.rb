@@ -115,14 +115,12 @@ module Parametric
 
         attr_reader :_type, :key
 
-        def_delegators :_type, :call
+        def_delegators :_type, :call, :ast
 
         def initialize(key)
           @key = key
           @_type = Types::Any
         end
-
-        def ast = _type.ast
 
         def type(steppable)
           raise ArgumentError, "expected a Parametric type, but got #{steppable.inspect}" unless steppable.respond_to?(:call)
@@ -137,7 +135,7 @@ module Parametric
         end
 
         def array(...)
-          @_type = @_type >> SchemaArray.new(Schema.wrap(...))
+          @_type = @_type >> Types::Array[Schema.wrap(...)]
           self
         end
 
@@ -178,21 +176,6 @@ module Parametric
         private
 
         attr_reader :registry
-      end
-
-      class SchemaArray
-        def initialize(schema)
-          @schema = schema
-          @_type = Types::Array[schema]
-        end
-
-        def call(result)
-          _type.call(result)
-        end
-
-        private
-
-        attr_reader :_type
       end
     end
   end
