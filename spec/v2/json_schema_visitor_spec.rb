@@ -77,12 +77,12 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
 
     specify ':lte rule' do
       type = Parametric::V2::Types::Numeric.rule(lte: 10.20)
-      expect(visitor.visit(type.ast)).to eq(type: 'numeric', maximum: 10.20)
+      expect(visitor.visit(type.ast)).to eq(type: 'number', maximum: 10.20)
     end
 
     specify ':excluded_from rule' do
       type = Parametric::V2::Types::Numeric.rule(excluded_from: [1,2,4])
-      expect(visitor.visit(type.ast)).to eq(type: 'numeric', not: { enum: [1,2,4] })
+      expect(visitor.visit(type.ast)).to eq(type: 'number', not: { enum: [1,2,4] })
     end
 
     specify '#not' do

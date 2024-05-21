@@ -8,6 +8,8 @@ module Parametric
         'boolean' => 'boolean',
         'string' => 'string',
         'integer' => 'integer',
+        'numeric' => 'number',
+        'number' => 'number',
         'float' => 'number',
         'null' => 'null',
         'nilclass' => 'null',
