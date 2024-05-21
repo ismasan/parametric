@@ -5,4 +5,5 @@ gemspec
 
 group :development do
   gem 'benchmark-ips'
+  gem 'ruby-prof'
 end
