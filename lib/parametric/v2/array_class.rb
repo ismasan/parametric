@@ -34,10 +34,10 @@ module Parametric
       def call(result)
         return result.halt(error: 'is not an Array') unless result.value.is_a?(::Enumerable)
 
-        list = map_array_elements(result.value)
-        errors = list.each.with_object({}).with_index do |(r, memo), idx|
-          memo[idx] = r.error unless r.success?
-        end
+        list, errors = map_array_elements(result.value)
+        # errors = list.each.with_object({}).with_index do |(r, memo), idx|
+        #   memo[idx] = r.error unless r.success?
+        # end
 
         values = list.map(&:value)
         return result.success(values) unless errors.any?
@@ -55,22 +55,36 @@ module Parametric
         # We still want to make sure to map element results
         # to an array of different objects (in case a step returns the same result instance)
         element_result = BLANK_RESULT.dup
-        list.map do |e|
+        errors = {}
+        results = list.map.with_index do |e, idx|
           re = element_type.call(element_result.reset(e))
+          errors[idx] = re.error unless re.success?
           re.object_id == element_result.object_id ? re.dup : re
         end
+
+        [results, errors]
       end
 
       class ConcurrentArrayClass < self
         private
 
         def map_array_elements(list)
-          list
+          errors = {}
+
+          results = list
             .map { |e| Concurrent::Future.execute { element_type.resolve(e) } }
-            .map do |f|
+            .map.with_index do |f, idx|
               val = f.value
-              f.rejected? ? Result.halt(error: f.reason) : val
+              if f.rejected?
+                errors[idx] = f.reason
+                Result.halt(error: f.reason)
+              else
+                val
+              end
+              # f.rejected? ? Result.halt(error: f.reason) : val
             end
+
+          [results, errors]
         end
       end
     end
