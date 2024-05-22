@@ -31,7 +31,7 @@ module Parametric
       def halt? = !@success
 
       def inspect
-        %(<#{self.class}[#{success? ? 'success' : 'halt'}]##{object_id} value:#{value.inspect}>)
+        %(<#{self.class}[#{success? ? 'success' : 'halt'}]##{object_id} value:#{value.inspect} error:#{error.inspect}>)
       end
 
       def reset(val)
