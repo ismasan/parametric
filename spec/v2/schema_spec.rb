@@ -19,11 +19,32 @@ RSpec.describe Parametric::V2::Schema do
         sc.field(:friend).schema do |s|
           s.field(:name).type(Test::Types::String)
         end
-        sc.field(:friends).array do |f|
+        sc.field(:friends).default([]).array do |f|
           f.field(:name).type(Test::Types::String).default('Anonymous')
           f.field(:age).type(Test::Types::Lax::Integer)
         end
       end
+    end
+
+    specify 'resolves a valid data structure filling in defaults' do
+      data = {
+        name: 'Ismael',
+        age: '42',
+        friend: {
+          name: 'Joe'
+        }
+      }
+      result = schema.resolve(data)
+      expect(result.success?).to be true
+      expect(result.value).to eq({
+        title: 'Mr',
+        name: 'Ismael',
+        age: 42,
+        friend: {
+          name: 'Joe'
+        },
+        friends: []
+      })
     end
 
     specify '#json_schema' do
