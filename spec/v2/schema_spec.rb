@@ -19,6 +19,7 @@ RSpec.describe Parametric::V2::Schema do
         sc.field(:friend).schema do |s|
           s.field(:name).type(Test::Types::String)
         end
+        sc.field(:tags).array(Test::Types::Lax::String).default([])
         sc.field(:friends).default([]).array do |f|
           f.field(:name).type(Test::Types::String).default('Anonymous')
           f.field(:age).type(Test::Types::Lax::Integer)
@@ -43,6 +44,7 @@ RSpec.describe Parametric::V2::Schema do
         friend: {
           name: 'Joe'
         },
+        tags: [],
         friends: []
       })
     end
@@ -71,6 +73,7 @@ RSpec.describe Parametric::V2::Schema do
         friend: {
           name: 'Joe'
         },
+        tags: [10, 'foo'],
         friends: [
           { name: 'Joan', age: 44 },
           { age: '45' }
@@ -86,6 +89,7 @@ RSpec.describe Parametric::V2::Schema do
           friend: {
             name: 'Joe'
           },
+          tags: ['10', 'foo'],
           friends: [
             { name: 'Joan', age: 44 },
             { name: 'Anonymous', age: 45 }

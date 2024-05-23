@@ -12,7 +12,7 @@ module Parametric
         raise ArgumentError, 'expected a block or a schema' if sc.nil? && !block_given?
 
         if sc
-          raise ArgumentError, 'expected a schema' unless sc.is_a?(Schema)
+          raise ArgumentError, 'expected a Steppable' unless sc.is_a?(Steppable)
           return sc
         end
 
@@ -60,7 +60,6 @@ module Parametric
         # @fields = SymbolAccessHash.new(_hash.to_h)
         @_schema.clear.freeze
         @_hash.freeze
-        freeze
       end
 
       def field(key)
