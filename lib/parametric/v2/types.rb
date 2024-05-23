@@ -99,6 +99,8 @@ module Parametric
                 | Any.coerce(0) { |_| false }
 
         Boolean = True | False
+
+        Nil = Nil | (String[BLANK_STRING] >> nil)
       end
     end
   end
