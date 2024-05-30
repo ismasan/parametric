@@ -159,6 +159,11 @@ module Parametric
           self
         end
 
+        def rule(...)
+          @_type = @_type.rule(...)
+          self
+        end
+
         def inspect
           "#{self.class}[#{@_type.inspect}]"
         end

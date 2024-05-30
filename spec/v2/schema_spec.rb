@@ -137,6 +137,20 @@ RSpec.describe Parametric::V2::Schema do
     assert_result(schema.resolve({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
   end
 
+  specify 'array schemas with rules' do
+    s1 = described_class.new do |sc|
+      sc.field(:friends).array do |f|
+        f.field(:name).type(Test::Types::String)
+      end.rule(size: (1..))
+    end
+
+    result = s1.resolve(friends: [ { name: 'Joe' } ])
+    expect(result.success?).to be true
+
+    result = s1.resolve(friends: [])
+    expect(result.success?).to be false
+  end
+
   specify 'merge with #+' do
     s1 = described_class.new do |sc|
       sc.field(:name).type(Test::Types::String)
