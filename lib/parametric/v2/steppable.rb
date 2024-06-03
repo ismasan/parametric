@@ -43,7 +43,9 @@ module Parametric
       include Callable
 
       def self.wrap(callable)
-        callable.is_a?(Steppable) ? callable : Step.new(callable)
+        callable.is_a?(Steppable) \
+          ? callable : \
+          (callable.respond_to?(:call) ? Step.new(callable) : StaticClass.new(callable))
       end
 
       def name
@@ -98,7 +100,7 @@ module Parametric
           [:metadata, metadata, []]
         end
 
-        private def _call(result) = result
+        def call(result) = result
       end
 
       def meta(data = {})
