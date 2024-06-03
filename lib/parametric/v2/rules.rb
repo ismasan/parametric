@@ -16,11 +16,21 @@ module Parametric
           end
         end
 
-        RuleDef = Data.define(:name, :error_tpl, :callable, :metadata_key) do
-          def error_for(result, value)
-            return nil if callable.call(result, value)
+        RuleDef = Data.define(:name, :error_tpl, :callable, :metadata_key)
 
-            error_tpl % { value: value }
+        Rule = Data.define(:rule_def, :arg_value, :error_str) do
+          def self.build(rule_def, arg_value)
+            error_str = rule_def.error_tpl % { value: arg_value }
+            new(rule_def, arg_value, error_str)
+          end
+
+          def name = rule_def.name
+          def metadata_key = rule_def.metadata_key
+
+          def error_for(result)
+            return nil if rule_def.callable.call(result, arg_value)
+
+            error_str
           end
         end
 
@@ -34,8 +44,12 @@ module Parametric
           @definitions[name] = RuleDef.new(name:, error_tpl:, callable:, metadata_key:)
         end
 
-        def resolve(rules)
-          rules.map { |(name, value)| [@definitions.fetch(name.to_sym) { raise UndefinedRuleError.new(name) }, value] }
+        # Ex. size: 3, match: /foo/
+        def resolve(rule_specs)
+          rule_specs.map do |(name, arg_value)|
+            rule_def = @definitions.fetch(name.to_sym) { raise UndefinedRuleError.new(name) }
+            Rule.build(rule_def, arg_value)
+          end
         end
       end
 
@@ -49,20 +63,26 @@ module Parametric
         registry.define(...)
       end
 
-      def initialize(rules)
-        @rules = self.class.registry.resolve(rules)
+      # Ex. new(size: 3, match: /foo/)
+      def initialize(rule_specs)
+        @rules = self.class.registry.resolve(rule_specs)
       end
 
       def ast
         [
           :rules,
           BLANK_HASH,
-          @rules.map { |(ruledef, value)| [ruledef.name, { ruledef.metadata_key => value }, []] }
+          @rules.map { |rule| [rule.name, { rule.metadata_key => rule.arg_value }, []] }
         ]
       end
 
       def call(result)
-        errors = @rules.map { |(ruledef, value)| ruledef.error_for(result, value) }.compact
+        errors = []
+        err = nil
+        @rules.each do |rule|
+          err = rule.error_for(result)
+          errors << err if err
+        end
         return result unless errors.any?
 
         result.halt(error: errors.join(', '))
