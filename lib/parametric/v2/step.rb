@@ -11,6 +11,7 @@ module Parametric
         @_metadata = callable.respond_to?(:metadata) ? callable.metadata : BLANK_HASH
         @callable = callable || block
         @type = @callable.respond_to?(:new) ? @callable : @callable.class
+        freeze
       end
 
       def ast

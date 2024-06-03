@@ -9,6 +9,7 @@ module Parametric
 
       def initialize(value = Undefined)
         @value = value
+        freeze
       end
 
       def [](value)

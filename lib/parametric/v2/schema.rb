@@ -60,6 +60,7 @@ module Parametric
         # @fields = SymbolAccessHash.new(_hash.to_h)
         @_schema.clear.freeze
         @_hash.freeze
+        freeze
       end
 
       def field(key)

@@ -65,7 +65,8 @@ module Parametric
 
       # Ex. new(size: 3, match: /foo/)
       def initialize(rule_specs)
-        @rules = self.class.registry.resolve(rule_specs)
+        @rules = self.class.registry.resolve(rule_specs).freeze
+        freeze
       end
 
       def ast

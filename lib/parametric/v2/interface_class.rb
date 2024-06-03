@@ -9,6 +9,7 @@ module Parametric
 
       def initialize(method_names = [])
         @method_names = method_names
+        freeze
       end
 
       def of(*args)

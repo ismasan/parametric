@@ -11,6 +11,7 @@ module Parametric
         @lock = Mutex.new
         @definition = definition
         @cached_type = nil
+        # freeze
       end
 
       def ast

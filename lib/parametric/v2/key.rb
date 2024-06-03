@@ -17,6 +17,7 @@ module Parametric
         @key = match[1]
         @to_sym = @key.to_sym
         @optional = !match[2].nil? ? true : optional
+        freeze
       end
 
       def to_s = @key

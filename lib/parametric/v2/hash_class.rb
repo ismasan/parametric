@@ -13,7 +13,7 @@ module Parametric
 
       def initialize(schema = {})
         @_schema = schema
-        # freeze
+        freeze
       end
 
       # A Hash type with a specific schema.

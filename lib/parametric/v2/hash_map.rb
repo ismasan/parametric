@@ -9,6 +9,7 @@ module Parametric
 
       def initialize(key_type, value_type)
         @key_type, @value_type = key_type, value_type
+        freeze
       end
 
       def ast

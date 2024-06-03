@@ -9,6 +9,7 @@ module Parametric
 
       def initialize(left, right)
         @left, @right = left, right
+        freeze
       end
 
       def inspect

@@ -11,6 +11,7 @@ module Parametric
 
       def initialize(element_type: Types::Any)
         @element_type = element_type
+        freeze
       end
 
       def of(element_type)

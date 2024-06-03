@@ -10,6 +10,7 @@ module Parametric
       def initialize(step, error: nil)
         @step = step
         @error = error
+        freeze
       end
 
       def inspect
