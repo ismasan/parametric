@@ -25,6 +25,7 @@ module Parametric
         @value = value
         @success = success
         @error = error
+        freeze
       end
 
       def success? = @success
@@ -42,24 +43,11 @@ module Parametric
       end
 
       def success(val = value)
-        if val == value
-          @value = val
-          @success = true
-          self
-        else
-          self.class.success(val)
-        end
+        self.class.success(val)
       end
 
       def halt(val = value, error: nil)
-        if val == value && error == @error
-          @value = val
-          @error = error
-          @success = false
-          self
-        else
-          self.class.halt(val, error: error)
-        end
+        self.class.halt(val, error: error)
       end
     end
   end
