@@ -7,4 +7,6 @@ group :development do
   gem 'benchmark-ips'
   gem 'ruby-prof'
   gem 'debug'
+  gem 'money'
+  gem 'monetize'
 end
