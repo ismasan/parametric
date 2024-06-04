@@ -22,8 +22,7 @@ module Parametric
       end
 
       def call(result)
-        result = @left.call(result)
-        result.success? ? @right.call(result) : result
+        result.map(@left).map(@right)
       end
     end
   end
