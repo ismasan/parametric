@@ -52,11 +52,29 @@ module Parametric
         end
       end
 
-      def name
-        self.class.name
+      attr_reader :name
+
+      class Name
+        def initialize(name)
+          @name = name
+        end
+
+        def to_s = @name
+
+        def set(n)
+          @name = n
+          self
+        end
       end
 
-      def inspect = name
+      def freeze
+        return self if frozen?
+
+        @name = Name.new(self.class.name)
+        super
+      end
+
+      def inspect = name.to_s
 
       def ast
         raise NotImplementedError, "Implement #ast in #{self.class}"
