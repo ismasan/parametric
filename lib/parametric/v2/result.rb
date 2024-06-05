@@ -45,12 +45,12 @@ module Parametric
       end
 
       def halt(val = value, error: nil)
-        Result.halt(val, error: error)
+        Result.halt(val, error:)
       end
 
       class Success < self
-        def map(fn)
-          fn.call(self)
+        def map(callable)
+          callable.call(self)
         end
       end
 
