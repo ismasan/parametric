@@ -43,9 +43,13 @@ module Parametric
       include Callable
 
       def self.wrap(callable)
-        callable.is_a?(Steppable) \
-          ? callable : \
-          (callable.respond_to?(:call) ? Step.new(callable) : StaticClass.new(callable))
+        if callable.is_a?(Steppable)
+          callable
+        elsif callable.respond_to?(:call)
+          Step.new(callable)
+        else
+          StaticClass.new(callable)
+        end
       end
 
       def name
@@ -72,7 +76,7 @@ module Parametric
 
       def transform(callable = nil, &block)
         callable ||= block
-        transformation = ->(result) {
+        transformation = lambda { |result|
           new_value = callable.call(result.value)
           result.success(new_value)
         }
@@ -81,7 +85,7 @@ module Parametric
       end
 
       def check(error = 'did not pass the check', &block)
-        a_check = ->(result) {
+        a_check = lambda { |result|
           block.call(result.value) ? result : result.halt(error:)
         }
 
@@ -92,6 +96,7 @@ module Parametric
         include Steppable
 
         attr_reader :metadata
+
         def initialize(metadata)
           @metadata = metadata
         end
@@ -124,7 +129,7 @@ module Parametric
       def default(val = Undefined, &block)
         val_type = val == Undefined ? Types::Any.transform(&block) : Types::Static[val]
         ((Types::Nothing >> val_type) | self).with_ast(
-          [:default, { default: val }, [self.ast]]
+          [:default, { default: val }, [ast]]
         )
       end
 
@@ -166,7 +171,10 @@ module Parametric
       end
 
       def rule(rules = {})
-        raise ArgumentError, "expected a Hash<rule:value>, ex. #rule(gt: 10), but got #{rules.inspect}" unless rules.is_a?(::Hash)
+        unless rules.is_a?(::Hash)
+          raise ArgumentError,
+                "expected a Hash<rule:value>, ex. #rule(gt: 10), but got #{rules.inspect}"
+        end
 
         self >> Rules.new(rules)
       end
@@ -181,10 +189,12 @@ module Parametric
 
       def coerce(type, coercion = nil, &block)
         coercion ||= block
-        step = ->(result) {
-          type === result.value \
-            ? result.success(coercion.call(result.value)) \
-            : result.halt(error: "%s can't be coerced" % result.value.inspect )
+        step = lambda { |result|
+          if type === result.value
+            result.success(coercion.call(result.value))
+          else
+            result.halt(error: "%s can't be coerced" % result.value.inspect)
+          end
         }
         self >> step
       end
@@ -192,7 +202,7 @@ module Parametric
       def constructor(cns, factory_method = :new, &block)
         block ||= ->(value) { cns.send(factory_method, value) }
         (self >> ->(result) { result.success(block.call(result.value)) }).with_ast(
-          [:constructor, { constructor: cns, factory_method: factory_method }, [self.ast]]
+          [:constructor, { constructor: cns, factory_method: }, [ast]]
         )
       end
 
