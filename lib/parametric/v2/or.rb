@@ -8,7 +8,8 @@ module Parametric
       include Steppable
 
       def initialize(left, right)
-        @left, @right = left, right
+        @left = left
+        @right = right
         freeze
       end
 
