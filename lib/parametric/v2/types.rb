@@ -4,43 +4,43 @@ require 'bigdecimal'
 
 module Parametric
   module V2
-    Rules.define :eq, 'must be equal to %{value}' do |result, value|
+    Rules.define :eq, 'must be equal to %<value>s' do |result, value|
       value == result.value
     end
-    Rules.define :not_eq, 'must not be equal to %{value}' do |result, value|
+    Rules.define :not_eq, 'must not be equal to %<value>s' do |result, value|
       value != result.value
     end
-    Rules.define :gt, 'must be greater than %{value}' do |result, value|
+    Rules.define :gt, 'must be greater than %<value>s' do |result, value|
       value < result.value
     end
-    Rules.define :lt, 'must be greater than %{value}' do |result, value|
+    Rules.define :lt, 'must be greater than %<value>s' do |result, value|
       value > result.value
     end
-    Rules.define :gte, 'must be greater or equal to %{value}' do |result, value|
+    Rules.define :gte, 'must be greater or equal to %<value>s' do |result, value|
       value <= result.value
     end
-    Rules.define :lte, 'must be greater or equal to %{value}' do |result, value|
+    Rules.define :lte, 'must be greater or equal to %<value>s' do |result, value|
       value >= result.value
     end
-    Rules.define :match, 'must match %{value}', metadata_key: :pattern do |result, value|
+    Rules.define :match, 'must match %<value>s', metadata_key: :pattern do |result, value|
       value === result.value
     end
-    Rules.define :format, 'must match format %{value}' do |result, value|
+    Rules.define :format, 'must match format %<value>s' do |result, value|
       value === result.value
     end
-    Rules.define :included_in, 'must be included in %{value}', metadata_key: :options do |result, value|
+    Rules.define :included_in, 'must be included in %<value>s', metadata_key: :options do |result, value|
       value.include? result.value
     end
-    Rules.define :excluded_from, 'must not be included in %{value}' do |result, value|
+    Rules.define :excluded_from, 'must not be included in %<value>s' do |result, value|
       !value.include?(result.value)
     end
-    Rules.define :respond_to, 'must respond to %{value}' do |result, value|
+    Rules.define :respond_to, 'must respond to %<value>s' do |result, value|
       Array(value).all? { |m| result.value.respond_to?(m) }
     end
-    Rules.define :is_a, 'must be a %{value}', metadata_key: :type do |result, value|
+    Rules.define :is_a, 'must be a %<value>s', metadata_key: :type do |result, value|
       result.value.is_a? value
     end
-    Rules.define :size, 'must be of size %{value}', metadata_key: :size do |result, value|
+    Rules.define :size, 'must be of size %<value>s', metadata_key: :size do |result, value|
       value === result.value.size
     end
 
@@ -58,7 +58,7 @@ module Parametric
       Nil = Any.is_a(::NilClass)
       True = Any.is_a(::TrueClass)
       False = Any.is_a(::FalseClass)
-      Boolean = (True | False).with_ast([:boolean, { type: 'boolean'}, []])
+      Boolean = (True | False).with_ast([:boolean, { type: 'boolean' }, []])
       Array = ArrayClass.new
       Tuple = TupleClass.new
       Hash = HashClass.new
