@@ -24,7 +24,6 @@ module Parametric
       def initialize(value, error: nil)
         @value = value
         @error = error
-        freeze
       end
 
       def success? = true
