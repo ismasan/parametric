@@ -232,6 +232,38 @@ RSpec.describe Parametric::V2::Schema do
     end
   end
 
+  describe '#after' do
+    it 'runs after schema fields' do
+      change_name = ->(result) { result.success(result.value.merge(name: 'Ismael')) }
+
+      schema = described_class.new do |sc|
+        # As callable
+        sc.before change_name
+
+        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field(:name).type(Test::Types::String)
+      end
+
+      assert_result(schema.resolve({ name: 'Joe' }), { title: 'Mr', name: 'Ismael' }, true)
+    end
+
+    it 'can halt processing' do
+      schema = described_class.new do |sc|
+        sc.before do |result|
+          result.halt(error: 'Halted')
+        end
+
+        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field(:name).type(Test::Types::String)
+      end
+
+      result = schema.resolve({})
+      expect(result.success?).to be false
+      expect(result.value).to eq({})
+      expect(result.error).to eq('Halted')
+    end
+  end
+
   specify 'Field#meta' do
     field = described_class::Field.new(:name).type(Test::Types::String).meta(foo: 1).meta(bar: 2)
     expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)

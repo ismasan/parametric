@@ -25,6 +25,7 @@ module Parametric
       def initialize(hash = Types::Hash, &block)
         @pipeline = Types::Any
         @before = Types::Any
+        @after = Types::Any
         @_schema = {}
         @_hash = hash
         @fields = SymbolAccessHash.new({})
@@ -36,6 +37,11 @@ module Parametric
 
       def before(callable = nil, &block)
         @before >>= callable || block
+        self
+      end
+
+      def after(callable = nil, &block)
+        @after >>= callable || block
         self
       end
 
@@ -63,7 +69,7 @@ module Parametric
       end
 
       private def finish
-        @pipeline = @before >> @_hash.freeze
+        @pipeline = @before.freeze >> @_hash.freeze >> @after.freeze
         @_schema.clear.freeze
         freeze
       end
