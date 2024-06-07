@@ -5,22 +5,26 @@ require 'parametric/v2/steppable'
 module Parametric
   module V2
     class Rules
-      class Registry
-        class UndefinedRuleError < KeyError
-          def initialize(rule_name)
-            @rule_name = rule_name
-          end
+      UnsupportedRuleError = Class.new(StandardError)
+      UndefinedRuleError = Class.new(KeyError)
 
-          def message
-            %(No rule registered with :#{@rule_name})
+      class Registry
+        RuleDef = Data.define(:name, :error_tpl, :callable, :metadata_key, :expects) do
+          def supports?(type)
+            case expects
+            when Symbol
+              type.public_instance_methods.include?(expects)
+            when Array then expects.include?(type)
+            when Class then type <= expects
+            when Object then true
+            else raise "Unexpected expects: #{expects}"
+            end
           end
         end
 
-        RuleDef = Data.define(:name, :error_tpl, :callable, :metadata_key)
-
         Rule = Data.define(:rule_def, :arg_value, :error_str) do
           def self.build(rule_def, arg_value)
-            error_str = rule_def.error_tpl % { value: arg_value }
+            error_str = format(rule_def.error_tpl, value: arg_value)
             new(rule_def, arg_value, error_str)
           end
 
@@ -35,19 +39,22 @@ module Parametric
         end
 
         def initialize
-          @definitions = {}
+          @definitions = Hash.new { |h, k| h[k] = Set.new }
         end
 
-        def define(name, error_tpl, callable = nil, metadata_key: name, &block)
+        def define(name, error_tpl, callable = nil, metadata_key: name, expects: Object, &block)
           name = name.to_sym
           callable ||= block
-          @definitions[name] = RuleDef.new(name:, error_tpl:, callable:, metadata_key:)
+          @definitions[name] << RuleDef.new(name:, error_tpl:, callable:, metadata_key:, expects:)
         end
 
         # Ex. size: 3, match: /foo/
-        def resolve(rule_specs)
+        def resolve(rule_specs, for_type)
           rule_specs.map do |(name, arg_value)|
-            rule_def = @definitions.fetch(name.to_sym) { raise UndefinedRuleError.new(name) }
+            rule_defs = @definitions.fetch(name.to_sym) { raise UndefinedRuleError, "no rule defined with :#{name}" }
+            rule_def = rule_defs.find { |rd| rd.supports?(for_type) }
+            raise UnsupportedRuleError, "No :#{name} rule defined for type #{for_type}" unless rule_def
+
             Rule.build(rule_def, arg_value)
           end
         end
@@ -64,8 +71,8 @@ module Parametric
       end
 
       # Ex. new(size: 3, match: /foo/)
-      def initialize(rule_specs)
-        @rules = self.class.registry.resolve(rule_specs).freeze
+      def initialize(rule_specs, for_type)
+        @rules = self.class.registry.resolve(rule_specs, for_type).freeze
         freeze
       end
 

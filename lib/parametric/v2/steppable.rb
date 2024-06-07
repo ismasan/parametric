@@ -206,7 +206,7 @@ module Parametric
                 "expected a Hash<rule:value>, ex. #rule(gt: 10), but got #{rules.inspect}"
         end
 
-        self >> Rules.new(rules)
+        self >> Rules.new(rules, metadata[:type])
       end
 
       def match(pattern)

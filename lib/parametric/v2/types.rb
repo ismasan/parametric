@@ -10,22 +10,35 @@ module Parametric
     Rules.define :not_eq, 'must not be equal to %<value>s' do |result, value|
       value != result.value
     end
-    Rules.define :gt, 'must be greater than %<value>s' do |result, value|
+    # :gt for numbers and #size (arrays, strings, hashes)
+    Rules.define :gt, 'must be greater than %<value>s', expects: :> do |result, value|
       value < result.value
     end
-    Rules.define :lt, 'must be greater than %<value>s' do |result, value|
+    Rules.define :gt, 'must contain more than %<value>s elements', expects: :size do |result, value|
+      value < result.value.size
+    end
+    # :lt for numbers and #size (arrays, strings, hashes)
+    Rules.define :lt, 'must be greater than %<value>s', expects: :< do |result, value|
       value > result.value
     end
-    Rules.define :gte, 'must be greater or equal to %<value>s' do |result, value|
+    Rules.define :lt, 'must contain fewer than %<value>s elements', expects: :size do |result, value|
+      value > result.value.size
+    end
+    # :gte for numbers and #size (arrays, strings, hashes)
+    Rules.define :gte, 'must be greater or equal to %<value>s', expects: :> do |result, value|
       value <= result.value
     end
-    Rules.define :lte, 'must be greater or equal to %<value>s' do |result, value|
+    Rules.define :gte, 'must be size greater or equal to %<value>s', expects: :size do |result, value|
+      value <= result.value.size
+    end
+    # :lte for numbers and #size (arrays, strings, hashes)
+    Rules.define :lte, 'must be less or equal to %<value>s', expects: :< do |result, value|
+      value >= result.value
+    end
+    Rules.define :lte, 'must be size less or equal to %<value>s', expects: :size do |result, value|
       value >= result.value
     end
     Rules.define :match, 'must match %<value>s', metadata_key: :pattern do |result, value|
-      value === result.value
-    end
-    Rules.define :format, 'must match format %<value>s' do |result, value|
       value === result.value
     end
     Rules.define :included_in, 'must be included in %<value>s', metadata_key: :options do |result, value|
@@ -40,7 +53,7 @@ module Parametric
     Rules.define :is_a, 'must be a %<value>s', metadata_key: :type do |result, value|
       result.value.is_a? value
     end
-    Rules.define :size, 'must be of size %<value>s', metadata_key: :size do |result, value|
+    Rules.define :size, 'must be of size %<value>s', expects: :size, metadata_key: :size do |result, value|
       value === result.value.size
     end
 

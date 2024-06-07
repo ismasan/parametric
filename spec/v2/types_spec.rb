@@ -281,6 +281,14 @@ RSpec.describe Parametric::V2::Types do
     end
 
     describe '#rule' do
+      specify 'rules not supported by current underlying type' do
+        custom_class = Class.new
+        custom = Types::Any.meta(type: custom_class)
+        expect do
+          custom.rule(size: 10)
+        end.to raise_error(Parametric::V2::Rules::UnsupportedRuleError)
+      end
+
       specify ':eq' do
         custom = Struct.new(:value) do
           def ==(other)
@@ -305,6 +313,11 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Integer.rule(gt: 20).resolve(21), 21, true)
         assert_result(Types::Integer.rule(gt: 10, lt: 20).resolve(20), 20, false)
         expect(Types::Integer.rule(gt: 10, lt: 20).resolve(9).error).to eq('must be greater than 10')
+      end
+
+      specify ':gt, :lt with array' do
+        assert_result(Types::Array.rule(gt: 1, lt: 3).resolve([1, 2]), [1, 2], true)
+        assert_result(Types::Array.rule(gt: 1, lt: 3).resolve([1, 2, 3]), [1, 2, 3], false)
       end
 
       specify ':match' do

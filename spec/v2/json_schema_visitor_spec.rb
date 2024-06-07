@@ -208,12 +208,12 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
 
     specify 'complex type with AND and OR branches' do
       type = Parametric::V2::Types::String \
-        | (Parametric::V2::Types::Integer >> Parametric::V2::Types::Any).options(%w[foo bar])
+        | (Parametric::V2::Types::Integer.transform(::Integer) { |v| v * 2 }).options([2, 4])
 
       expect(visitor.visit(type.ast)).to eq(
         anyOf: [
           { type: 'string' },
-          { type: 'integer', enum: %w[foo bar] }
+          { type: 'integer', enum: [2, 4] }
         ]
       )
     end

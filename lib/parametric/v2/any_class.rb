@@ -8,11 +8,11 @@ module Parametric
       include Steppable
 
       def ast
-        [:any, BLANK_HASH, BLANK_ARRAY]
+        [:any, { type: AnyClass }, BLANK_ARRAY]
       end
 
-      def >>(steppable)
-        Steppable.wrap(steppable)
+      def >>(other)
+        Steppable.wrap(other)
       end
 
       def |(other)

@@ -12,6 +12,8 @@ module Parametric
         String => 'string',
         Hash => 'object',
         Array => 'array',
+        AnyClass => 'any',
+        'any' => 'any',
         'numeric' => 'number',
         'number' => 'number',
         'float' => 'number',
