@@ -498,6 +498,17 @@ RSpec.describe Parametric::V2::Types do
         )
       end
 
+      specify '#[] (#of) Hash argument wraps subtype in Types::Hash' do
+        type = Types::Array[foo: Types::String]
+        assert_result(type.resolve([{ foo: 'bar' }]), [{ foo: 'bar' }], true)
+      end
+
+      specify '#[] (#of) with non-steppable argument' do
+        expect do
+          Types::Array['bar']
+        end.to raise_error(ArgumentError)
+      end
+
       specify '#present (non-empty)' do
         non_empty_array = Types::Array.of(Types::Boolean).present
         assert_result(

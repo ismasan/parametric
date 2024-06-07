@@ -12,7 +12,7 @@ module Parametric
       include Steppable
 
       def initialize(schema = {})
-        @_schema = schema
+        @_schema = wrap_keys_and_values(schema)
         freeze
       end
 

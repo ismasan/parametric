@@ -3,6 +3,7 @@
 require 'concurrent'
 require 'parametric/v2/steppable'
 require 'parametric/v2/result'
+require 'parametric/v2/hash_class'
 
 module Parametric
   module V2
@@ -10,6 +11,16 @@ module Parametric
       include Steppable
 
       def initialize(element_type: Types::Any)
+        element_type = case element_type
+                       when Steppable
+                         element_type
+                       when ::Hash
+                         HashClass.new(element_type)
+                       else
+                         raise ArgumentError,
+                               "element_type #{element_type.inspect} must be a Steppable"
+                       end
+
         @element_type = element_type
         freeze
       end
@@ -18,7 +29,7 @@ module Parametric
         self.class.new(element_type:)
       end
 
-      alias_method :[], :of
+      alias [] of
 
       def concurrent
         ConcurrentArrayClass.new(element_type:)
@@ -68,14 +79,12 @@ module Parametric
           errors = {}
 
           values = list
-            .map { |e| Concurrent::Future.execute { element_type.resolve(e) } }
-            .map.with_index do |f, idx|
-              re = f.value
-              if f.rejected?
-                errors[idx] = f.reason
-              end
-              re.value
-            end
+                   .map { |e| Concurrent::Future.execute { element_type.resolve(e) } }
+                   .map.with_index do |f, idx|
+            re = f.value
+            errors[idx] = f.reason if f.rejected?
+            re.value
+          end
 
           [values, errors]
         end
