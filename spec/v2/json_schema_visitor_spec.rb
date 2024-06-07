@@ -1,4 +1,3 @@
-
 # frozen_string_literal: true
 
 require 'spec_helper'
@@ -20,9 +19,9 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
         :type => 'object',
         :properties => {
           'name' => { type: 'string', description: 'the name' },
-          'age' => { type: 'integer' },
+          'age' => { type: 'integer' }
         },
-        :required => %w[name],
+        :required => %w[name]
       }
     )
   end
@@ -81,8 +80,8 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
     end
 
     specify ':excluded_from rule' do
-      type = Parametric::V2::Types::Numeric.rule(excluded_from: [1,2,4])
-      expect(visitor.visit(type.ast)).to eq(type: 'number', not: { enum: [1,2,4] })
+      type = Parametric::V2::Types::Numeric.rule(excluded_from: [1, 2, 4])
+      expect(visitor.visit(type.ast)).to eq(type: 'number', not: { enum: [1, 2, 4] })
     end
 
     specify '#not' do
@@ -162,44 +161,45 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
     end
 
     specify 'Types::Hash.tagged_by' do
-      t1 = Parametric::V2::Types::Hash[kind: 't1', name: Parametric::V2::Types::String, age: Parametric::V2::Types::Integer]
+      t1 = Parametric::V2::Types::Hash[kind: 't1', name: Parametric::V2::Types::String,
+                                       age: Parametric::V2::Types::Integer]
       t2 = Parametric::V2::Types::Hash[kind: 't2', name: Parametric::V2::Types::String]
       type = Parametric::V2::Types::Hash.tagged_by(:kind, t1, t2)
 
       expect(visitor.visit(type.ast)).to eq(
         type: 'object',
         properties: {
-          'kind' => { type: 'string', enum: %w[t1 t2] },
+          'kind' => { type: 'string', enum: %w[t1 t2] }
         },
         required: ['kind'],
         allOf: [
           {
-            :if => {
+            if: {
               properties: {
-                'kind' => { const: 't1', type: 'string' },
+                'kind' => { const: 't1', type: 'string' }
               }
             },
-            :then => {
+            then: {
               properties: {
-                'kind' => { type: 'string', default: 't1', const: 't1'},
+                'kind' => { type: 'string', default: 't1', const: 't1' },
                 'name' => { type: 'string' },
                 'age' => { type: 'integer' }
               },
-              required: ['kind', 'name', 'age']
+              required: %w[kind name age]
             }
           },
           {
-            :if => {
+            if: {
               properties: {
-                'kind' => { const: 't2', type: 'string' },
+                'kind' => { const: 't2', type: 'string' }
               }
             },
-            :then => {
+            then: {
               properties: {
-                'kind' => { type: 'string', default: 't2', const: 't2'},
+                'kind' => { type: 'string', default: 't2', const: 't2' },
                 'name' => { type: 'string' }
               },
-              required: ['kind', 'name']
+              required: %w[kind name]
             }
           }
         ]
@@ -237,7 +237,7 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
           },
           'value' => { type: 'string' }
         },
-        required: ['value', 'next'],
+        required: %w[value next]
       )
     end
   end

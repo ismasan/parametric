@@ -8,6 +8,10 @@ module Parametric
         'boolean' => 'boolean',
         'string' => 'string',
         'integer' => 'integer',
+        Integer => 'integer',
+        String => 'string',
+        Hash => 'object',
+        Array => 'array',
         'numeric' => 'number',
         'number' => 'number',
         'float' => 'number',
@@ -15,15 +19,17 @@ module Parametric
         'nilclass' => 'null',
         'trueclass' => 'boolean',
         'falseclass' => 'boolean',
-        'array' => 'array',
+        'array' => 'array'
       }.freeze
 
       NormalizeType = proc do |type|
-        KNOWN_TYPES.fetch(type) { puts("WARNING: unknown type '#{type}'"); type }
+        KNOWN_TYPES.fetch(type) do
+          raise("WARNING: unknown type '#{type}'")
+        end
       end
 
       Noop = ->(value) { value }
-      RegexpToString = ->(value) { value.respond_to?(:source) ? value.source : value.to_s}
+      RegexpToString = ->(value) { value.respond_to?(:source) ? value.source : value.to_s }
 
       KNOWN_KEYS = {
         type: NormalizeType,
@@ -43,18 +49,18 @@ module Parametric
         exclusiveMinimum: Noop,
         exclusiveMaximum: Noop,
         minimum: Noop,
-        maximum: Noop,
+        maximum: Noop
       }.freeze
 
       def self.call(ast)
         {
-          '$schema' => 'http://json-schema.org/draft-08/schema#',
+          '$schema' => 'http://json-schema.org/draft-08/schema#'
         }.merge(new.visit(ast))
       end
 
       def normalize_props(props)
         props.each_with_object({}) do |(key, value), acc|
-          if(normalizer = KNOWN_KEYS[key.to_sym])
+          if (normalizer = KNOWN_KEYS[key.to_sym])
             acc[key] = normalizer.call(value)
           else
             puts "WARNING: Unknown key #{key}"
@@ -73,7 +79,7 @@ module Parametric
 
       # TODO: figure out how
       # to represent recursive types in JSON Schema
-      def visit_deferred(node, prop = BLANK_HASH)
+      def visit_deferred(_node, _prop = BLANK_HASH)
         BLANK_HASH
       end
 
@@ -186,7 +192,7 @@ module Parametric
       def visit_eq(node, prop = BLANK_HASH)
         prop.merge(enum: node[1])
         value = node[1][:eq]
-        (value == Parametric::V2::Undefined) ? prop : prop.merge(type: value.class.name.downcase, const: value)
+        value == Parametric::V2::Undefined ? prop : prop.merge(type: value.class.name.downcase, const: value)
       end
 
       def visit_or(node, prop = BLANK_HASH)
@@ -199,7 +205,7 @@ module Parametric
         right = visit(node[2][1])
         type = right[:type] || left[:type]
         prop = prop.merge(left).merge(right)
-        prop = prop.merge(type: type) if type
+        prop = prop.merge(type:) if type
         prop
       end
 
@@ -233,7 +239,7 @@ module Parametric
         items = visit(node[2].first)
         {
           type: 'array',
-          items: items
+          items:
         }
       end
 

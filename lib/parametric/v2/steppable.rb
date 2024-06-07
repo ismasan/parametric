@@ -92,14 +92,25 @@ module Parametric
         Or.new(self, Steppable.wrap(other))
       end
 
-      def transform(callable = nil, &block)
-        callable ||= block
-        transformation = lambda { |result|
-          new_value = callable.call(result.value)
-          result.success(new_value)
-        }
+      class Transform
+        include Steppable
 
-        self >> transformation
+        def initialize(target_type, callable)
+          @target_type = target_type
+          @callable = callable
+        end
+
+        def ast
+          [:transform, { type: @target_type }, []]
+        end
+
+        def call(result)
+          result.success(@callable.call(result.value))
+        end
+      end
+
+      def transform(target_type, callable = nil, &block)
+        self >> Transform.new(target_type, callable || block)
       end
 
       def check(error = 'did not pass the check', &block)
@@ -145,7 +156,8 @@ module Parametric
       def [](val) = value(val)
 
       def default(val = Undefined, &block)
-        val_type = val == Undefined ? Types::Any.transform(&block) : Types::Static[val]
+        # TODO: Default needs a type if given a block
+        val_type = val == Undefined ? Types::Any.transform(::String, &block) : Types::Static[val]
         ((Types::Nothing >> val_type) | self).with_ast(
           [:default, { default: val }, [ast]]
         )

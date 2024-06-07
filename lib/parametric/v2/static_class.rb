@@ -21,7 +21,7 @@ module Parametric
       end
 
       def ast
-        [:static, { default: @value, const: @value, type: @value.class.name.downcase }, BLANK_ARRAY]
+        [:static, { default: @value, const: @value, type: @value.class }, BLANK_ARRAY]
       end
 
       def call(result)

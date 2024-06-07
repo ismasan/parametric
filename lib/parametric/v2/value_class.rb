@@ -21,7 +21,7 @@ module Parametric
       end
 
       def ast
-        [:value, { const: @value, type: @value.class.name.downcase }, BLANK_ARRAY]
+        [:value, { const: @value, type: @value.class }, BLANK_ARRAY]
       end
 
       def call(result)

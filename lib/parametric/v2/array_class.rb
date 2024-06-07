@@ -40,7 +40,7 @@ module Parametric
       end
 
       def ast
-        [:array, { type: 'array' }, [element_type.ast]]
+        [:array, { type: ::Array }, [element_type.ast]]
       end
 
       def call(result)

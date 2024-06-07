@@ -18,9 +18,9 @@ module Parametric
         when :hash
           visit_hash(node, prop)
         when :hash_map
-          visit_with_type(node, prop, 'hash')
+          visit_with_type(node, prop, Hash)
         when :array
-          visit_with_type(node, prop, 'array')
+          visit_with_type(node, prop, Array)
         when :deferred
           BLANK_HASH
         else
@@ -46,8 +46,8 @@ module Parametric
         end.merge(type: types)
       end
 
-      def visit_hash(node, prop)
-        prop.merge(type: 'hash')
+      def visit_hash(_node, prop)
+        prop.merge(type: Hash)
       end
 
       def visit_default(node, prop)

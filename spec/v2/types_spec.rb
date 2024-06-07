@@ -35,8 +35,8 @@ RSpec.describe Parametric::V2::Types do
     end
 
     specify '#transform' do
-      to_i = Types::Any.transform(&:to_i)
-      plus_ten = Types::Any.transform { |value| value + 10 }
+      to_i = Types::Any.transform(::Integer, &:to_i)
+      plus_ten = Types::Any.transform(::Integer) { |value| value + 10 }
       pipeline = to_i >> plus_ten
       expect(pipeline.resolve('5').value).to eq(15)
     end
@@ -44,34 +44,28 @@ RSpec.describe Parametric::V2::Types do
     specify Types::Static do
       assert_result(Types::Static['hello'].resolve('hello'), 'hello', true)
       assert_result(Types::Static['hello'].resolve('nope'), 'hello', true)
-      expect(Types::Static['hello'].ast).to eq([:static, { default: 'hello', const: 'hello', type: 'string' }, []])
+      expect(Types::Static['hello'].ast).to eq([:static, { default: 'hello', const: 'hello', type: String }, []])
     end
 
     specify '#ast' do
       type = (
-        (Types::String.transform(&:to_i) | Types::Integer) \
-        >> Types::Integer.transform { |v| v + 5 }
+        (Types::String.transform(::Integer, &:to_i) | Types::Integer) \
+        >> Types::Integer.transform(::Integer) { |v| v + 5 }
       )
 
       expect(type.ast).to eq(
-        [:and, {}, [
-          [:or, {}, [
-            [:and, {}, [
-              [:rules, {}, [
-                [:is_a, { type: String }, []]
-              ]],
-              [:leaf, {}, []]
-            ]],
-            [:rules, {}, [
-              [:is_a, { type: Integer }, []]
-            ]]
-          ]], [:and, {}, [[:rules, {}, [[:is_a, { type: Integer }, []]]], [:leaf, {}, []]]]
-        ]]
+        [:and,
+         {},
+         [[:or,
+           {},
+           [[:and, {}, [[:rules, {}, [[:is_a, { type: String }, []]]], [:transform, { type: Integer }, []]]],
+            [:rules, {}, [[:is_a, { type: Integer }, []]]]]],
+          [:and, {}, [[:rules, {}, [[:is_a, { type: Integer }, []]]], [:transform, { type: Integer }, []]]]]]
       )
     end
 
     specify '#with_ast' do
-      type = Types::Any.transform(&:to_i).with_ast([:foo, { type: 'bar' }, []])
+      type = Types::Any.transform(::Integer, &:to_i).with_ast([:foo, { type: 'bar' }, []])
       expect(type.ast).to eq([:foo, { type: 'bar' }, []])
 
       expect do
@@ -111,7 +105,7 @@ RSpec.describe Parametric::V2::Types do
     end
 
     specify '#is_a' do
-      pipeline = Types::Any.is_a(::Integer).transform { |v| v + 5 }
+      pipeline = Types::Any.is_a(::Integer).transform(::Integer) { |v| v + 5 }
       assert_result(pipeline.resolve(10), 15, true)
       assert_result(pipeline.resolve('nope'), 'nope', false)
     end
@@ -125,8 +119,8 @@ RSpec.describe Parametric::V2::Types do
     specify '#|' do
       integer = Types::Any.is_a(::Integer)
       string = Types::Any.is_a(::String)
-      to_s = Types::Any.transform(&:to_s)
-      title = Types::Any.transform { |v| "The number is #{v}" }
+      to_s = Types::Any.transform(::Integer, &:to_s)
+      title = Types::Any.transform(::Integer) { |v| "The number is #{v}" }
 
       pipeline = string | (integer >> to_s >> title)
 
@@ -139,8 +133,8 @@ RSpec.describe Parametric::V2::Types do
     end
 
     specify '#meta' do
-      to_s = Types::Any.transform(&:to_s).meta(type: :string)
-      to_i = Types::Any.transform(&:to_i).meta(type: :integer).meta(foo: 'bar')
+      to_s = Types::Any.transform(::String, &:to_s).meta(type: :string)
+      to_i = Types::Any.transform(::Integer, &:to_i).meta(type: :integer).meta(foo: 'bar')
       pipe = to_s >> to_i
       expect(to_s.metadata[:type]).to eq(:string)
       expect(pipe.metadata[:type]).to eq(:integer)
@@ -210,20 +204,20 @@ RSpec.describe Parametric::V2::Types do
       let(:pipeline) do
         Types::Lax::Integer.pipeline do |pl|
           pl.step { |r| r.success(r.value * 2) }
-          pl.step Types::Any.transform(&:to_s)
+          pl.step Types::Any.transform(::Integer, &:to_s)
           pl.step { |r| r.success('The number is %s' % r.value) }
         end
       end
 
       specify '#metadata' do
         pipe = pipeline.meta(foo: 'bar')
-        expect(pipe.metadata).to eq({ type: ::Numeric, foo: 'bar' })
+        expect(pipe.metadata).to eq({ type: Integer, foo: 'bar' })
       end
 
       it 'builds a step composed of many steps' do
         assert_result(pipeline.resolve(2), 'The number is 4', true)
         assert_result(pipeline.resolve('2'), 'The number is 4', true)
-        assert_result(pipeline.transform { |v| v + '!!' }.resolve(2), 'The number is 4!!', true)
+        assert_result(pipeline.transform(::String) { |v| v + '!!' }.resolve(2), 'The number is 4!!', true)
         assert_result(pipeline.resolve('nope'), 'nope', false)
       end
 
@@ -237,7 +231,7 @@ RSpec.describe Parametric::V2::Types do
       end
 
       it 'is chainable' do
-        type = Types::Any.transform { |v| v + 5 } >> pipeline
+        type = Types::Any.transform(::Integer) { |v| v + 5 } >> pipeline
         assert_result(type.resolve(2), 'The number is 14', true)
       end
     end
@@ -254,12 +248,12 @@ RSpec.describe Parametric::V2::Types do
             list << 'after: %s' % result.value
             result
           end
-          pl.step(Types::Any.transform { |v| "-#{v}-" })
+          pl.step(Types::Any.transform(::String) { |v| "-#{v}-" })
           pl.around do |step, result|
             counts += 1
             step.resolve(result)
           end
-          pl.step(Types::Any.transform { |v| "*#{v}*" })
+          pl.step(Types::Any.transform(::String) { |v| "*#{v}*" })
         end
 
         assert_result(pipeline.resolve(1), '*-1-*', true)
@@ -530,11 +524,11 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#metadata' do
         type = Types::Array[Types::Boolean].meta(foo: 1)
-        expect(type.metadata).to eq(type: 'array', foo: 1)
+        expect(type.metadata).to eq(type: Array, foo: 1)
       end
 
       specify '#concurrent' do
-        slow_type = Types::Any.transform do |r|
+        slow_type = Types::Any.transform(NilClass) do |r|
           sleep(0.02)
           r
         end
@@ -616,7 +610,7 @@ RSpec.describe Parametric::V2::Types do
           { value: 1, next: { value: 2, next: { value: 3, next: nil } } },
           true
         )
-        expect(linked_list.metadata).to eq(type: 'hash')
+        expect(linked_list.metadata).to eq(type: Hash)
       end
 
       specify '#defer with Tuple' do
@@ -644,7 +638,7 @@ RSpec.describe Parametric::V2::Types do
           ['hello'],
           true
         )
-        expect(type.metadata).to eq(type: 'array')
+        expect(type.metadata).to eq(type: Array)
         # TODO: Deferred #ast cannot delegate to the deferred type
         # to avoid infinite recursion. Deferred should only be used
         # for recursive types such as Linked Lists, Trees, etc.
@@ -663,7 +657,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#metadata' do
         s1 = Types::Hash.schema(name: Types::String, age: Types::Integer, company: Types::String)
-        expect(s1.metadata).to eq(type: 'hash')
+        expect(s1.metadata).to eq(type: Hash)
       end
 
       specify '#tagged_by' do
@@ -678,7 +672,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#>>' do
         s1 = Types::Hash.schema(name: Types::String)
-        s2 = Types::Any.transform { |v| "Name is #{v[:name]}" }
+        s2 = Types::Any.transform(::String) { |v| "Name is #{v[:name]}" }
 
         pipe = s1 >> s2
         assert_result(pipe.resolve(name: 'Ismael', age: 42), 'Name is Ismael', true)
@@ -702,7 +696,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#schema(key_type, value_type) "Map"' do
         s1 = Types::Hash.schema(Types::String, Types::Integer)
-        expect(s1.metadata).to eq(type: 'hash')
+        expect(s1.metadata).to eq(type: Hash)
         assert_result(s1.resolve('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
         s1.resolve(a: 1, 'b' => 2).tap do |result|
           assert_result(result, { a: 1, 'b' => 2 }, false)
@@ -717,7 +711,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#[] alias to #schema' do
         s1 = Types::Hash[Types::String, Types::Integer]
-        expect(s1.metadata).to eq(type: 'hash')
+        expect(s1.metadata).to eq(type: Hash)
         assert_result(s1.resolve('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
       end
     end

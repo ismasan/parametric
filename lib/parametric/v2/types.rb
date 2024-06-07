@@ -72,7 +72,7 @@ module Parametric
       )
 
       Present = Blank.halt(error: 'must be present')
-      Split = String.transform { |v| v.split(/\s*,\s*/) }
+      Split = String.transform(::String) { |v| v.split(/\s*,\s*/) }
 
       module Lax
         String = Types::String \
@@ -82,7 +82,7 @@ module Parametric
         Symbol = Types::Symbol \
           | Any.coerce(::String, &:to_sym)
 
-        Integer = Types::Numeric.transform(&:to_i) \
+        Integer = Types::Numeric.transform(::Integer, &:to_i) \
                   | Any.coerce(/^\d+$/, &:to_i) \
                   | Any.coerce(/^\d+.\d*?$/, &:to_i)
       end

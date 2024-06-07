@@ -53,6 +53,7 @@ RSpec.describe Parametric::V2::Schema do
       schema = described_class.new do |sc|
         sc.field(:title).type(Test::Types::String).default('Mr')
         sc.field?(:age).type(Test::Types::Integer)
+        sc.field?(:foo).type(Test::Types::String.transform(::Integer, &:to_i))
       end
       data = schema.json_schema
       expect(data).to eq({
@@ -60,7 +61,8 @@ RSpec.describe Parametric::V2::Schema do
                            type: 'object',
                            properties: {
                              'title' => { type: 'string', default: 'Mr' },
-                             'age' => { type: 'integer' }
+                             'age' => { type: 'integer' },
+                             'foo' => { type: 'integer' }
                            },
                            required: %w[title]
                          })
@@ -279,7 +281,9 @@ RSpec.describe Parametric::V2::Schema do
   end
 
   specify 'Field#optional' do
-    field = described_class::Field.new(:name).type(Test::Types::String.transform { |v| "Hello #{v}" }).optional
+    field = described_class::Field.new(:name).type(Test::Types::String.transform(::String) do |v|
+                                                     "Hello #{v}"
+                                                   end).optional
     assert_result(field.resolve('Ismael'), 'Hello Ismael', true)
     assert_result(field.resolve(nil), nil, true)
   end
@@ -299,7 +303,7 @@ RSpec.describe Parametric::V2::Schema do
   end
 
   specify 'self-contained Array type' do
-    array_type = Test::Types::Array[Test::Types::Integer | Test::Types::String.transform(&:to_i)]
+    array_type = Test::Types::Array[Test::Types::Integer | Test::Types::String.transform(::Integer, &:to_i)]
     schema = described_class.new do |sc|
       sc.field(:numbers).type(array_type)
     end
