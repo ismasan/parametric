@@ -20,15 +20,13 @@ end
 module V2Schemas
   include Parametric::V2::Types
 
-  MONEY_EXP = /(\W{1}|\w{3})?[\d+\,\.]/
+  MONEY_EXP = /(\W{1}|\w{3})?[\d+,.]/
 
   PARSE_DATE = proc do |result|
-    begin
-      date = ::Date.parse(result.value)
-      result.success(date)
-    rescue ::Date::Error
-      result.halt(error: 'invalid date')
-    end
+    date = ::Date.parse(result.value)
+    result.success(date)
+  rescue ::Date::Error
+    result.halt(error: 'invalid date')
   end
 
   PARSE_MONEY = proc do |result|
@@ -121,4 +119,81 @@ module V2Schemas
     sc.field(:commission).type(Money).optional
     sc.field(:max_broadband_download_speed).type(Integer).default(0)
   end
+
+  TermHash = Hash[
+    name: String.default(''),
+    url: String.default(''),
+    terms_text: String.default(''),
+    start_date?: BlankStringOrDate.optional,
+    end_date: BlankStringOrDate.optional
+  ]
+
+  TvComponentHash = Hash[
+    slug: String,
+    name: String.present,
+    search_tags: Array[String].default([]),
+    description: String.default(''),
+    channels: Integer.default(0),
+    discount_price: Money.default(::Money.zero)
+  ]
+
+  HashSchema = Hash[
+    supplier_name: String.present,
+    start_date: BlankStringOrDate.optional.meta(admin_ui: true),
+    end_date: BlankStringOrDate.optional.meta(admin_ui: true),
+    countdown_date: BlankStringOrDate.optional,
+    name: String.present,
+    upfront_cost_description: String.default(''),
+    tv_channels_count: Integer.default(0),
+    terms: Array[TermHash].rule(size: (1..)).default([]),
+    tv_included: Boolean,
+    additional_info: String,
+    product_type: String.optional,
+    annual_price_increase_applies: Boolean.default(false),
+    annual_price_increase_description: String.default(''),
+    broadband_components: Array[
+      name: String,
+      technology: String,
+      technology_tags: Array[String].default([]),
+      is_mobile: Boolean.default(false),
+      description: String,
+      download_speed_measurement: String.default(''),
+      download_speed: Numeric.default(0),
+      upload_speed_measurement: String,
+      upload_speed: Numeric.default(0),
+      download_usage_limit: Integer.optional,
+      discount_price: Money.optional,
+      discount_period?: Integer.optional,
+      speed_description: String.default(''),
+      ongoing_price: Money.optional,
+      contract_length: Integer.optional,
+      upfront_cost: Money.optional,
+      commission: Money.optional
+    ],
+    tv_components: Array[TvComponentHash].default([]),
+    call_package_types: Array[String].default([]).meta(example: ['Everything']),
+    phone_components: Array[
+      name: String,
+      description: String,
+      discount_price: Money.optional,
+      discount_period: Integer.optional,
+      ongoing_price: Money.optional,
+      contract_length: Integer.optional,
+      upfront_cost: Money.optional,
+      commission: Money.optional,
+      call_package_type: Array[String].default([])
+    ].default([]),
+    payment_methods: Array[String].default([]),
+    discounts: Array[
+      period: Integer,
+      price: Money.optional
+    ],
+    ongoing_price: Money.optional.meta(admin_ui: true),
+    contract_length: Integer.optional,
+    upfront_cost: Money.optional,
+    year_1_price: Money.optional.meta(admin_ui: true),
+    savings: Money.optional.meta(admin_ui: true),
+    commission: Money.optional,
+    max_broadband_download_speed: Integer.default(0)
+  ]
 end

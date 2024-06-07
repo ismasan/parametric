@@ -34,7 +34,7 @@ require_relative './v2_schema'
 #   end
 # end
 
-# V2Hash = Types::Hash[
+# V2Hash = PaTypes::Hash[
 #   name: Types::String,
 #   friend: Types::Hash[
 #     name: Types::String,
@@ -55,7 +55,7 @@ data = {
   tv_channels_count: 100,
   terms: [
     { name: 'Foo', url: 'http://foo.com', terms_text: 'Foo terms', start_date: '2020-01-01', end_date: '2021-01-01' },
-    { name: 'Foo2', url: 'http://foo2.com', terms_text: 'Foo terms', start_date: '2020-01-01', end_date: '2021-01-01' },
+    { name: 'Foo2', url: 'http://foo2.com', terms_text: 'Foo terms', start_date: '2020-01-01', end_date: '2021-01-01' }
   ],
   tv_included: true,
   additional_info: 'Additional info',
@@ -87,7 +87,7 @@ data = {
     {
       slug: 'vodafone-tv',
       name: 'Vodafone TV',
-      search_tags: ['Vodafone', 'TV'],
+      search_tags: %w[Vodafone TV],
       description: 'Vodafone TV description',
       channels: 100,
       discount_price: 100
@@ -127,14 +127,14 @@ data = {
 # p result
 # p V2Schema.call(result)
 Benchmark.ips do |x|
-  x.report('Parametric::Schema') {
+  x.report('Parametric::Schema') do
     V1Schemas::RECORD.resolve(data)
-  }
-  x.report('Parametric::V2::Schema') {
+  end
+  x.report('Parametric::V2::Schema') do
     V2Schemas::Record.resolve(data)
-  }
-  # x.report('Parametric::V2::Hash') {
-  #   V2Hash.resolve(data)
-  # }
+  end
+  x.report('Parametric::V2::Hash') do
+    V2Schemas::HashSchema.resolve(data)
+  end
   x.compare!
 end
