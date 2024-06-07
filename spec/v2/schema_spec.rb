@@ -38,15 +38,15 @@ RSpec.describe Parametric::V2::Schema do
       result = schema.resolve(data)
       expect(result.success?).to be true
       expect(result.value).to eq({
-        title: 'Mr',
-        name: 'Ismael',
-        age: 42,
-        friend: {
-          name: 'Joe'
-        },
-        tags: [],
-        friends: []
-      })
+                                   title: 'Mr',
+                                   name: 'Ismael',
+                                   age: 42,
+                                   friend: {
+                                     name: 'Joe'
+                                   },
+                                   tags: [],
+                                   friends: []
+                                 })
     end
 
     specify '#json_schema' do
@@ -56,14 +56,14 @@ RSpec.describe Parametric::V2::Schema do
       end
       data = schema.json_schema
       expect(data).to eq({
-        '$schema' => 'http://json-schema.org/draft-08/schema#',
-        type: 'object',
-        properties: {
-          'title' => { type: 'string', default: 'Mr' },
-          'age' => { type: 'integer' }
-        },
-        required: %w[title],
-      })
+                           '$schema' => 'http://json-schema.org/draft-08/schema#',
+                           type: 'object',
+                           properties: {
+                             'title' => { type: 'string', default: 'Mr' },
+                             'age' => { type: 'integer' }
+                           },
+                           required: %w[title]
+                         })
     end
 
     it 'coerces a nested data structure' do
@@ -89,7 +89,7 @@ RSpec.describe Parametric::V2::Schema do
           friend: {
             name: 'Joe'
           },
-          tags: ['10', 'foo'],
+          tags: %w[10 foo],
           friends: [
             { name: 'Joan', age: 44 },
             { name: 'Anonymous', age: 45 }
@@ -118,8 +118,8 @@ RSpec.describe Parametric::V2::Schema do
       s.field?(:age).type(Test::Types::Lax::Integer)
     end
 
-    assert_result(schema.resolve({name: 'Ismael', age: '42'}), {name: 'Ismael', age: 42}, true)
-    assert_result(schema.resolve({name: 'Ismael'}), {name: 'Ismael'}, true)
+    assert_result(schema.resolve({ name: 'Ismael', age: '42' }), { name: 'Ismael', age: 42 }, true)
+    assert_result(schema.resolve({ name: 'Ismael' }), { name: 'Ismael' }, true)
   end
 
   specify 'reusing schemas' do
@@ -134,7 +134,8 @@ RSpec.describe Parametric::V2::Schema do
       sc.field(:friend).schema friend_schema
     end
 
-    assert_result(schema.resolve({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+    assert_result(schema.resolve({ name: 'Ismael', age: '42', friend: { name: 'Joe' } }),
+                  { title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' } }, true)
   end
 
   specify 'array schemas with rules' do
@@ -144,7 +145,7 @@ RSpec.describe Parametric::V2::Schema do
       end.rule(size: (1..))
     end
 
-    result = s1.resolve(friends: [ { name: 'Joe' } ])
+    result = s1.resolve(friends: [{ name: 'Joe' }])
     expect(result.success?).to be true
 
     result = s1.resolve(friends: [])
@@ -195,6 +196,42 @@ RSpec.describe Parametric::V2::Schema do
     assert_result(s3.resolve(name: 'Joe', age: 20, title: 'Mr', email: 'email@me.com'), { name: 'Joe', age: 20 }, true)
   end
 
+  describe '#before' do
+    it 'runs before schema fields' do
+      populate_name = ->(result) { result.success(result.value.merge(name: 'Ismael')) }
+
+      schema = described_class.new do |sc|
+        # As block
+        sc.before do |result|
+          result.success(result.value.merge(title: 'Dr'))
+        end
+        # As callable
+        sc.before populate_name
+
+        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field(:name).type(Test::Types::String)
+      end
+
+      assert_result(schema.resolve({}), { title: 'Dr', name: 'Ismael' }, true)
+    end
+
+    it 'can halt processing' do
+      schema = described_class.new do |sc|
+        sc.before do |result|
+          result.halt(error: 'Halted')
+        end
+
+        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field(:name).type(Test::Types::String)
+      end
+
+      result = schema.resolve({})
+      expect(result.success?).to be false
+      expect(result.value).to eq({})
+      expect(result.error).to eq('Halted')
+    end
+  end
+
   specify 'Field#meta' do
     field = described_class::Field.new(:name).type(Test::Types::String).meta(foo: 1).meta(bar: 2)
     expect(field.metadata).to eq(type: ::String, foo: 1, bar: 2)
@@ -202,11 +239,11 @@ RSpec.describe Parametric::V2::Schema do
   end
 
   specify 'Field#options' do
-    field = described_class::Field.new(:name).type(Test::Types::String).options(%w(aa bb cc))
+    field = described_class::Field.new(:name).type(Test::Types::String).options(%w[aa bb cc])
     assert_result(field.resolve('aa'), 'aa', true)
     assert_result(field.resolve('cc'), 'cc', true)
     assert_result(field.resolve('dd'), 'dd', false)
-    expect(field.metadata[:options]).to eq(%w(aa bb cc))
+    expect(field.metadata[:options]).to eq(%w[aa bb cc])
   end
 
   specify 'Field#optional' do
@@ -235,7 +272,7 @@ RSpec.describe Parametric::V2::Schema do
       sc.field(:numbers).type(array_type)
     end
 
-    assert_result(schema.resolve(numbers: [1, 2, '3']), {numbers: [1, 2, 3]}, true)
+    assert_result(schema.resolve(numbers: [1, 2, '3']), { numbers: [1, 2, 3] }, true)
   end
 
   private

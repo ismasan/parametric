@@ -13,6 +13,7 @@ module Parametric
 
         if sc
           raise ArgumentError, 'expected a Steppable' unless sc.is_a?(Steppable)
+
           return sc
         end
 
@@ -22,15 +23,20 @@ module Parametric
       attr_reader :fields
 
       def initialize(hash = Types::Hash, &block)
+        @pipeline = Types::Any
+        @before = Types::Any
         @_schema = {}
         @_hash = hash
         @fields = SymbolAccessHash.new({})
 
-        if block_given?
-          setup(&block)
-        end
+        setup(&block) if block_given?
 
         finish
+      end
+
+      def before(callable = nil, &block)
+        @before >>= callable || block
+        self
       end
 
       def ast = _hash.ast
@@ -40,7 +46,7 @@ module Parametric
       end
 
       def call(result)
-        _hash.call(result)
+        @pipeline.call(result)
       end
 
       private def setup(&block)
@@ -48,7 +54,7 @@ module Parametric
         when 1
           yield self
         when 0
-          self.instance_eval(&block)
+          instance_eval(&block)
         else
           raise ::ArgumentError, "#{self.class} expects a block with 0 or 1 argument, but got #{block.arity}"
         end
@@ -57,9 +63,8 @@ module Parametric
       end
 
       private def finish
-        # @fields = SymbolAccessHash.new(_hash.to_h)
+        @pipeline = @before >> @_hash.freeze
         @_schema.clear.freeze
-        @_hash.freeze
         freeze
       end
 
@@ -114,19 +119,22 @@ module Parametric
         def call(result) = _type.call(result)
 
         def type(steppable)
-          raise ArgumentError, "expected a Parametric type, but got #{steppable.inspect}" unless steppable.respond_to?(:call)
+          unless steppable.respond_to?(:call)
+            raise ArgumentError,
+                  "expected a Parametric type, but got #{steppable.inspect}"
+          end
 
-          @_type = @_type >> steppable
+          @_type >>= steppable
           self
         end
 
         def schema(...)
-          @_type = @_type >> Schema.wrap(...)
+          @_type >>= Schema.wrap(...)
           self
         end
 
         def array(...)
-          @_type = @_type >> Types::Array[Schema.wrap(...)]
+          @_type >>= Types::Array[Schema.wrap(...)]
           self
         end
 
