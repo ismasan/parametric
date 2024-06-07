@@ -200,13 +200,17 @@ module Parametric
         rule(included_in: opts)
       end
 
-      def rule(rules = {})
-        unless rules.is_a?(::Hash)
-          raise ArgumentError,
-                "expected a Hash<rule:value>, ex. #rule(gt: 10), but got #{rules.inspect}"
-        end
+      def rule(*args)
+        specs = case args
+                in [::Symbol => rule_name, value]
+                  { rule_name => value }
+                in [::Hash => rules]
+                  rules
+                else
+                  raise ArgumentError, "expected 1 or 2 arguments, but got #{args.size}"
+                end
 
-        self >> Rules.new(rules, metadata[:type])
+        self >> Rules.new(specs, metadata[:type])
       end
 
       def match(pattern)

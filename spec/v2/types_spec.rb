@@ -307,6 +307,10 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Integer.rule(not_eq: 1).resolve(2), 2, true)
       end
 
+      specify 'registering rule as :name, value' do
+        assert_result(Types::Integer.rule(:not_eq, 1).resolve(2), 2, true)
+      end
+
       specify ':gt, :lt' do
         assert_result(Types::Integer.rule(gt: 10, lt: 20).resolve(11), 11, true)
         assert_result(Types::Integer.rule(gt: 10, lt: 20).resolve(9), 9, false)
