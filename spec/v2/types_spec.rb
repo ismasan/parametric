@@ -30,8 +30,8 @@ RSpec.describe Parametric::V2::Types do
 
       expect(pipeline.resolve(10).success?).to be(false)
       expect(pipeline.resolve(10).value).to eq(13)
-      expect((step1 >> step2 >> step4.(1)).resolve(10).value).to eq(12)
-      expect((step1 >> ->(r) { r.success(r.value.to_s)}).resolve(10).value).to eq('15')
+      expect((step1 >> step2 >> step4.call(1)).resolve(10).value).to eq(12)
+      expect((step1 >> ->(r) { r.success(r.value.to_s) }).resolve(10).value).to eq('15')
     end
 
     specify '#transform' do
@@ -58,23 +58,25 @@ RSpec.describe Parametric::V2::Types do
           [:or, {}, [
             [:and, {}, [
               [:rules, {}, [
-                [:is_a, {:type=>String}, []]]],
-                [:leaf, {}, []]]],
-                [:rules, {}, [
-                  [:is_a, {:type=>Integer}, []]
-                ]
-                ]
-          ]
-          ], [:and, {}, [[:rules, {}, [[:is_a, {:type=>Integer}, []]]], [:leaf, {}, []]]]]])
+                [:is_a, { type: String }, []]
+              ]],
+              [:leaf, {}, []]
+            ]],
+            [:rules, {}, [
+              [:is_a, { type: Integer }, []]
+            ]]
+          ]], [:and, {}, [[:rules, {}, [[:is_a, { type: Integer }, []]]], [:leaf, {}, []]]]
+        ]]
+      )
     end
 
     specify '#with_ast' do
       type = Types::Any.transform(&:to_i).with_ast([:foo, { type: 'bar' }, []])
       expect(type.ast).to eq([:foo, { type: 'bar' }, []])
 
-      expect {
+      expect do
         Types::Any.with_ast([:foo, { type: 'bar' }])
-      }.to raise_error(ArgumentError)
+      end.to raise_error(ArgumentError)
     end
 
     specify '#match' do
@@ -148,20 +150,20 @@ RSpec.describe Parametric::V2::Types do
     describe '#metadata' do
       specify 'AND (>>) chains' do
         type = Types::String >> Types::Integer.meta(foo: 'bar')
-        expect(type.metadata).to eq({ type: ::Integer, foo: 'bar'})
+        expect(type.metadata).to eq({ type: ::Integer, foo: 'bar' })
       end
 
       specify 'OR (|) chains' do
         type = Types::String | Types::Integer.meta(foo: 'bar')
-        expect(type.metadata).to eq({ type: [::String, ::Integer], foo: 'bar'})
+        expect(type.metadata).to eq({ type: [::String, ::Integer], foo: 'bar' })
       end
 
       specify 'AND (>>) with OR (|)' do
         type = Types::String >> (Types::Integer | Types::Boolean).meta(foo: 'bar')
-        expect(type.metadata).to eq({ type: [::Integer, 'boolean'], foo: 'bar'})
+        expect(type.metadata).to eq({ type: [::Integer, 'boolean'], foo: 'bar' })
 
         type = Types::String | (Types::Integer >> Types::Boolean).meta(foo: 'bar')
-        expect(type.metadata).to eq({ type: [::String, 'boolean'], foo: 'bar'})
+        expect(type.metadata).to eq({ type: [::String, 'boolean'], foo: 'bar' })
       end
     end
 
@@ -221,7 +223,7 @@ RSpec.describe Parametric::V2::Types do
       it 'builds a step composed of many steps' do
         assert_result(pipeline.resolve(2), 'The number is 4', true)
         assert_result(pipeline.resolve('2'), 'The number is 4', true)
-        assert_result(pipeline.transform{ |v| v + '!!' }.resolve(2), 'The number is 4!!', true)
+        assert_result(pipeline.transform { |v| v + '!!' }.resolve(2), 'The number is 4!!', true)
         assert_result(pipeline.resolve('nope'), 'nope', false)
       end
 
@@ -252,18 +254,21 @@ RSpec.describe Parametric::V2::Types do
             list << 'after: %s' % result.value
             result
           end
-          pl.step Types::Any.transform { |v| "-#{v}-" }
-          pl.around { |step, result| counts += 1; step.resolve(result) }
-          pl.step Types::Any.transform { |v| "*#{v}*" }
+          pl.step(Types::Any.transform { |v| "-#{v}-" })
+          pl.around do |step, result|
+            counts += 1
+            step.resolve(result)
+          end
+          pl.step(Types::Any.transform { |v| "*#{v}*" })
         end
 
         assert_result(pipeline.resolve(1), '*-1-*', true)
         expect(list).to eq([
-          'before: 1',
-          'after: -1-',
-          'before: -1-',
-          'after: *-1-*'
-        ])
+                             'before: 1',
+                             'after: -1-',
+                             'before: -1-',
+                             'after: *-1-*'
+                           ])
         expect(counts).to eq(1)
       end
     end
@@ -275,7 +280,7 @@ RSpec.describe Parametric::V2::Types do
         end
       end
       assert_result(Types::Any.constructor(custom).resolve('Ismael'), custom.new('Ismael'), true)
-      with_block = Types::Any.constructor(custom){ |v| custom.new('mr. %s' % v) }
+      with_block = Types::Any.constructor(custom) { |v| custom.new('mr. %s' % v) }
       expect(with_block.resolve('Ismael').value.name).to eq('mr. Ismael')
       with_symbol = Types::Any.constructor(custom, :build)
       expect(with_symbol.resolve('Ismael').value.name).to eq('Ismael')
@@ -284,8 +289,8 @@ RSpec.describe Parametric::V2::Types do
     describe '#rule' do
       specify ':eq' do
         custom = Struct.new(:value) do
-          def ==(v)
-            value == v
+          def ==(other)
+            value == other
           end
         end
 
@@ -316,13 +321,13 @@ RSpec.describe Parametric::V2::Types do
       end
 
       specify ':included_in' do
-        assert_result(Types::String.rule(included_in: %w(a b c)).resolve('b'), 'b', true)
-        assert_result(Types::String.rule(included_in: %w(a b c)).resolve('d'), 'd', false)
+        assert_result(Types::String.rule(included_in: %w[a b c]).resolve('b'), 'b', true)
+        assert_result(Types::String.rule(included_in: %w[a b c]).resolve('d'), 'd', false)
       end
 
       specify ':excluded_from' do
-        assert_result(Types::String.rule(excluded_from: %w(a b c)).resolve('b'), 'b', false)
-        assert_result(Types::String.rule(excluded_from: %w(a b c)).resolve('d'), 'd', true)
+        assert_result(Types::String.rule(excluded_from: %w[a b c]).resolve('b'), 'b', false)
+        assert_result(Types::String.rule(excluded_from: %w[a b c]).resolve('d'), 'd', true)
       end
 
       specify ':respond_to' do
@@ -453,8 +458,8 @@ RSpec.describe Parametric::V2::Types do
           true
         )
         assert_result(
-          type.resolve(['nope', 'yup']),
-          ['nope', 'yup'],
+          type.resolve(%w[nope yup]),
+          %w[nope yup],
           false
         )
       end
@@ -487,7 +492,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#of with unions' do
         assert_result(
-          Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).resolve(['a', 'b', 'a']),
+          Types::Array.of(Types::Any.value('a') | Types::Any.value('b')).resolve(%w[a b a]),
           %w[a b a],
           true
         )
@@ -529,7 +534,10 @@ RSpec.describe Parametric::V2::Types do
       end
 
       specify '#concurrent' do
-        slow_type = Types::Any.transform { |r| sleep(0.02); r }
+        slow_type = Types::Any.transform do |r|
+          sleep(0.02)
+          r
+        end
         array = Types::Array.of(slow_type).concurrent
         assert_result(array.resolve(1), 1, false)
         result, elapsed = bench do
@@ -544,7 +552,7 @@ RSpec.describe Parametric::V2::Types do
 
     describe Types::Hash do
       specify 'no schema' do
-        assert_result(Types::Hash.resolve({foo: 1}), {foo: 1}, true)
+        assert_result(Types::Hash.resolve({ foo: 1 }), { foo: 1 }, true)
         assert_result(Types::Hash.resolve(1), 1, false)
       end
 
@@ -556,11 +564,12 @@ RSpec.describe Parametric::V2::Types do
           friend: Types::Hash.schema(name: Types::String)
         )
 
-        assert_result(hash.resolve({name: 'Ismael', age: '42', friend: { name: 'Joe' }}), {title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' }}, true)
+        assert_result(hash.resolve({ name: 'Ismael', age: '42', friend: { name: 'Joe' } }),
+                      { title: 'Mr', name: 'Ismael', age: 42, friend: { name: 'Joe' } }, true)
 
-        hash.resolve({title: 'Dr', name: 'Ismael', friend: {}}).tap do |result|
+        hash.resolve({ title: 'Dr', name: 'Ismael', friend: {} }).tap do |result|
           expect(result.success?).to be false
-          expect(result.value).to eq({title: 'Dr', name: 'Ismael', friend: { }})
+          expect(result.value).to eq({ title: 'Dr', name: 'Ismael', friend: {} })
           expect(result.error[:age].any?).to be(true)
           expect(result.error[:friend][:name]).to be_a(::String)
         end
@@ -574,7 +583,8 @@ RSpec.describe Parametric::V2::Types do
           friend: Types::Hash.schema(name: Types::String)
         )
 
-        assert_result(hash.resolve({ friend: { name: 'Joe' } }), { title: 'Mr', name: 'Ismael', age: 45, friend: { name: 'Joe' } }, true)
+        assert_result(hash.resolve({ friend: { name: 'Joe' } }),
+                      { title: 'Mr', name: 'Ismael', age: 45, friend: { name: 'Joe' } }, true)
       end
 
       specify '#|' do
@@ -592,8 +602,8 @@ RSpec.describe Parametric::V2::Types do
         s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer)
         s3 = s1 + s2
 
-        assert_result(s3.resolve(name: 'Ismael', age: 42), {name: 'Ismael', age: 42}, true)
-        assert_result(s3.resolve(age: 42), {age: 42}, true)
+        assert_result(s3.resolve(name: 'Ismael', age: 42), { name: 'Ismael', age: 42 }, true)
+        assert_result(s3.resolve(age: 42), { age: 42 }, true)
       end
 
       specify '#defer' do
@@ -646,8 +656,9 @@ RSpec.describe Parametric::V2::Types do
         s2 = Types::Hash.schema(name?: Types::String, age: Types::Integer, email: Types::String)
         s3 = s1 & s2
 
-        assert_result(s3.resolve(name: 'Ismael', age: 42, company: 'ACME', email: 'me@acme.com'), {name: 'Ismael', age: 42}, true)
-        assert_result(s3.resolve(age: 42), {age: 42}, true)
+        assert_result(s3.resolve(name: 'Ismael', age: 42, company: 'ACME', email: 'me@acme.com'),
+                      { name: 'Ismael', age: 42 }, true)
+        assert_result(s3.resolve(age: 42), { age: 42 }, true)
       end
 
       specify '#metadata' do
@@ -686,7 +697,7 @@ RSpec.describe Parametric::V2::Types do
           age?: Types::Lax::Integer
         )
 
-        assert_result(hash.resolve({}), {title: 'Mr'}, true)
+        assert_result(hash.resolve({}), { title: 'Mr' }, true)
       end
 
       specify '#schema(key_type, value_type) "Map"' do
@@ -720,7 +731,7 @@ RSpec.describe Parametric::V2::Types do
     expect(result.success?).to be(is_success)
   end
 
-  def bench(&block)
+  def bench
     start = Time.now
     result = yield
     elapsed = (Time.now - start).to_f * 1000
