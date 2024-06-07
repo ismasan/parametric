@@ -90,14 +90,15 @@ module Parametric
         errors = {}
         field_result = BLANK_RESULT.dup
         output = _schema.each.with_object({}) do |(key, field), ret|
-          if input.key?(key.to_sym)
-            r = field.call(field_result.reset(input[key.to_sym]))
-            errors[key.to_sym] = r.error unless r.success?
-            ret[key.to_sym] = r.value
+          key_s = key.to_sym
+          if input.key?(key_s)
+            r = field.call(field_result.reset(input[key_s]))
+            errors[key_s] = r.error unless r.success?
+            ret[key_s] = r.value
           elsif !key.optional?
             r = field.call(BLANK_RESULT)
-            errors[key.to_sym] = r.error unless r.success?
-            ret[key.to_sym] = r.value unless r.value == Undefined
+            errors[key_s] = r.error unless r.success?
+            ret[key_s] = r.value unless r.value == Undefined
           end
         end
 
