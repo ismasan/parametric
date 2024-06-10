@@ -130,8 +130,8 @@ module Parametric
         )
       end
 
-      def with_ast(a)
-        AST.new(self, a)
+      def with_ast(the_ast)
+        AST.new(self, the_ast)
       end
 
       def optional
