@@ -95,6 +95,10 @@ module Parametric
 
         result.halt(errors: errors.join(', '))
       end
+
+      private def _inspect
+        +'Rules(' << @rules.map { |r| [r.name, r.arg_value].join(': ') }.join(', ') << +')'
+      end
     end
   end
 end
