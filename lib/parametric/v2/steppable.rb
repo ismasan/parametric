@@ -122,9 +122,19 @@ module Parametric
 
       def [](val) = value(val)
 
+      DefaultProc = proc do |callable|
+        proc do |result|
+          result.success(callable.call)
+        end
+      end
+
       def default(val = Undefined, &block)
-        # TODO: Default needs a type if given a block
-        val_type = val == Undefined ? Types::Any.transform(::String, &block) : Types::Static[val]
+        val_type = if val == Undefined
+                     DefaultProc.call(block)
+                   else
+                     Types::Static[val]
+                   end
+
         ((Types::Nothing >> val_type) | self).with_ast(
           [:default, { default: val }, [ast]]
         )

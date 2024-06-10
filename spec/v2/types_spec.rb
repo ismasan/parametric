@@ -181,6 +181,7 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types::Any.default('hello').resolve(nil), nil, true)
       assert_result(Types::Any.default('hello').resolve(Undefined), 'hello', true)
       assert_result(Types::String.default('hello').resolve(Undefined), 'hello', true)
+      assert_result(Types::String.default { 'hi' }.resolve(Undefined), 'hi', true)
     end
 
     specify '#optional' do
