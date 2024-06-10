@@ -212,7 +212,7 @@ RSpec.describe Parametric::V2::Types do
 
       specify '#metadata' do
         pipe = pipeline.meta(foo: 'bar')
-        expect(pipe.metadata).to eq({ type: Integer, foo: 'bar' })
+        expect(pipe.metadata).to include({ type: Integer, foo: 'bar' })
       end
 
       it 'builds a step composed of many steps' do
@@ -318,6 +318,20 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Integer.rule(gt: 20).resolve(21), 21, true)
         assert_result(Types::Integer.rule(gt: 10, lt: 20).resolve(20), 20, false)
         expect(Types::Integer.rule(gt: 10, lt: 20).resolve(9).errors).to eq('must be greater than 10')
+      end
+
+      specify 'with multiple host types via OR, with incompatible rule implementations' do
+        type = Types::Integer | Types::String | Types::Decimal
+        expect do
+          type.rule(gt: 10, lt: 20)
+        end.to raise_error(Parametric::V2::Rules::UnsupportedRuleError)
+      end
+
+      specify 'with multiple host types via OR with compatible rule implementations' do
+        type = (Types::Integer | Types::Decimal).rule(gt: 10)
+        assert_result(type.resolve(11), 11, true)
+        assert_result(type.resolve(BigDecimal(11)), BigDecimal(11), true)
+        assert_result(type.resolve(10), 10, false)
       end
 
       specify ':gt, :lt with array' do

@@ -11,33 +11,41 @@ module Parametric
       value != result.value
     end
     # :gt for numbers and #size (arrays, strings, hashes)
-    Rules.define :gt, 'must be greater than %<value>s', expects: :> do |result, value|
-      value < result.value
+    [::String, ::Array, ::Hash].each do |klass|
+      Rules.define :gt, 'must contain more than %<value>s elements', expects: klass do |result, value|
+        value < result.value.size
+      end
+
+      # :lt for numbers and #size (arrays, strings, hashes)
+      Rules.define :lt, 'must contain fewer than %<value>s elements', expects: klass do |result, value|
+        value > result.value.size
+      end
+
+      Rules.define :gte, 'must be size greater or equal to %<value>s', expects: klass do |result, value|
+        value <= result.value.size
+      end
+
+      Rules.define :lte, 'must be size less or equal to %<value>s', expects: klass do |result, value|
+        value >= result.value
+      end
     end
-    Rules.define :gt, 'must contain more than %<value>s elements', expects: :size do |result, value|
-      value < result.value.size
+    # :gt and :lt for numbers, BigDecimal
+    [::Numeric].each do |klass|
+      Rules.define :gt, 'must be greater than %<value>s', expects: klass do |result, value|
+        value < result.value
+      end
+      Rules.define :lt, 'must be greater than %<value>s', expects: klass do |result, value|
+        value > result.value
+      end
+      Rules.define :gte, 'must be greater or equal to %<value>s', expects: klass do |result, value|
+        value <= result.value
+      end
+      # :lte for numbers and #size (arrays, strings, hashes)
+      Rules.define :lte, 'must be less or equal to %<value>s', expects: klass do |result, value|
+        value >= result.value
+      end
     end
-    # :lt for numbers and #size (arrays, strings, hashes)
-    Rules.define :lt, 'must be greater than %<value>s', expects: :< do |result, value|
-      value > result.value
-    end
-    Rules.define :lt, 'must contain fewer than %<value>s elements', expects: :size do |result, value|
-      value > result.value.size
-    end
-    # :gte for numbers and #size (arrays, strings, hashes)
-    Rules.define :gte, 'must be greater or equal to %<value>s', expects: :> do |result, value|
-      value <= result.value
-    end
-    Rules.define :gte, 'must be size greater or equal to %<value>s', expects: :size do |result, value|
-      value <= result.value.size
-    end
-    # :lte for numbers and #size (arrays, strings, hashes)
-    Rules.define :lte, 'must be less or equal to %<value>s', expects: :< do |result, value|
-      value >= result.value
-    end
-    Rules.define :lte, 'must be size less or equal to %<value>s', expects: :size do |result, value|
-      value >= result.value
-    end
+
     Rules.define :match, 'must match %<value>s', metadata_key: :pattern do |result, value|
       value === result.value
     end

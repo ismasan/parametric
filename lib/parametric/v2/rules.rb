@@ -11,11 +11,11 @@ module Parametric
       class Registry
         RuleDef = Data.define(:name, :error_tpl, :callable, :metadata_key, :expects) do
           def supports?(type)
+            types = [type].flatten # may be an array of types for OR logic
             case expects
             when Symbol
-              type.public_instance_methods.include?(expects)
-            when Array then expects.include?(type)
-            when Class then type <= expects
+              types.all? { |type| type.public_instance_methods.include?(expects) }
+            when Class then types.all? { |type| type <= expects }
             when Object then true
             else raise "Unexpected expects: #{expects}"
             end
@@ -53,7 +53,13 @@ module Parametric
           rule_specs.map do |(name, arg_value)|
             rule_defs = @definitions.fetch(name.to_sym) { raise UndefinedRuleError, "no rule defined with :#{name}" }
             rule_def = rule_defs.find { |rd| rd.supports?(for_type) }
-            raise UnsupportedRuleError, "No :#{name} rule defined for type #{for_type}" unless rule_def
+            unless rule_def
+              raise UnsupportedRuleError, "No :#{name} rule for type #{for_type}" unless for_type.is_a?(Array)
+
+              raise UnsupportedRuleError,
+                    "Can't apply :#{name} rule for types #{for_type}. All types must support the same rule implementation"
+
+            end
 
             Rule.build(rule_def, arg_value)
           end
