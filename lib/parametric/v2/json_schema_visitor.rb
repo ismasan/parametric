@@ -16,6 +16,7 @@ module Parametric
         'any' => 'any',
         'numeric' => 'number',
         'number' => 'number',
+        'bigdecimal' => 'number',
         'float' => 'number',
         'null' => 'null',
         'nilclass' => 'null',

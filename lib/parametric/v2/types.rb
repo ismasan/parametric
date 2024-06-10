@@ -66,6 +66,7 @@ module Parametric
       Symbol = Any.is_a(::Symbol)
       Numeric = Any.is_a(::Numeric)
       Integer = Any.is_a(::Integer)
+      Decimal = Any.is_a(BigDecimal)
       Static = StaticClass.new
       Value = ValueClass.new
       Nil = Any.is_a(::NilClass)
@@ -88,16 +89,24 @@ module Parametric
       Split = String.transform(::String) { |v| v.split(/\s*,\s*/) }
 
       module Lax
+        NUMBER_EXPR = /^\d{1,3}(?:,\d{3})*(?:\.\d+)?$/
+
         String = Types::String \
                  | Any.coerce(BigDecimal) { |v| v.to_s('F') } \
                  | Any.coerce(::Numeric, &:to_s)
 
-        Symbol = Types::Symbol \
-          | Any.coerce(::String, &:to_sym)
+        Symbol = Types::Symbol | Types::String.transform(::Symbol, &:to_sym)
 
-        Integer = Types::Numeric.transform(::Integer, &:to_i) \
-                  | Any.coerce(/^\d+$/, &:to_i) \
-                  | Any.coerce(/^\d+.\d*?$/, &:to_i)
+        NumberString = Types::String.match(NUMBER_EXPR)
+        CoercibleNumberString = NumberString.transform(::String) { |v| v.tr(',', '') }
+
+        Numeric = Types::Numeric | CoercibleNumberString.transform(::Numeric, &:to_f)
+
+        Decimal = Types::Decimal | \
+                  (Types::Numeric.transform(::String, &:to_s) | CoercibleNumberString) \
+                  .transform(::BigDecimal) { |v| BigDecimal(v) }
+
+        Integer = Numeric.transform(::Integer, &:to_i)
       end
 
       module Forms

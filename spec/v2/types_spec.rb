@@ -366,6 +366,11 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Integer.resolve('10'), '10', false)
       end
 
+      specify Types::Decimal do
+        assert_result(Types::Decimal.resolve(BigDecimal(10)), BigDecimal(10), true)
+        assert_result(Types::Decimal.resolve('10'), '10', false)
+      end
+
       specify Types::True do
         assert_result(Types::True.resolve(true), true, true)
         assert_result(Types::True.resolve(false), false, false)
@@ -408,12 +413,34 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::String.resolve(true), true, false)
       end
 
+      specify Types::Lax::Symbol do
+        assert_result(Types::Lax::Symbol.resolve('foo'), :foo, true)
+        assert_result(Types::Lax::Symbol.resolve(:foo), :foo, true)
+      end
+
       specify Types::Lax::Integer do
         assert_result(Types::Lax::Integer.resolve(113), 113, true)
         assert_result(Types::Lax::Integer.resolve(113.10), 113, true)
         assert_result(Types::Lax::Integer.resolve('113'), 113, true)
         assert_result(Types::Lax::Integer.resolve('113.10'), 113, true)
+        assert_result(Types::Lax::Integer.resolve('113,222.10'), 113_222, true)
         assert_result(Types::Lax::Integer.resolve('nope'), 'nope', false)
+      end
+
+      specify Types::Lax::Numeric do
+        assert_result(Types::Lax::Numeric.resolve(113), 113.0, true)
+        assert_result(Types::Lax::Numeric.resolve(113.10), 113.10, true)
+        assert_result(Types::Lax::Numeric.resolve('113'), 113.0, true)
+        assert_result(Types::Lax::Numeric.resolve('113.10'), 113.10, true)
+        assert_result(Types::Lax::Numeric.resolve('113,222.10'), 113_222.10, true)
+        assert_result(Types::Lax::Numeric.resolve('nope'), 'nope', false)
+      end
+
+      specify Types::Lax::Decimal do
+        assert_result(Types::Lax::Decimal.resolve(BigDecimal(10)), BigDecimal(10), true)
+        assert_result(Types::Lax::Decimal.resolve('10'), BigDecimal('10'), true)
+        assert_result(Types::Lax::Decimal.resolve(10.30), BigDecimal('10.30'), true)
+        assert_result(Types::Lax::Decimal.resolve('10,222,333.30'), BigDecimal('10222333.30'), true)
       end
 
       specify Types::Forms::Boolean do
