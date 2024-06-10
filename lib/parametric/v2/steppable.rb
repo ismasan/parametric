@@ -92,23 +92,6 @@ module Parametric
         Or.new(self, Steppable.wrap(other))
       end
 
-      class Transform
-        include Steppable
-
-        def initialize(target_type, callable)
-          @target_type = target_type
-          @callable = callable
-        end
-
-        def ast
-          [:transform, { type: @target_type }, []]
-        end
-
-        def call(result)
-          result.success(@callable.call(result.value))
-        end
-      end
-
       def transform(target_type, callable = nil, &block)
         self >> Transform.new(target_type, callable || block)
       end
@@ -119,22 +102,6 @@ module Parametric
         }
 
         self >> a_check
-      end
-
-      class Metadata
-        include Steppable
-
-        attr_reader :metadata
-
-        def initialize(metadata)
-          @metadata = metadata
-        end
-
-        def ast
-          [:metadata, metadata, []]
-        end
-
-        def call(result) = result
       end
 
       def meta(data = {})
@@ -161,27 +128,6 @@ module Parametric
         ((Types::Nothing >> val_type) | self).with_ast(
           [:default, { default: val }, [ast]]
         )
-      end
-
-      class AST
-        include Steppable
-
-        attr_reader :ast
-
-        def initialize(steppable, ast)
-          if !ast.is_a?(::Array) \
-            || ast.size != 3 \
-            || !ast[0].is_a?(::Symbol) \
-            || !ast[1].is_a?(::Hash) \
-            || !ast[2].is_a?(::Array)
-            raise ArgumentError, "expected an Array<Symbol, Hash, Array>, but got #{ast.inspect}"
-          end
-
-          @steppable = steppable
-          @ast = ast
-        end
-
-        def call(result) = @steppable.call(result)
       end
 
       def with_ast(a)
@@ -252,3 +198,6 @@ module Parametric
 end
 
 require 'parametric/v2/deferred'
+require 'parametric/v2/transform'
+require 'parametric/v2/ast'
+require 'parametric/v2/metadata'
