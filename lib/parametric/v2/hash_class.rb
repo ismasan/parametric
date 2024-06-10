@@ -78,7 +78,7 @@ module Parametric
 
       def to_h = _schema
 
-      def inspect
+      private def _inspect
         %(#{name}[#{_schema.map { |(k, v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
       end
 

@@ -16,7 +16,7 @@ module Parametric
         self.class.new(value)
       end
 
-      def inspect
+      private def _inspect
         %(#{name}[#{@value.inspect}])
       end
 

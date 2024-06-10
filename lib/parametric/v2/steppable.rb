@@ -70,9 +70,11 @@ module Parametric
       def freeze
         return self if frozen?
 
-        @name = Name.new(self.class.name)
+        @name = Name.new(_inspect)
         super
       end
+
+      private def _inspect = self.class.name
 
       def inspect = name.to_s
 

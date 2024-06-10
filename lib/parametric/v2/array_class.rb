@@ -35,7 +35,7 @@ module Parametric
         ConcurrentArrayClass.new(element_type:)
       end
 
-      def inspect
+      private def _inspect
         %(#{name}[#{element_type}])
       end
 

@@ -21,7 +21,7 @@ module Parametric
         [:tuple, { type: 'array' }, @types.map(&:ast)]
       end
 
-      def inspect
+      private def _inspect
         "#{name}[#{@types.map(&:inspect).join(', ')}]"
       end
 

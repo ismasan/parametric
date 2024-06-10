@@ -13,7 +13,7 @@ module Parametric
         freeze
       end
 
-      def inspect
+      private def _inspect
         %((#{@left.inspect} | #{@right.inspect}))
       end
 

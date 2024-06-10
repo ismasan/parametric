@@ -13,7 +13,7 @@ module Parametric
         freeze
       end
 
-      def inspect
+      private def _inspect
         %(Not(#{@step.inspect}))
       end
 
