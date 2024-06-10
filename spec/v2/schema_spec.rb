@@ -104,8 +104,8 @@ RSpec.describe Parametric::V2::Schema do
     it 'returns errors for invalid data' do
       result = schema.resolve({ friend: {} })
       expect(result.success?).to be false
-      expect(result.error[:name]).to eq('must be a String')
-      expect(result.error[:friend][:name]).to eq('must be a String')
+      expect(result.errors[:name]).to eq('must be a String')
+      expect(result.errors[:friend][:name]).to eq('must be a String')
     end
 
     specify '#fields' do
@@ -220,7 +220,7 @@ RSpec.describe Parametric::V2::Schema do
     it 'can halt processing' do
       schema = described_class.new do |sc|
         sc.before do |result|
-          result.halt(error: 'Halted')
+          result.halt(errors: 'Halted')
         end
 
         sc.field(:title).type(Test::Types::String).default('Mr')
@@ -230,7 +230,7 @@ RSpec.describe Parametric::V2::Schema do
       result = schema.resolve({})
       expect(result.success?).to be false
       expect(result.value).to eq({})
-      expect(result.error).to eq('Halted')
+      expect(result.errors).to eq('Halted')
     end
   end
 
@@ -252,7 +252,7 @@ RSpec.describe Parametric::V2::Schema do
     it 'can halt processing' do
       schema = described_class.new do |sc|
         sc.before do |result|
-          result.halt(error: 'Halted')
+          result.halt(errors: 'Halted')
         end
 
         sc.field(:title).type(Test::Types::String).default('Mr')
@@ -262,7 +262,7 @@ RSpec.describe Parametric::V2::Schema do
       result = schema.resolve({})
       expect(result.success?).to be false
       expect(result.value).to eq({})
-      expect(result.error).to eq('Halted')
+      expect(result.errors).to eq('Halted')
     end
   end
 
@@ -292,14 +292,14 @@ RSpec.describe Parametric::V2::Schema do
     field = described_class::Field.new(:name).present
     assert_result(field.resolve('Ismael'), 'Ismael', true)
     assert_result(field.resolve(nil), nil, false)
-    expect(field.resolve(nil).error).to eq('must be present')
+    expect(field.resolve(nil).errors).to eq('must be present')
   end
 
   specify 'Field#required' do
     field = described_class::Field.new(:name).required
     assert_result(field.resolve, Parametric::V2::Undefined, false)
     assert_result(field.resolve(nil), nil, true)
-    expect(field.resolve.error).to eq('is required')
+    expect(field.resolve.errors).to eq('is required')
   end
 
   specify 'self-contained Array type' do

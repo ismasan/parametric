@@ -13,10 +13,10 @@ RSpec.describe Parametric::V2::Types do
       expect(result.value).to eq(10)
       result = result.success(20)
       expect(result.value).to eq(20)
-      result = result.halt(error: 'nope')
+      result = result.halt(errors: 'nope')
       expect(result.success?).to be(false)
       expect(result.halt?).to be(true)
-      expect(result.error).to eq('nope')
+      expect(result.errors).to eq('nope')
     end
   end
 
@@ -83,7 +83,7 @@ RSpec.describe Parametric::V2::Types do
       is_a_string = Types::Any.check('not a string') { |value| value.is_a?(::String) }
       expect(is_a_string.resolve('yup').success?).to be(true)
       expect(is_a_string.resolve(10).success?).to be(false)
-      expect(is_a_string.resolve(10).error).to eq('not a string')
+      expect(is_a_string.resolve(10).errors).to eq('not a string')
     end
 
     specify '#present' do
@@ -129,7 +129,7 @@ RSpec.describe Parametric::V2::Types do
 
       pipeline = Types::String | Types::Integer
       failed = pipeline.resolve(10.3)
-      expect(failed.error).to eq(['must be a String', 'must be a Integer'])
+      expect(failed.errors).to eq(['must be a String', 'must be a Integer'])
     end
 
     specify '#meta' do
@@ -170,10 +170,10 @@ RSpec.describe Parametric::V2::Types do
     end
 
     specify '#halt' do
-      type = Types::Integer.rule(lte: 10).halt(error: 'nope')
+      type = Types::Integer.rule(lte: 10).halt(errors: 'nope')
       assert_result(type.resolve(9), 9, false)
       assert_result(type.resolve(19), 19, true)
-      expect(type.resolve(9).error).to eq('nope')
+      expect(type.resolve(9).errors).to eq('nope')
     end
 
     specify '#default' do
@@ -317,7 +317,7 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Integer.rule(gt: 10, lt: 20).resolve(9), 9, false)
         assert_result(Types::Integer.rule(gt: 20).resolve(21), 21, true)
         assert_result(Types::Integer.rule(gt: 10, lt: 20).resolve(20), 20, false)
-        expect(Types::Integer.rule(gt: 10, lt: 20).resolve(9).error).to eq('must be greater than 10')
+        expect(Types::Integer.rule(gt: 10, lt: 20).resolve(9).errors).to eq('must be greater than 10')
       end
 
       specify ':gt, :lt with array' do
@@ -497,8 +497,8 @@ RSpec.describe Parametric::V2::Types do
         Types::Array.of(Types::Boolean).resolve([true, 'nope', false, 1]).tap do |result|
           expect(result.success?).to be false
           expect(result.value).to eq [true, 'nope', false, 1]
-          expect(result.error[1]).to eq(['must be a TrueClass', 'must be a FalseClass'])
-          expect(result.error[3]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+          expect(result.errors[1]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+          expect(result.errors[3]).to eq(['must be a TrueClass', 'must be a FalseClass'])
         end
       end
 
@@ -582,8 +582,8 @@ RSpec.describe Parametric::V2::Types do
         hash.resolve({ title: 'Dr', name: 'Ismael', friend: {} }).tap do |result|
           expect(result.success?).to be false
           expect(result.value).to eq({ title: 'Dr', name: 'Ismael', friend: {} })
-          expect(result.error[:age].any?).to be(true)
-          expect(result.error[:friend][:name]).to be_a(::String)
+          expect(result.errors[:age].any?).to be(true)
+          expect(result.errors[:friend][:name]).to be_a(::String)
         end
       end
 
@@ -718,11 +718,11 @@ RSpec.describe Parametric::V2::Types do
         assert_result(s1.resolve('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
         s1.resolve(a: 1, 'b' => 2).tap do |result|
           assert_result(result, { a: 1, 'b' => 2 }, false)
-          expect(result.error).to eq('key :a must be a String')
+          expect(result.errors).to eq('key :a must be a String')
         end
         s1.resolve('a' => 1, 'b' => {}).tap do |result|
           assert_result(result, { 'a' => 1, 'b' => {} }, false)
-          expect(result.error).to eq('value {} must be a Integer')
+          expect(result.errors).to eq('value {} must be a Integer')
         end
         assert_result(s1.present.resolve({}), {}, false)
       end

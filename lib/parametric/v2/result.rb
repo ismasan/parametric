@@ -8,8 +8,8 @@ module Parametric
           Success.new(value)
         end
 
-        def halt(value = nil, error: nil)
-          Halt.new(value, error:)
+        def halt(value = nil, errors: nil)
+          Halt.new(value, errors:)
         end
 
         def wrap(value)
@@ -19,23 +19,23 @@ module Parametric
         end
       end
 
-      attr_reader :value, :error
+      attr_reader :value, :errors
 
-      def initialize(value, error: nil)
+      def initialize(value, errors: nil)
         @value = value
-        @error = error
+        @errors = errors
       end
 
       def success? = true
       def halt? = false
 
       def inspect
-        %(<#{self.class}##{object_id} value:#{value.inspect} error:#{error.inspect}>)
+        %(<#{self.class}##{object_id} value:#{value.inspect} errors:#{errors.inspect}>)
       end
 
       def reset(val)
         @value = val
-        @error = nil
+        @errors = nil
         self
       end
 
@@ -43,8 +43,8 @@ module Parametric
         Result.success(val)
       end
 
-      def halt(val = value, error: nil)
-        Result.halt(val, error:)
+      def halt(val = value, errors: nil)
+        Result.halt(val, errors:)
       end
 
       class Success < self

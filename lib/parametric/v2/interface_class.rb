@@ -21,7 +21,7 @@ module Parametric
         end
       end
 
-      alias_method :[], :of
+      alias [] of
 
       def ast
         [:interface, { method_names: @method_names }, BLANK_ARRAY]
@@ -30,7 +30,7 @@ module Parametric
       def call(result)
         obj = result.value
         missing_methods = @method_names.reject { |m| obj.respond_to?(m) }
-        return result.halt(error: "missing methods: #{missing_methods.join(', ')}") if missing_methods.any?
+        return result.halt(errors: "missing methods: #{missing_methods.join(', ')}") if missing_methods.any?
 
         result
       end

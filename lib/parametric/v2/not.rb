@@ -7,9 +7,9 @@ module Parametric
     class Not
       include Steppable
 
-      def initialize(step, error: nil)
+      def initialize(step, errors: nil)
         @step = step
-        @error = error
+        @errors = errors
         freeze
       end
 
@@ -23,7 +23,7 @@ module Parametric
 
       def call(result)
         result = @step.call(result)
-        result.success? ? result.halt(error: @error) : result.success
+        result.success? ? result.halt(errors: @errors) : result.success
       end
     end
   end

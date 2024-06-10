@@ -35,15 +35,15 @@ module Parametric
         end
       end
 
-      alias_method :[], :schema
+      alias [] schema
 
       def ast
         [
           :hash,
           BLANK_HASH,
-          _schema.map { |(k, v)|
+          _schema.map do |(k, v)|
             [k.ast, v.ast]
-          }
+          end
         ]
       end
 
@@ -79,11 +79,11 @@ module Parametric
       def to_h = _schema
 
       def inspect
-        %(#{name}[#{_schema.map{ |(k,v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
+        %(#{name}[#{_schema.map { |(k, v)| [k.inspect, v.inspect].join(':') }.join(' ')}])
       end
 
       def call(result)
-        return result.halt(error: 'must be a Hash') unless result.value.is_a?(::Hash)
+        return result.halt(errors: 'must be a Hash') unless result.value.is_a?(::Hash)
         return result unless _schema.any?
 
         input = result.value
@@ -93,16 +93,16 @@ module Parametric
           key_s = key.to_sym
           if input.key?(key_s)
             r = field.call(field_result.reset(input[key_s]))
-            errors[key_s] = r.error unless r.success?
+            errors[key_s] = r.errors unless r.success?
             ret[key_s] = r.value
           elsif !key.optional?
             r = field.call(BLANK_RESULT)
-            errors[key_s] = r.error unless r.success?
+            errors[key_s] = r.errors unless r.success?
             ret[key_s] = r.value unless r.value == Undefined
           end
         end
 
-        errors.any? ? result.halt(output, error: errors) : result.success(output)
+        errors.any? ? result.halt(output, errors:) : result.success(output)
       end
 
       protected
@@ -121,7 +121,7 @@ module Parametric
           end
         when Callable
           hash
-        else # leaf values
+        else #  leaf values
           StaticClass.new(hash)
         end
       end

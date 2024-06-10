@@ -15,7 +15,7 @@ module Parametric
         self.class.new(*types)
       end
 
-      alias_method :[], :of
+      alias [] of
 
       def ast
         [:tuple, { type: 'array' }, @types.map(&:ast)]
@@ -26,20 +26,20 @@ module Parametric
       end
 
       def call(result)
-        return result.halt(error: 'must be an Array') unless result.value.is_a?(::Array)
-        return result.halt(error: 'must have the same size') unless result.value.size == @types.size
+        return result.halt(errors: 'must be an Array') unless result.value.is_a?(::Array)
+        return result.halt(errors: 'must have the same size') unless result.value.size == @types.size
 
         errors = {}
         values = @types.map.with_index do |type, idx|
           val = result.value[idx]
           r = type.resolve(val)
-          errors[idx] = ["expected #{type.inspect}, got #{val.inspect}", r.error].flatten unless r.success?
+          errors[idx] = ["expected #{type.inspect}, got #{val.inspect}", r.errors].flatten unless r.success?
           r.value
         end
 
         return result.success(values) unless errors.any?
 
-        result.halt(error: errors)
+        result.halt(errors:)
       end
     end
   end

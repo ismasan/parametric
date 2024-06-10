@@ -93,7 +93,7 @@ module Parametric
         end
         return result unless errors.any?
 
-        result.halt(error: errors.join(', '))
+        result.halt(errors: errors.join(', '))
       end
     end
   end

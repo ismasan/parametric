@@ -44,12 +44,12 @@ module Parametric
       end
 
       def call(result)
-        return result.halt(error: 'is not an Array') unless result.value.is_a?(::Enumerable)
+        return result.halt(errors: 'is not an Array') unless result.value.is_a?(::Enumerable)
 
         values, errors = map_array_elements(result.value)
         return result.success(values) unless errors.any?
 
-        result.halt(error: errors)
+        result.halt(errors:)
       end
 
       private
@@ -65,7 +65,7 @@ module Parametric
         errors = {}
         values = list.map.with_index do |e, idx|
           re = element_type.call(element_result.reset(e))
-          errors[idx] = re.error unless re.success?
+          errors[idx] = re.errors unless re.success?
           re.value
         end
 

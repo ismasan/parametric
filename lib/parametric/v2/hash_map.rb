@@ -8,7 +8,8 @@ module Parametric
       include Steppable
 
       def initialize(key_type, value_type)
-        @key_type, @value_type = key_type, value_type
+        @key_type = key_type
+        @value_type = value_type
         freeze
       end
 
@@ -18,7 +19,8 @@ module Parametric
 
       def call(result)
         failed = result.value.lazy.filter_map do |key, value|
-          key_r, value_r = @key_type.resolve(key), @value_type.resolve(value)
+          key_r = @key_type.resolve(key)
+          value_r = @value_type.resolve(value)
           if !key_r.success?
             [:key, key, key_r]
           elsif !value_r.success?
@@ -27,7 +29,7 @@ module Parametric
         end
         if (first = failed.next)
           field, val, halt = failed.first
-          return result.halt(error: "#{field} #{val.inspect} #{halt.error}")
+          result.halt(errors: "#{field} #{val.inspect} #{halt.errors}")
         end
       rescue StopIteration
         result

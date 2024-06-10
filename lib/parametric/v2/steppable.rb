@@ -29,7 +29,7 @@ module Parametric
 
       def cast(value)
         result = resolve(value)
-        raise TypeError, result.error if result.halt?
+        raise TypeError, result.errors if result.halt?
 
         result.value
       end
@@ -96,9 +96,9 @@ module Parametric
         self >> Transform.new(target_type, callable || block)
       end
 
-      def check(error = 'did not pass the check', &block)
+      def check(errors = 'did not pass the check', &block)
         a_check = lambda { |result|
-          block.call(result.value) ? result : result.halt(error:)
+          block.call(result.value) ? result : result.halt(errors:)
         }
 
         self >> a_check
@@ -112,8 +112,8 @@ module Parametric
         Not.new(other)
       end
 
-      def halt(error: nil)
-        Not.new(self, error:)
+      def halt(errors: nil)
+        Not.new(self, errors:)
       end
 
       def value(val)
@@ -183,7 +183,7 @@ module Parametric
           if type === result.value
             result.success(coercion.call(result.value))
           else
-            result.halt(error: "%s can't be coerced" % result.value.inspect)
+            result.halt(errors: "%s can't be coerced" % result.value.inspect)
           end
         }
         self >> step

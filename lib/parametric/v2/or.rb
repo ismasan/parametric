@@ -26,7 +26,7 @@ module Parametric
         return left_result if left_result.success?
 
         right_result = @right.call(result)
-        right_result.success? ? right_result : result.halt(error: [left_result.error, right_result.error].flatten)
+        right_result.success? ? right_result : result.halt(errors: [left_result.errors, right_result.errors].flatten)
       end
     end
   end

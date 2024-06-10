@@ -84,7 +84,7 @@ module Parametric
         | Array.value(BLANK_ARRAY)
       )
 
-      Present = Blank.halt(error: 'must be present')
+      Present = Blank.halt(errors: 'must be present')
       Split = String.transform(::String) { |v| v.split(/\s*,\s*/) }
 
       module Lax
