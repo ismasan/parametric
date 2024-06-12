@@ -413,6 +413,11 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Value['hello'].resolve('nope'), 'nope', false)
         assert_result(Types::Lax::String.value('10').resolve(10), '10', true)
         assert_result(Types::Lax::String.value('11').resolve(10), '10', false)
+        assert_result(Types::Integer[11].resolve(11), 11, true)
+        assert_result(Types::Integer[11].resolve(10), 10, false)
+        assert_result(Types::Integer[10..20].resolve(10), 10, true)
+        assert_result(Types::Integer[10..20].resolve(15), 15, true)
+        assert_result(Types::Integer[10..20].resolve(21), 21, false)
       end
 
       specify Types::Interface do

@@ -25,7 +25,7 @@ module Parametric
       end
 
       def call(result)
-        result.value === @value ? result.success(@value) : result.halt(errors: @error)
+        @value === result.value ? result : result.halt(errors: @error)
       end
     end
   end
