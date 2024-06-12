@@ -49,8 +49,15 @@ module Parametric
     Rules.define :match, 'must match %<value>s', metadata_key: :pattern do |result, value|
       value === result.value
     end
-    Rules.define :included_in, 'must be included in %<value>s', metadata_key: :options do |result, value|
-      value.include? result.value
+    Rules.define :included_in, 'elements must be included in %<value>s', expects: ::Array,
+                                                                         metadata_key: :options do |result, opts|
+      result.value.all? { |v| opts.include?(v) }
+    end
+    Rules.define :included_in, 'must be included in %<value>s', metadata_key: :options do |result, opts|
+      opts.include? result.value
+    end
+    Rules.define :excluded_from, 'elements must not be included in %<value>s', expects: ::Array do |result, value|
+      result.value.all? { |v| !value.include?(v) }
     end
     Rules.define :excluded_from, 'must not be included in %<value>s' do |result, value|
       !value.include?(result.value)

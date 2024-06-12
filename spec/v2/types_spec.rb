@@ -346,14 +346,26 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Integer.rule(match: (1..10)).resolve(11), 11, false)
       end
 
-      specify ':included_in' do
+      specify ':included_in (#options)' do
         assert_result(Types::String.rule(included_in: %w[a b c]).resolve('b'), 'b', true)
         assert_result(Types::String.rule(included_in: %w[a b c]).resolve('d'), 'd', false)
+      end
+
+      specify ':included_in (#options) with Array' do
+        type = Types::Array.options([1, 2, 3])
+        assert_result(type.resolve([1, 2]), [1, 2], true)
+        assert_result(type.resolve([1, 3, 3]), [1, 3, 3], true)
+        assert_result(type.resolve([1, 4, 3]), [1, 4, 3], false)
       end
 
       specify ':excluded_from' do
         assert_result(Types::String.rule(excluded_from: %w[a b c]).resolve('b'), 'b', false)
         assert_result(Types::String.rule(excluded_from: %w[a b c]).resolve('d'), 'd', true)
+      end
+
+      specify ':excluded_from with Array' do
+        assert_result(Types::Array.rule(excluded_from: %w[a b c]).resolve(%w[x z b]), %w[x z b], false)
+        assert_result(Types::Array.rule(excluded_from: %w[a b c]).resolve(%w[x z y]), %w[x z y], true)
       end
 
       specify ':respond_to' do
