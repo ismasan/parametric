@@ -408,16 +408,23 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Boolean.resolve('true'), 'true', false)
       end
 
-      specify Types::Value do
-        assert_result(Types::Value['hello'].resolve('hello'), 'hello', true)
-        assert_result(Types::Value['hello'].resolve('nope'), 'nope', false)
-        assert_result(Types::Lax::String.value('10').resolve(10), '10', true)
-        assert_result(Types::Lax::String.value('11').resolve(10), '10', false)
-        assert_result(Types::Integer[11].resolve(11), 11, true)
-        assert_result(Types::Integer[11].resolve(10), 10, false)
-        assert_result(Types::Integer[10..20].resolve(10), 10, true)
-        assert_result(Types::Integer[10..20].resolve(15), 15, true)
-        assert_result(Types::Integer[10..20].resolve(21), 21, false)
+      describe Types::Value do
+        it 'matches exact values' do
+          assert_result(Types::Value['hello'].resolve('hello'), 'hello', true)
+          assert_result(Types::Value['hello'].resolve('nope'), 'nope', false)
+          assert_result(Types::Lax::String.value('10').resolve(10), '10', true)
+          assert_result(Types::Lax::String.value('11').resolve(10), '10', false)
+          assert_result(Types::Integer[11].resolve(11), 11, true)
+          assert_result(Types::Integer[11].resolve(10), 10, false)
+        end
+
+        it 'matches using #===' do
+          assert_result(Types::Integer[10..20].resolve(10), 10, true)
+          assert_result(Types::Integer[10..20].resolve(15), 15, true)
+          assert_result(Types::Integer[10..20].resolve(21), 21, false)
+          assert_result(Types::Value[String].resolve('hello'), 'hello', true)
+          assert_result(Types::Value[String].resolve(10), 10, false)
+        end
       end
 
       specify Types::Interface do
