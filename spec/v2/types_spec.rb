@@ -201,6 +201,13 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types::Any.coerce(1) { |_| true }.resolve(1), true, true)
     end
 
+    specify '#===' do
+      expect(Types::String === '1').to be(true)
+      expect(Types::String === 1).to be(false)
+      expect(Types::String === Types::String).to be(true)
+      expect(Types::String === Types::Integer).to be(false)
+    end
+
     describe '#pipeline' do
       let(:pipeline) do
         Types::Lax::Integer.pipeline do |pl|

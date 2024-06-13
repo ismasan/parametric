@@ -179,6 +179,15 @@ module Parametric
         rule(is_a: klass)
       end
 
+      def ===(other)
+        case other
+        when Steppable
+          other.ast == ast
+        else
+          resolve(other).success?
+        end
+      end
+
       def coerce(type, coercion = nil, &block)
         coercion ||= block
         step = lambda { |result|
