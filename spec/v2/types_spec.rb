@@ -100,24 +100,46 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types::Any.present.resolve(nil), nil, false)
     end
 
-    specify '#[](matcher) using #===' do
-      type = Types::String['hello']
-      assert_result(type.resolve('hello'), 'hello', true)
-      assert_result(type.resolve('nope'), 'nope', false)
+    describe '#[](matcher) using #===' do
+      it 'matches value classes' do
+        type = Types::Any[::String]
+        assert_result(type.resolve('hello'), 'hello', true)
+        assert_result(Types::Any[::Integer].resolve('hello'), 'hello', false)
+      end
 
-      type = Types::Lax::String['10']
-      assert_result(type.resolve(10), '10', true)
+      it 'matches values' do
+        type = Types::String['hello']
+        assert_result(type.resolve('hello'), 'hello', true)
+        assert_result(type.resolve('nope'), 'nope', false)
 
-      type = Types::Integer[10..100]
-      assert_result(type.resolve(10), 10, true)
-      assert_result(type.resolve(99), 99, true)
-      assert_result(type.resolve(101), 101, false)
-    end
+        type = Types::Lax::String['10']
+        assert_result(type.resolve(10), '10', true)
+      end
 
-    specify '#match' do
-      type = Types::Any.match(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/)
-      expect(type.resolve('(888)555-1212x').success?).to be(false)
-      expect(type.resolve('(888)555-1212').success?).to be(true)
+      it 'matches ranges' do
+        type = Types::Integer[10..100]
+        assert_result(type.resolve(10), 10, true)
+        assert_result(type.resolve(99), 99, true)
+        assert_result(type.resolve(101), 101, false)
+      end
+
+      it 'matches lambdas' do
+        type = Types::Integer[->(v) { v.even? }]
+        assert_result(type.resolve(10), 10, true)
+        assert_result(type.resolve(11), 11, false)
+      end
+
+      it 'is aliased as #match' do
+        type = Types::Any.match(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/)
+        expect(type.resolve('(888)555-1212x').success?).to be(false)
+        expect(type.resolve('(888)555-1212').success?).to be(true)
+      end
+
+      specify '#match works for Hash' do
+        type = Types::Hash[foo: Types::String].match(->(h) { h[:foo] == 'bar' })
+        assert_result(type.resolve(foo: 'bar'), { foo: 'bar' }, true)
+        assert_result(type.resolve(foo: 'nope'), { foo: 'nope' }, false)
+      end
     end
 
     specify '#is_a' do
