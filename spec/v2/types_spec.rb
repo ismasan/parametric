@@ -20,6 +20,17 @@ RSpec.describe Parametric::V2::Types do
     end
   end
 
+  specify do
+    assert_result(Types::Any[String].resolve('hello'), 'hello', true)
+    assert_result(Types::Any['hello'].resolve('hello'), 'hello', true)
+    assert_result(Types::Any['hello'].resolve('nope'), 'nope', false)
+    assert_result(Types::Any[String][/@/].resolve('hello@server.com'), 'hello@server.com', true)
+    Types::Any[String][/@/].resolve('hello').tap do |result|
+      expect(result.success?).to be(false)
+      expect(result.errors).to eq('Must match /@/')
+    end
+  end
+
   describe 'Step' do
     specify '#>>' do
       step1 = Step.new { |r| r.success(r.value + 5) }
@@ -73,12 +84,6 @@ RSpec.describe Parametric::V2::Types do
       end.to raise_error(ArgumentError)
     end
 
-    specify '#match' do
-      type = Types::Any.match(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/)
-      expect(type.resolve('(888)555-1212x').success?).to be(false)
-      expect(type.resolve('(888)555-1212').success?).to be(true)
-    end
-
     specify '#check' do
       is_a_string = Types::Any.check('not a string') { |value| value.is_a?(::String) }
       expect(is_a_string.resolve('yup').success?).to be(true)
@@ -95,13 +100,24 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types::Any.present.resolve(nil), nil, false)
     end
 
-    specify '#[](value)' do
+    specify '#[](matcher) using #===' do
       type = Types::String['hello']
       assert_result(type.resolve('hello'), 'hello', true)
       assert_result(type.resolve('nope'), 'nope', false)
 
       type = Types::Lax::String['10']
       assert_result(type.resolve(10), '10', true)
+
+      type = Types::Integer[10..100]
+      assert_result(type.resolve(10), 10, true)
+      assert_result(type.resolve(99), 99, true)
+      assert_result(type.resolve(101), 101, false)
+    end
+
+    specify '#match' do
+      type = Types::Any.match(/^(\([0-9]{3}\))?[0-9]{3}-[0-9]{4}$/)
+      expect(type.resolve('(888)555-1212x').success?).to be(false)
+      expect(type.resolve('(888)555-1212').success?).to be(true)
     end
 
     specify '#is_a' do
@@ -416,21 +432,14 @@ RSpec.describe Parametric::V2::Types do
       end
 
       describe Types::Value do
-        it 'matches exact values' do
+        it 'matches exact values using #==' do
           assert_result(Types::Value['hello'].resolve('hello'), 'hello', true)
           assert_result(Types::Value['hello'].resolve('nope'), 'nope', false)
           assert_result(Types::Lax::String.value('10').resolve(10), '10', true)
           assert_result(Types::Lax::String.value('11').resolve(10), '10', false)
           assert_result(Types::Integer[11].resolve(11), 11, true)
           assert_result(Types::Integer[11].resolve(10), 10, false)
-        end
-
-        it 'matches using #===' do
-          assert_result(Types::Integer[10..20].resolve(10), 10, true)
-          assert_result(Types::Integer[10..20].resolve(15), 15, true)
-          assert_result(Types::Integer[10..20].resolve(21), 21, false)
-          assert_result(Types::Value[String].resolve('hello'), 'hello', true)
-          assert_result(Types::Value[String].resolve(10), 10, false)
+          assert_result(Types::Value[11..15].resolve(11..15), (11..15), true)
         end
       end
 

@@ -83,6 +83,7 @@ module Parametric
       Integer = Any.is_a(::Integer)
       Decimal = Any.is_a(BigDecimal)
       Static = StaticClass.new
+      Match = MatchClass.new
       Value = ValueClass.new
       Nil = Any.is_a(::NilClass)
       True = Any.is_a(::TrueClass)

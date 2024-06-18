@@ -9,23 +9,16 @@ module Parametric
 
       def initialize(value = Undefined)
         @value = value
-        @error = "must be equal to #{@value}"
       end
 
-      def [](value)
-        self.class.new(value)
-      end
+      def inspect = @value.inspect
 
-      private def _inspect
-        %(#{name}[#{@value.inspect}])
-      end
+      def [](value) = self.class.new(value)
 
-      def ast
-        [:value, { const: @value, type: @value.class }, BLANK_ARRAY]
-      end
+      def ast = [:value, { value: @value, type: @value.class }, BLANK_ARRAY]
 
       def call(result)
-        @value === result.value ? result : result.halt(errors: @error)
+        @value == result.value ? result : result.halt(errors: "Must be equal to #{@value}")
       end
     end
   end

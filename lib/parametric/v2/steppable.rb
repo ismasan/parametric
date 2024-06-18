@@ -122,7 +122,11 @@ module Parametric
         self >> Types::Value[val]
       end
 
-      def [](val) = value(val)
+      def match(*args)
+        self >> Types::Match[*args]
+      end
+
+      def [](val) = match(val)
 
       DefaultProc = proc do |callable|
         proc do |result|
@@ -169,10 +173,6 @@ module Parametric
                 end
 
         self >> Rules.new(specs, metadata[:type])
-      end
-
-      def match(pattern)
-        rule(match: pattern)
       end
 
       def is_a(klass)
