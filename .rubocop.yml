@@ -1,2 +1,4 @@
 Style/CaseEquality:
   Enabled: false
+Style/LambdaCall:
+  Enabled: false
