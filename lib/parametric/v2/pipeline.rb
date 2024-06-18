@@ -11,7 +11,8 @@ module Parametric
         include Steppable
 
         def initialize(step, block)
-          @step, @block = step, block
+          @step = step
+          @block = block
         end
 
         def call(result)
@@ -22,10 +23,10 @@ module Parametric
       def initialize(type = Types::Any, &setup)
         @type = type
         @around_blocks = []
-        if block_given?
-          configure(&setup)
-          freeze
-        end
+        return unless block_given?
+
+        configure(&setup)
+        freeze
       end
 
       def ast = @type.ast
@@ -36,10 +37,13 @@ module Parametric
 
       def step(callable = nil, &block)
         callable ||= block
-        raise ArgumentError, "#step expects an interface #call(Result) Result, but got #{callable.inspect}" unless is_a_step?(callable)
+        unless is_a_step?(callable)
+          raise ArgumentError,
+                "#step expects an interface #call(Result) Result, but got #{callable.inspect}"
+        end
 
         callable = @around_blocks.reduce(callable) { |cl, bl| AroundStep.new(cl, bl) } if @around_blocks.any?
-        @type = @type >> callable
+        @type >>= callable
         self
       end
 
