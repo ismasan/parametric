@@ -734,6 +734,19 @@ RSpec.describe Parametric::V2::Types do
         expect(linked_list.metadata).to eq(type: Hash)
       end
 
+      specify 'deferring definition with a regular proc' do
+        linked_list = Types::Hash[
+          value: Types::Any,
+          next: Types::Nil | proc { |result| linked_list.(result) }
+        ]
+        assert_result(
+          linked_list.resolve(value: 1, next: { value: 2, next: { value: 3, next: nil } }),
+          { value: 1, next: { value: 2, next: { value: 3, next: nil } } },
+          true
+        )
+        expect(linked_list.metadata).to eq(type: Hash)
+      end
+
       specify '#defer with Tuple' do
         type = Types::Tuple[
           Types::String,
