@@ -25,10 +25,6 @@ module Parametric
 
       alias [] of
 
-      def ast
-        [:interface, { method_names: @method_names }, BLANK_ARRAY]
-      end
-
       def call(result)
         obj = result.value
         missing_methods = @method_names.reject { |m| obj.respond_to?(m) }

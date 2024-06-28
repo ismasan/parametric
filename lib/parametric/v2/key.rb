@@ -23,10 +23,6 @@ module Parametric
 
       def to_s = @key
 
-      def ast
-        [:key, { name: @key, optional: @optional }, BLANK_ARRAY]
-      end
-
       def hash
         @key.hash
       end

@@ -14,10 +14,6 @@ module Parametric
         @callable = callable
       end
 
-      def ast
-        [:transform, { type: @target_type }, []]
-      end
-
       def call(result)
         result.success(@callable.call(result.value))
       end

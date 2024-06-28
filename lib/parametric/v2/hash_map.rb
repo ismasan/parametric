@@ -15,10 +15,6 @@ module Parametric
         freeze
       end
 
-      def ast
-        [:hash_map, BLANK_HASH, [@key_type.ast, @value_type.ast]]
-      end
-
       def call(result)
         failed = result.value.lazy.filter_map do |key, value|
           key_r = @key_type.resolve(key)

@@ -1,264 +1,192 @@
 # frozen_string_literal: true
 
+require 'parametric/v2/visitor_handlers'
+
 module Parametric
   module V2
     class JSONSchemaVisitor
-      KNOWN_TYPES = {
-        'object' => 'object',
-        'boolean' => 'boolean',
-        'string' => 'string',
-        'integer' => 'integer',
-        Integer => 'integer',
-        String => 'string',
-        Hash => 'object',
-        Array => 'array',
-        AnyClass => 'any',
-        'any' => 'any',
-        'numeric' => 'number',
-        'number' => 'number',
-        'bigdecimal' => 'number',
-        'float' => 'number',
-        'null' => 'null',
-        'nilclass' => 'null',
-        'trueclass' => 'boolean',
-        'falseclass' => 'boolean',
-        'array' => 'array'
-      }.freeze
+      include VisitorHandlers
 
-      NormalizeType = proc do |type|
-        KNOWN_TYPES.fetch(type) do
-          raise("WARNING: unknown type '#{type}'")
-        end
+      def self.call(type)
+        { 
+          '$schema' => 'https://json-schema.org/draft-08/schema#',
+        }.merge(new.visit(type))
       end
 
-      Noop = ->(value) { value }
-      RegexpToString = ->(value) { value.respond_to?(:source) ? value.source : value.to_s }
-
-      KNOWN_KEYS = {
-        type: NormalizeType,
-        properties: Noop,
-        patternProperties: Noop,
-        not: Noop,
-        anyOf: Noop,
-        allOf: Noop,
-        description: Noop,
-        enum: Noop,
-        items: Noop,
-        prefixItems: Noop,
-        required: Noop,
-        const: Noop,
-        default: Noop,
-        pattern: RegexpToString,
-        exclusiveMinimum: Noop,
-        exclusiveMaximum: Noop,
-        minimum: Noop,
-        maximum: Noop
-      }.freeze
-
-      def self.call(ast)
-        {
-          '$schema' => 'http://json-schema.org/draft-08/schema#'
-        }.merge(new.visit(ast))
-      end
-
-      def normalize_props(props)
-        props.each_with_object({}) do |(key, value), acc|
-          if (normalizer = KNOWN_KEYS[key.to_sym])
-            acc[key] = normalizer.call(value)
-          else
-            puts "WARNING: Unknown key #{key}"
-          end
-        end
-      end
-
-      def visit(node, prop = BLANK_HASH)
-        method_name = "visit_#{node[0]}"
-        if respond_to?(method_name)
-          normalize_props(send(method_name, node, prop))
-        else
-          normalize_props(visit_metadata(node, prop))
-        end
-      end
-
-      # TODO: figure out how
-      # to represent recursive types in JSON Schema
-      def visit_deferred(_node, _prop = BLANK_HASH)
-        BLANK_HASH
-      end
-
-      def visit_hash(node, _prop = BLANK_HASH)
-        result = {
+      on(:hash) do |type, props|
+        props.merge(
           type: 'object',
-          required: [],
-          properties: {}
-        }
-
-        node[2].each do |pair|
-          key_node, value_node = pair
-          key_name = visit_key(key_node)
-          result[:required] << key_name unless key_node[1][:optional]
-          result[:properties][key_name] = visit(value_node)
-        end
-
-        result
+          properties: type._schema.each_with_object({}) do |(key, value), hash|
+            hash[key.to_s] = visit(value)
+          end,
+          required: type._schema.select { |key, value| !key.optional? }.keys.map(&:to_s)
+        )
       end
 
-      def visit_hash_map(node, _prop = BLANK_HASH)
-        result = {
+      on(:and) do |type, props|
+        left = visit(type.left)
+        right = visit(type.right)
+        type = right[:type] || left[:type]
+        props = props.merge(left).merge(right)
+        props = props.merge(type:) if type
+        props
+      end
+
+      # A "default" value is usually an "or" of expected_value | (undefined >> static_value)
+      on(:or) do |type, props|
+        left = visit(type.left)
+        right = visit(type.right)
+        any_of = [left, right].uniq
+        if any_of.size == 1
+          props.merge(left)
+        elsif any_of.size == 2 && (defidx = any_of.index { |p| p.key?(:default) })
+          val = any_of[defidx == 0 ? 1 : 0]
+          props.merge(val).merge(default: any_of[defidx][:default])
+        else
+          props.merge(anyOf: any_of)
+        end
+      end
+
+      on(:value) do |type, props|
+        props = case type.value
+        when ::String, ::Symbol, ::Numeric
+          props.merge(const: type.value)
+        else
+          props
+        end
+
+        visit(type.value, props)
+      end
+
+      on(:transform) do |type, props|
+        visit(type.target_type, props)
+      end
+
+      on(:undefined) do |type, props|
+        props
+      end
+
+      on(:static) do |type, props|
+        props = case type.value
+        when ::String, ::Symbol, ::Numeric
+          props.merge(const: type.value, default: type.value)
+        else
+          props
+        end
+
+        visit(type.value, props)
+      end
+
+      on(:rules) do |type, props|
+        type.rules.reduce(props) do |acc, rule|
+          acc.merge(visit(rule))
+        end
+      end
+
+      on(:match) do |type, props|
+        visit(type.matcher, props)
+      end
+
+      on(:boolean) do |type, props|
+        props.merge(type: 'boolean')
+      end
+
+      on(::String) do |type, props|
+        props.merge(type: 'string')
+      end
+
+      on(::Integer) do |type, props|
+        props.merge(type: 'integer')
+      end
+
+      on(::Numeric) do |type, props|
+        props.merge(type: 'number')
+      end
+
+      on(::BigDecimal) do |type, props|
+        props.merge(type: 'number')
+      end
+
+      on(::Float) do |type, props|
+        props.merge(type: 'number')
+      end
+
+      on(::TrueClass) do |type, props|
+        props.merge(type: 'boolean')
+      end
+
+      on(::NilClass) do |type, props|
+        props.merge(type: 'null')
+      end
+
+      on(::FalseClass) do |type, props|
+        props.merge(type: 'boolean')
+      end
+
+      on(::Regexp) do |type, props|
+        props.merge(pattern: type.source)
+      end
+
+      on(::Range) do |type, props|
+        opts = {}
+        opts[:minimum] = type.min if type.begin
+        opts[:maximum] = type.max if type.end
+        props.merge(opts)
+      end
+
+      on(:metadata) do |type, props|
+        # TODO: here we should filter out the metadata that is not relevant for JSON Schema
+        props.merge(type.metadata)
+      end
+
+      on(:hash_map) do |type, props|
+        {
           type: 'object',
           patternProperties: {
-            '.*' => visit(node[2][1])
+            '.*' => visit(type.value_type)
           }
         }
       end
 
-      # https://json-schema.org/understanding-json-schema/reference/conditionals
-      def visit_tagged_hash(node, _prop = BLANK_HASH)
+      on(:constructor) do |type, props|
+        visit(type.type, props)
+      end
+
+      on(:array) do |type, props|
+        items = visit(type.element_type)
+        { type: 'array', items: }
+      end
+
+      on(:tuple) do |type, props|
+        items = type.types.map { |t| visit(t) }
+        { type: 'array', prefixItems: items }
+      end
+
+      on(:tagged_hash) do |type, props|
+        required = Set.new
         result = {
           type: 'object',
-          required: [],
           properties: {}
         }
 
-        key = node[1][:key].to_s
-        children = node[2].map { |child| visit(child) }
-        key_enum = children.map { |child| child[:properties][key][:const] }
-        key_type = children.map { |child| child[:properties][key][:type] }
-        result[:required] << key
+        key = type.key.to_s
+        children  = type.types.map { |c| visit(c) }
+        key_enum =  children.map { |c| c[:properties][key][:const] }
+        key_type =  children.map { |c| c[:properties][key][:type] }
+        required << key
         result[:properties][key] = { type: key_type.first, enum: key_enum }
         result[:allOf] = children.map do |child|
           child_prop = child[:properties][key]
 
           {
             if: {
-              properties: { key => { const: child_prop[:const], type: child_prop[:type] } }
+              properties: { key => child_prop.slice(:const, :type) }
             },
             then: child.except(:type)
           }
         end
 
-        result
-      end
-
-      def visit_metadata(node, prop = BLANK_HASH)
-        prop.merge(node[1])
-      end
-
-      def visit_leaf(node, prop = BLANK_HASH)
-        prop.merge(node[1])
-      end
-
-      def visit_any(node, prop = BLANK_HASH)
-        prop.merge(node[1])
-      end
-
-      def visit_key(node)
-        node[1][:name]
-      end
-
-      def visit_rules(node, prop = BLANK_HASH)
-        node[2].reduce(prop) do |acc, child|
-          acc.merge(visit(child))
-        end
-      end
-
-      def visit_is_a(node, prop = BLANK_HASH)
-        prop.merge(type: node[1][:type].to_s.downcase)
-      end
-
-      def visit_included_in(node, prop = BLANK_HASH)
-        prop.merge(enum: node[1][:options])
-      end
-
-      def visit_excluded_from(node, prop = BLANK_HASH)
-        negation = prop[:not] || {}
-        negation = negation.merge(enum: node[1][:excluded_from])
-        prop.merge(not: negation)
-      end
-
-      def visit_gt(node, prop = BLANK_HASH)
-        prop.merge(exclusiveMinimum: node[1][:gt])
-      end
-
-      def visit_gte(node, prop = BLANK_HASH)
-        prop.merge(minimum: node[1][:gte])
-      end
-
-      def visit_lt(node, prop = BLANK_HASH)
-        prop.merge(exclusiveMaximum: node[1][:lt])
-      end
-
-      def visit_lte(node, prop = BLANK_HASH)
-        prop.merge(maximum: node[1][:lte])
-      end
-
-      def visit_eq(node, prop = BLANK_HASH)
-        prop.merge(enum: node[1])
-        value = node[1][:eq]
-        value == Parametric::V2::Undefined ? prop : prop.merge(type: value.class.name.downcase, const: value)
-      end
-
-      def visit_or(node, prop = BLANK_HASH)
-        any_of = node[2].map { |child| visit(child) }
-        prop.merge(anyOf: any_of)
-      end
-
-      def visit_and(node, prop = BLANK_HASH)
-        left = visit(node[2][0])
-        right = visit(node[2][1])
-        type = right[:type] || left[:type]
-        prop = prop.merge(left).merge(right)
-        prop = prop.merge(type:) if type
-        prop
-      end
-
-      def visit_not(node, prop = BLANK_HASH)
-        prop.merge(not: visit(node[2][0]))
-      end
-
-      def visit_constructor(node, prop = BLANK_HASH)
-        prop.merge(
-          type: node[1][:constructor].name.downcase
-        )
-      end
-
-      def visit_static(node, prop = BLANK_HASH)
-        prop.merge(node[1])
-      end
-
-      def visit_value(node, prop = BLANK_HASH)
-        prop.merge(node[1])
-      end
-
-      def visit_default(node, prop = BLANK_HASH)
-        prop.merge(node[1]).merge(visit(node[2].first))
-      end
-
-      def visit_boolean(node, prop = BLANK_HASH)
-        prop.merge(node[1])
-      end
-
-      def visit_array(node, _prop = BLANK_HASH)
-        items = visit(node[2].first)
-        {
-          type: 'array',
-          items:
-        }
-      end
-
-      def visit_tuple(node, _prop = BLANK_HASH)
-        items = node[2].map { |child| visit(child) }
-
-        {
-          type: 'array',
-          prefixItems: items
-        }
-      end
-
-      def visit_format(node, prop = BLANK_HASH)
-        pattern = node[1][:pattern]
-        pattern = pattern.respond_to?(:source) ? pattern.source : pattern.to_s
-        prop.merge(pattern:)
+        result.merge(required: required.to_a)
       end
     end
   end

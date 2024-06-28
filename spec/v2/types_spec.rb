@@ -55,33 +55,6 @@ RSpec.describe Parametric::V2::Types do
     specify Types::Static do
       assert_result(Types::Static['hello'].resolve('hello'), 'hello', true)
       assert_result(Types::Static['hello'].resolve('nope'), 'hello', true)
-      expect(Types::Static['hello'].ast).to eq([:static, { default: 'hello', const: 'hello', type: String }, []])
-    end
-
-    specify '#ast' do
-      type = (
-        (Types::String.transform(::Integer, &:to_i) | Types::Integer) \
-        >> Types::Integer.transform(::Integer) { |v| v + 5 }
-      )
-
-      expect(type.ast).to eq(
-        [:and,
-         {},
-         [[:or,
-           {},
-           [[:and, {}, [[:rules, {}, [[:is_a, { type: String }, []]]], [:transform, { type: Integer }, []]]],
-            [:rules, {}, [[:is_a, { type: Integer }, []]]]]],
-          [:and, {}, [[:rules, {}, [[:is_a, { type: Integer }, []]]], [:transform, { type: Integer }, []]]]]]
-      )
-    end
-
-    specify '#with_ast' do
-      type = Types::Any.transform(::Integer, &:to_i).with_ast([:foo, { type: 'bar' }, []])
-      expect(type.ast).to eq([:foo, { type: 'bar' }, []])
-
-      expect do
-        Types::Any.with_ast([:foo, { type: 'bar' }])
-      end.to raise_error(ArgumentError)
     end
 
     specify '#check' do
@@ -161,7 +134,7 @@ RSpec.describe Parametric::V2::Types do
 
       pipeline = Types::String | Types::Integer
       failed = pipeline.resolve(10.3)
-      expect(failed.errors).to eq(['must be a String', 'must be a Integer'])
+      expect(failed.errors).to eq(['Must be a String', 'Must be a Integer'])
     end
 
     specify '#meta' do
@@ -465,9 +438,7 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::Interface[:name, :age, :test].resolve(obj), obj, true)
         assert_result(Types::Interface[:name, :nope, :test].resolve(obj), obj, false)
 
-        expect(Types::Interface[:name, :age].ast).to eq(
-          [:interface, { method_names: %i[name age] }, []]
-        )
+        expect(Types::Interface[:name, :age].method_names).to eq(%i[name age])
       end
 
       specify Types::Lax::String do
@@ -589,8 +560,8 @@ RSpec.describe Parametric::V2::Types do
         Types::Array.of(Types::Boolean).resolve([true, 'nope', false, 1]).tap do |result|
           expect(result.success?).to be false
           expect(result.value).to eq [true, 'nope', false, 1]
-          expect(result.errors[1]).to eq(['must be a TrueClass', 'must be a FalseClass'])
-          expect(result.errors[3]).to eq(['must be a TrueClass', 'must be a FalseClass'])
+          expect(result.errors[1]).to eq(['Must be a TrueClass', 'Must be a FalseClass'])
+          expect(result.errors[3]).to eq(['Must be a TrueClass', 'Must be a FalseClass'])
         end
       end
 
@@ -601,7 +572,7 @@ RSpec.describe Parametric::V2::Types do
           true
         )
         assert_result(
-          Types::Array.of(Types::Boolean).default([true]).resolve(Undefined),
+          Types::Array.of(Types::Boolean).default([true].freeze).resolve(Undefined),
           [true],
           true
         )
@@ -823,11 +794,11 @@ RSpec.describe Parametric::V2::Types do
         assert_result(s1.resolve('a' => 1, 'b' => 2), { 'a' => 1, 'b' => 2 }, true)
         s1.resolve(a: 1, 'b' => 2).tap do |result|
           assert_result(result, { a: 1, 'b' => 2 }, false)
-          expect(result.errors).to eq('key :a must be a String')
+          expect(result.errors).to eq('key :a Must be a String')
         end
         s1.resolve('a' => 1, 'b' => {}).tap do |result|
           assert_result(result, { 'a' => 1, 'b' => {} }, false)
-          expect(result.errors).to eq('value {} must be a Integer')
+          expect(result.errors).to eq('value {} Must be a Integer')
         end
         assert_result(s1.present.resolve({}), {}, false)
       end

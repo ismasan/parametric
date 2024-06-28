@@ -1,64 +1,109 @@
 # frozen_string_literal: true
 
-require 'parametric/v2/metadata_visitor'
+require 'parametric/v2/visitor_handlers'
 
 module Parametric
   module V2
     class MetadataVisitor
-      def self.call(ast)
-        new.visit(ast)
+      include VisitorHandlers
+
+      def self.call(type)
+        new.visit(type)
       end
 
-      def visit(node, prop = BLANK_HASH)
-        case node[0]
-        when :and
-          visit_and(node, prop)
-        when :or
-          visit_or(node, prop)
-        when :hash
-          visit_hash(node, prop)
-        when :hash_map
-          visit_with_type(node, prop, Hash)
-        when :array
-          visit_with_type(node, prop, Array)
-        when :deferred
-          BLANK_HASH
-        else
-          visit_default(node, prop)
-        end
+      def on_missing_handler(type, props)
+        return props.merge(type: type) if type.class == Class
+
+        puts "Missing handler for #{type.inspect}"
+        props
       end
 
-      def visit_and(node, prop)
-        left = visit(node[2][0])
-        right = visit(node[2][1])
+      on(:pipeline) do |type, props|
+        visit(type.type, props)
+      end
+
+      on(:step) do |type, props|
+        props.merge(type._metadata)
+      end
+
+      on(::Regexp) do |type, props|
+        props.merge(pattern: type)
+      end
+
+      on(::Range) do |type, props|
+        props.merge(match: type)
+      end
+
+      on(:match) do |type, props|
+        visit(type.matcher, props)
+      end
+
+      on(:hash) do |type, props|
+        props.merge(type: Hash)
+      end
+
+      on(:and) do |type, props|
+        left = visit(type.left)
+        right = visit(type.right)
         type = right[:type] || left[:type]
-        prop = prop.merge(left).merge(right)
-        prop[type:] if type
-        prop
+        props = props.merge(left).merge(right)
+        props = props.merge(type:) if type
+        props
       end
 
-      def visit_or(node, prop)
-        child_metas = node[2].map { |child| visit(child) }
+      on(:or) do |type, props|
+        child_metas = [visit(type.left), visit(type.right)]
         types = child_metas.map { |child| child[:type] }.flatten.compact
         types = types.first if types.size == 1
-        child_metas.reduce(prop) do |acc, child|
+        child_metas.reduce(props) do |acc, child|
           acc.merge(child)
         end.merge(type: types)
       end
 
-      def visit_hash(_node, prop)
-        prop.merge(type: Hash)
+      on(:value) do |type, props|
+        visit(type.value, props)
       end
 
-      def visit_default(node, prop)
-        prop = prop.merge(node[1])
-        node[2].reduce(prop) do |acc, child|
-          acc.merge(visit(child))
+      on(:transform) do |type, props|
+        props.merge(type: type.target_type)
+      end
+
+      on(:static) do |type, props|
+        visit(type.value, props)
+      end
+
+      on(:rules) do |type, props|
+        type.rules.reduce(props) do |acc, rule|
+          acc.merge(visit(rule))
         end
       end
 
-      def visit_with_type(node, prop, type)
-        visit_default(node, prop).merge(type:)
+      on(:boolean) do |type, props|
+        props.merge(type: 'boolean')
+      end
+
+      on(:metadata) do |type, props|
+        props.merge(type.metadata)
+      end
+
+      on(:hash_map) do |type, props|
+        props.merge(type: Hash)
+      end
+
+      on(:constructor) do |type, props|
+        visit(type.type, props)
+      end
+
+      on(:array) do |type, props|
+        props.merge(type: Array)
+      end
+
+      on(:tuple) do |type, props|
+        props.merge(type: Array)
+      end
+
+      on(:tagged_hash) do |type, props|
+        props.merge(type: Hash)
       end
     end
   end

@@ -84,14 +84,6 @@ module Parametric
         freeze
       end
 
-      def ast
-        [
-          :rules,
-          BLANK_HASH,
-          @rules.map { |rule| [rule.name, { rule.metadata_key => rule.arg_value }, []] }
-        ]
-      end
-
       def call(result)
         errors = []
         err = nil

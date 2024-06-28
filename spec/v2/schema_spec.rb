@@ -13,15 +13,15 @@ RSpec.describe Parametric::V2::Schema do
   describe 'a schema with nested schemas' do
     subject(:schema) do
       described_class.new do |sc|
-        sc.field(:title).type(Test::Types::String).default('Mr')
+        sc.field(:title).type(Test::Types::String).default('Mr'.freeze)
         sc.field(:name).type(Test::Types::String)
         sc.field?(:age).type(Test::Types::Lax::Integer)
         sc.field(:friend).schema do |s|
           s.field(:name).type(Test::Types::String)
         end
-        sc.field(:tags).array(Test::Types::Lax::String).default([])
-        sc.field(:friends).default([]).array do |f|
-          f.field(:name).type(Test::Types::String).default('Anonymous')
+        sc.field(:tags).array(Test::Types::Lax::String).default([].freeze)
+        sc.field(:friends).default([].freeze).array do |f|
+          f.field(:name).type(Test::Types::String).default('Anonymous'.freeze)
           f.field(:age).type(Test::Types::Lax::Integer)
         end
       end
@@ -57,7 +57,7 @@ RSpec.describe Parametric::V2::Schema do
       end
       data = schema.json_schema
       expect(data).to eq({
-                           '$schema' => 'http://json-schema.org/draft-08/schema#',
+                           '$schema' => 'https://json-schema.org/draft-08/schema#',
                            type: 'object',
                            properties: {
                              'title' => { type: 'string', default: 'Mr' },
@@ -104,8 +104,8 @@ RSpec.describe Parametric::V2::Schema do
     it 'returns errors for invalid data' do
       result = schema.resolve({ friend: {} })
       expect(result.success?).to be false
-      expect(result.errors[:name]).to eq('must be a String')
-      expect(result.errors[:friend][:name]).to eq('must be a String')
+      expect(result.errors[:name]).to eq('Must be a String')
+      expect(result.errors[:friend][:name]).to eq('Must be a String')
     end
 
     specify '#fields' do

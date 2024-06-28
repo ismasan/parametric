@@ -24,10 +24,6 @@ module Parametric
         %(#{name}[#{@value.inspect}])
       end
 
-      def ast
-        [:static, { default: @value, const: @value, type: @value.class }, BLANK_ARRAY]
-      end
-
       def call(result)
         result.success(@value)
       end

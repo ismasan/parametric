@@ -17,8 +17,6 @@ module Parametric
 
       def [](value) = self.class.new(value)
 
-      def ast = [:value, { value: @value, type: @value.class }, BLANK_ARRAY]
-
       def call(result)
         @value == result.value ? result : result.halt(errors: "Must be equal to #{@value}")
       end

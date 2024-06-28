@@ -14,10 +14,6 @@ module Parametric
         # freeze
       end
 
-      def ast
-        [:deferred, BLANK_HASH, BLANK_ARRAY]
-      end
-
       def call(result)
         cached_type.call(result)
       end

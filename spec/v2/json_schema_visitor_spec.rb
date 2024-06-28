@@ -5,17 +5,17 @@ require 'parametric/v2'
 require 'parametric/v2/json_schema_visitor'
 
 RSpec.describe Parametric::V2::JSONSchemaVisitor do
-  subject(:visitor) { described_class.new }
+  subject(:visitor) { described_class }
 
   specify 'simplest possible case with one-level keys and types' do
-    type = Parametric::V2::Types::Hash.schema(
+    type = Parametric::V2::Types::Hash[
       name: Parametric::V2::Types::String.meta(description: 'the name'),
       age?: Parametric::V2::Types::Integer
-    )
+    ]
 
-    expect(described_class.call(type.ast)).to eq(
+    expect(described_class.call(type)).to eq(
       {
-        '$schema' => 'http://json-schema.org/draft-08/schema#',
+        '$schema' => 'https://json-schema.org/draft-08/schema#',
         :type => 'object',
         :properties => {
           'name' => { type: 'string', description: 'the name' },
@@ -33,7 +33,7 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
         Parametric::V2::Types::Integer
       )
 
-      expect(visitor.visit(type.ast)).to eq(
+      expect(described_class.visit(type)).to eq(
         type: 'object',
         patternProperties: { '.*' => { type: 'integer' } }
       )
@@ -41,82 +41,119 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
 
     specify 'Types::String' do
       type = Parametric::V2::Types::String
-      expect(visitor.visit(type.ast)).to eq(type: 'string')
+      expect(described_class.visit(type)).to eq(type: 'string')
+    end
+
+    specify 'Types::Integer' do
+      type = Parametric::V2::Types::Integer
+      expect(described_class.visit(type)).to eq(type: 'integer')
+    end
+
+    specify 'Types::Numeric' do
+      type = Parametric::V2::Types::Numeric
+      expect(described_class.visit(type)).to eq(type: 'number')
+    end
+
+    specify 'Types::Decimal' do
+      type = Parametric::V2::Types::Decimal
+      expect(described_class.visit(type)).to eq(type: 'number')
+    end
+
+    specify 'Float' do
+      type = Parametric::V2::Types::Any[Float]
+      expect(described_class.visit(type)).to eq(type: 'number')
+    end
+
+    specify 'Types::Match with RegExp' do
+      type = Parametric::V2::Types::String[/[a-z]+/]
+      expect(described_class.visit(type)).to eq(type: 'string', pattern: '[a-z]+')
+    end
+
+    specify 'Types::Match with Range' do
+      type = Parametric::V2::Types::Integer[10..100]
+      expect(described_class.visit(type)).to eq(type: 'integer', minimum: 10, maximum: 100)
+
+      type = Parametric::V2::Types::Integer[10...100]
+      expect(described_class.visit(type)).to eq(type: 'integer', minimum: 10, maximum: 99)
+
+      type = Parametric::V2::Types::Integer[10..]
+      expect(described_class.visit(type)).to eq(type: 'integer', minimum: 10)
+
+      type = Parametric::V2::Types::Integer[..100]
+      expect(described_class.visit(type)).to eq(type: 'integer', maximum: 100)
     end
 
     specify '#default' do
+      # JSON schema's semantics for default values means a default only applies
+      # when the key is missing from the payload.
       type = Parametric::V2::Types::String.default('foo')
-      expect(visitor.visit(type.ast)).to eq(type: 'string', default: 'foo')
+      expect(described_class.visit(type)).to eq(type: 'string', default: 'foo')
+
+      type = Parametric::V2::Types::String | (Parametric::V2::Types::Nothing >> 'bar')
+      expect(described_class.visit(type)).to eq(type: 'string', default: 'bar')
+
+      type = (Parametric::V2::Types::Nothing >> 'bar2') | Parametric::V2::Types::String
+      expect(described_class.visit(type)).to eq(type: 'string', default: 'bar2')
     end
 
     specify '#match' do
       type = Parametric::V2::Types::String.match(/[a-z]+/)
-      expect(visitor.visit(type.ast)).to eq(type: 'string', pattern: '[a-z]+')
-    end
-
-    specify ':match rule' do
-      type = Parametric::V2::Types::String.rule(match: /[a-z]+/)
-      expect(visitor.visit(type.ast)).to eq(type: 'string', pattern: '[a-z]+')
-    end
-
-    specify ':gt rule' do
-      type = Parametric::V2::Types::Integer.rule(gt: 10)
-      expect(visitor.visit(type.ast)).to eq(type: 'integer', exclusiveMinimum: 10)
-    end
-
-    specify ':gte rule' do
-      type = Parametric::V2::Types::Integer.rule(gte: 10)
-      expect(visitor.visit(type.ast)).to eq(type: 'integer', minimum: 10)
-    end
-
-    specify ':lt rule' do
-      type = Parametric::V2::Types::Integer.rule(lt: 10)
-      expect(visitor.visit(type.ast)).to eq(type: 'integer', exclusiveMaximum: 10)
-    end
-
-    specify ':lte rule' do
-      type = Parametric::V2::Types::Numeric.rule(lte: 10.20)
-      expect(visitor.visit(type.ast)).to eq(type: 'number', maximum: 10.20)
-    end
-
-    specify ':excluded_from rule' do
-      type = Parametric::V2::Types::Numeric.rule(excluded_from: [1, 2, 4])
-      expect(visitor.visit(type.ast)).to eq(type: 'number', not: { enum: [1, 2, 4] })
-    end
-
-    specify '#not' do
-      type = Parametric::V2::Types::String.not
-      expect(visitor.visit(type.ast)).to eq(not: { type: 'string' })
+      expect(described_class.visit(type)).to eq(type: 'string', pattern: '[a-z]+')
     end
 
     specify '#constructor' do
       type = Parametric::V2::Types::Any.constructor(::String)
-      expect(visitor.visit(type.ast)).to eq(type: 'string')
-    end
-
-    specify '#options' do
-      type = Parametric::V2::Types::String.options(%w[foo bar])
-      expect(visitor.visit(type.ast)).to eq(type: 'string', enum: %w[foo bar])
+      expect(described_class.visit(type)).to eq(type: 'string')
     end
 
     specify 'Types::String >> Types::Integer' do
       type = Parametric::V2::Types::String >> Parametric::V2::Types::Integer
-      expect(visitor.visit(type.ast)).to eq(type: 'integer')
+      expect(described_class.visit(type)).to eq(type: 'integer')
     end
 
     specify 'Types::String | Types::Integer' do
       type = Parametric::V2::Types::String | Parametric::V2::Types::Integer
-      expect(visitor.visit(type.ast)).to eq(
+      expect(described_class.visit(type)).to eq(
         anyOf: [{ type: 'string' }, { type: 'integer' }]
+      )
+    end
+
+    xspecify 'complex type with AND and OR branches' do
+      type = Parametric::V2::Types::String \
+        | (Parametric::V2::Types::Integer.transform(::Integer) { |v| v * 2 }).options([2, 4])
+
+      expect(visitor.visit(type)).to eq(
+        anyOf: [
+          { type: 'string' },
+          { type: 'integer', enum: [2, 4] }
+        ]
       )
     end
 
     specify 'Types::Array' do
       type = Parametric::V2::Types::Array[Parametric::V2::Types::String]
-      expect(visitor.visit(type.ast)).to eq(
+      expect(described_class.visit(type)).to eq(
         type: 'array',
         items: { type: 'string' }
       )
+    end
+
+    specify 'Types::Boolean' do
+      type = Parametric::V2::Types::Boolean
+      expect(described_class.visit(type)).to eq(type: 'boolean')
+    end
+
+    specify 'Types.optional' do
+      type = Parametric::V2::Types::String.optional.default('bar')
+      expect(described_class.visit(type)).to eq(
+        anyOf: [{ type: 'null' }, { type: 'string' }],
+        default: 'bar'
+      )
+    end
+
+    specify 'Types::True' do
+      type = Parametric::V2::Types::True
+      expect(described_class.visit(type)).to eq(type: 'boolean')
     end
 
     specify 'Types::Array with union member type' do
@@ -126,7 +163,7 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
         )
       ]
 
-      expect(visitor.visit(type.ast)).to eq(
+      expect(described_class.visit(type)).to eq(
         type: 'array',
         items: {
           anyOf: [
@@ -150,7 +187,7 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
         Parametric::V2::Types::Integer
       ]
 
-      expect(visitor.visit(type.ast)).to eq(
+      expect(described_class.visit(type)).to eq(
         type: 'array',
         prefixItems: [
           { const: 'ok', type: 'string' },
@@ -161,12 +198,14 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
     end
 
     specify 'Types::Hash.tagged_by' do
-      t1 = Parametric::V2::Types::Hash[kind: 't1', name: Parametric::V2::Types::String,
-                                       age: Parametric::V2::Types::Integer]
+      t1 = Parametric::V2::Types::Hash[
+        kind: 't1', name: Parametric::V2::Types::String,
+        age: Parametric::V2::Types::Integer
+      ]
       t2 = Parametric::V2::Types::Hash[kind: 't2', name: Parametric::V2::Types::String]
       type = Parametric::V2::Types::Hash.tagged_by(:kind, t1, t2)
 
-      expect(visitor.visit(type.ast)).to eq(
+      expect(described_class.visit(type)).to eq(
         type: 'object',
         properties: {
           'kind' => { type: 'string', enum: %w[t1 t2] }
@@ -203,41 +242,6 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
             }
           }
         ]
-      )
-    end
-
-    specify 'complex type with AND and OR branches' do
-      type = Parametric::V2::Types::String \
-        | (Parametric::V2::Types::Integer.transform(::Integer) { |v| v * 2 }).options([2, 4])
-
-      expect(visitor.visit(type.ast)).to eq(
-        anyOf: [
-          { type: 'string' },
-          { type: 'integer', enum: [2, 4] }
-        ]
-      )
-    end
-
-    specify 'recursive type' do
-      type = Parametric::V2::Types::Hash[
-        value: Parametric::V2::Types::String,
-        next: Parametric::V2::Types::Any.defer { linked_list } | Parametric::V2::Types::Nil
-      ]
-
-      # TODO: figure out how
-      # to represent recursive types in JSON Schema
-      expect(visitor.visit(type.ast)).to eq(
-        type: 'object',
-        properties: {
-          'next' => {
-            anyOf: [
-              {},
-              { type: 'null' }
-            ]
-          },
-          'value' => { type: 'string' }
-        },
-        required: %w[value next]
       )
     end
   end

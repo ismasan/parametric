@@ -19,10 +19,6 @@ module Parametric
 
       alias [] of
 
-      def ast
-        [:tuple, { type: 'array' }, @types.map(&:ast)]
-      end
-
       private def _inspect
         "#{name}[#{@types.map(&:inspect).join(', ')}]"
       end

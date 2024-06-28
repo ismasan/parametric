@@ -40,10 +40,6 @@ module Parametric
         %(#{name}[#{element_type}])
       end
 
-      def ast
-        [:array, { type: ::Array }, [element_type.ast]]
-      end
-
       def call(result)
         return result.halt(errors: 'is not an Array') unless result.value.is_a?(::Enumerable)
 

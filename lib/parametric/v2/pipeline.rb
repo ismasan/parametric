@@ -31,8 +31,6 @@ module Parametric
         freeze
       end
 
-      def ast = @type.ast
-
       def call(result)
         @type.call(result)
       end

@@ -45,10 +45,8 @@ module Parametric
         self
       end
 
-      def ast = _hash.ast
-
       def json_schema
-        V2::JSONSchemaVisitor.call(ast).to_h
+        V2::JSONSchemaVisitor.call(_hash).to_h
       end
 
       def call(result)

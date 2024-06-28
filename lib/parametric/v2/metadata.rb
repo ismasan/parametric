@@ -11,10 +11,6 @@ module Parametric
         @metadata = metadata
       end
 
-      def ast
-        [:metadata, metadata, []]
-      end
-
       def call(result) = result
     end
   end

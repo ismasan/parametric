@@ -19,10 +19,6 @@ module Parametric
         %((#{@left.inspect} >> #{@right.inspect}))
       end
 
-      def ast
-        [:and, BLANK_HASH, [@left.ast, @right.ast]]
-      end
-
       def call(result)
         result.map(@left).map(@right)
       end

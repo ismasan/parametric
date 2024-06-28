@@ -9,6 +9,7 @@ module Parametric
         %(Undefined)
       end
 
+      def to_s = inspect
       def node_name = :undefined
     end
 
@@ -22,7 +23,7 @@ module Parametric
 
     module Callable
       def metadata
-        MetadataVisitor.call(ast)
+        MetadataVisitor.call(self)
       end
 
       def resolve(value = Undefined)
@@ -91,10 +92,6 @@ module Parametric
 
       def node_name = self.class.name.split('::').last.to_sym
 
-      def ast
-        raise NotImplementedError, "Implement #ast in #{self.class}"
-      end
-
       def defer(definition = nil, &block)
         Deferred.new(definition || block)
       end
@@ -157,10 +154,6 @@ module Parametric
         self | (Types::Nothing >> val_type)
       end
 
-      def with_ast(the_ast)
-        AST.new(self, the_ast)
-      end
-
       class Node
         include Steppable
 
@@ -212,7 +205,7 @@ module Parametric
       def ===(other)
         case other
         when Steppable
-          other.ast == ast
+          other == self
         else
           resolve(other).success?
         end
@@ -248,5 +241,4 @@ end
 require 'parametric/v2/deferred'
 require 'parametric/v2/transform'
 require 'parametric/v2/constructor'
-require 'parametric/v2/ast'
 require 'parametric/v2/metadata'

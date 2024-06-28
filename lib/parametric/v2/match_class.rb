@@ -20,10 +20,6 @@ module Parametric
         %(#{name}[#{@matcher.inspect}])
       end
 
-      def ast
-        [:match, { const: @matcher, type: @matcher.class }, BLANK_ARRAY]
-      end
-
       def call(result)
         @matcher === result.value ? result : result.halt(errors: @error)
       end

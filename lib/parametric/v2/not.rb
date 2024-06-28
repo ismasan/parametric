@@ -19,10 +19,6 @@ module Parametric
         %(Not(#{@step.inspect}))
       end
 
-      def ast
-        [:not, BLANK_HASH, [@step.ast]]
-      end
-
       def call(result)
         result = @step.call(result)
         result.success? ? result.halt(errors: @errors) : result.success
