@@ -28,6 +28,7 @@ module Parametric
             new(rule_def, arg_value, error_str)
           end
 
+          def node_name = :"rule_#{rule_def.name}"
           def name = rule_def.name
           def metadata_key = rule_def.metadata_key
 

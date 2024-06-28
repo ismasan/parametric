@@ -11,10 +11,10 @@ module Parametric
         new.visit(type)
       end
 
-      def on_missing_handler(type, props)
+      def on_missing_handler(type, props, method_name)
         return props.merge(type: type) if type.class == Class
 
-        puts "Missing handler for #{type.inspect}"
+        puts "Missing handler for #{type.inspect} with props #{props.inspect} and :method_name #{method_name}"
         props
       end
 
@@ -74,7 +74,7 @@ module Parametric
 
       on(:rules) do |type, props|
         type.rules.reduce(props) do |acc, rule|
-          acc.merge(visit(rule))
+          acc.merge(rule.name => rule.arg_value)
         end
       end
 

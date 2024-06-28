@@ -183,8 +183,8 @@ RSpec.describe Parametric::V2::Types do
 
     specify '#default' do
       assert_result(Types::Any.default('hello').resolve('bye'), 'bye', true)
-      assert_result(Types::Any.default('hello').resolve(nil), nil, true)
-      assert_result(Types::Any.default('hello').resolve(Undefined), 'hello', true)
+      assert_result(Types::String.default('hello').resolve('bye'), 'bye', true)
+      assert_result(Types::String.default('hello').resolve(nil), nil, false)
       assert_result(Types::String.default('hello').resolve(Undefined), 'hello', true)
       assert_result(Types::String.default { 'hi' }.resolve(Undefined), 'hi', true)
     end
@@ -368,6 +368,7 @@ RSpec.describe Parametric::V2::Types do
         assert_result(type.resolve([1, 2]), [1, 2], true)
         assert_result(type.resolve([1, 3, 3]), [1, 3, 3], true)
         assert_result(type.resolve([1, 4, 3]), [1, 4, 3], false)
+        expect(type.metadata[:included_in]).to eq([1, 2, 3])
       end
 
       specify ':excluded_from' do

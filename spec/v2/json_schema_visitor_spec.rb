@@ -118,7 +118,7 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       )
     end
 
-    xspecify 'complex type with AND and OR branches' do
+    specify 'complex type with AND and OR branches' do
       type = Parametric::V2::Types::String \
         | (Parametric::V2::Types::Integer.transform(::Integer) { |v| v * 2 }).options([2, 4])
 

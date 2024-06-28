@@ -24,12 +24,12 @@ module Parametric
         if respond_to?(method_name)
           send(method_name, type, props)
         else
-          on_missing_handler(type, props)
+          on_missing_handler(type, props, method_name)
         end
       end
 
-      def on_missing_handler(type, _props)
-        raise "No handler for #{type.inspect}"
+      def on_missing_handler(type, _props, method_name)
+        raise "No handler for #{type.inspect} with :#{method_name}"
       end
     end
   end

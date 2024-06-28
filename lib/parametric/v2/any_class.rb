@@ -7,14 +7,6 @@ module Parametric
     class AnyClass
       include Steppable
 
-      def >>(other)
-        Steppable.wrap(other)
-      end
-
-      def |(other)
-        Steppable.wrap(other)
-      end
-
       def call(result) = result
     end
   end

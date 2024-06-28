@@ -13,6 +13,10 @@ module Parametric
         }.merge(new.visit(type))
       end
 
+      on(:any) do |type, props|
+        props
+      end
+
       on(:pipeline) do |type, props|
         visit(type.type, props)
       end
@@ -89,6 +93,10 @@ module Parametric
         type.rules.reduce(props) do |acc, rule|
           acc.merge(visit(rule))
         end
+      end
+
+      on(:rule_included_in) do |type, props|
+        props.merge(enum: type.arg_value)
       end
 
       on(:match) do |type, props|
