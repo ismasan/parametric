@@ -173,7 +173,7 @@ module Parametric
         Node.new(node_name, self, metadata)
       end
 
-      def optional
+      def nullable
         Types::Nil | self
       end
 

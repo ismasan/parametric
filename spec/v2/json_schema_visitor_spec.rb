@@ -143,8 +143,8 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(described_class.visit(type)).to eq(type: 'boolean')
     end
 
-    specify 'Types.optional' do
-      type = Parametric::V2::Types::String.optional.default('bar')
+    specify 'Types.nullable' do
+      type = Parametric::V2::Types::String.nullable.default('bar')
       expect(described_class.visit(type)).to eq(
         anyOf: [{ type: 'null' }, { type: 'string' }],
         default: 'bar'

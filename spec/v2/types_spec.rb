@@ -190,10 +190,10 @@ RSpec.describe Parametric::V2::Types do
       assert_result(Types::String.default { 'hi' }.resolve(Undefined), 'hi', true)
     end
 
-    specify '#optional' do
-      assert_result(Types::String.optional.resolve('bye'), 'bye', true)
+    specify '#nullable' do
+      assert_result(Types::String.nullable.resolve('bye'), 'bye', true)
       assert_result(Types::String.resolve(nil), nil, false)
-      assert_result(Types::String.optional.resolve(nil), nil, true)
+      assert_result(Types::String.nullable.resolve(nil), nil, true)
     end
 
     specify '#coerce' do
@@ -623,7 +623,7 @@ RSpec.describe Parametric::V2::Types do
         assert_result(result, %w[a b c], true)
         expect(elapsed).to be < 30
 
-        assert_result(array.optional.resolve(nil), nil, true)
+        assert_result(array.nullable.resolve(nil), nil, true)
       end
     end
 
