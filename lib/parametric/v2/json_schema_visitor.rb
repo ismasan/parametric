@@ -13,6 +13,14 @@ module Parametric
         }.merge(new.visit(type))
       end
 
+      on(:pipeline) do |type, props|
+        visit(type.type, props)
+      end
+
+      on(:step) do |type, props|
+        props.merge(type._metadata)
+      end
+
       on(:hash) do |type, props|
         props.merge(
           type: 'object',

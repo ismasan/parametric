@@ -156,6 +156,13 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       expect(described_class.visit(type)).to eq(type: 'boolean')
     end
 
+    specify 'Pipeline' do
+      type = Parametric::V2::Types::String.pipeline do |pl|
+        pl.step { |result| result }
+      end
+      expect(described_class.visit(type)).to eq(type: 'string')
+    end
+
     specify 'Types::Array with union member type' do
       type = Parametric::V2::Types::Array[
         Parametric::V2::Types::String | Parametric::V2::Types::Hash.schema(
