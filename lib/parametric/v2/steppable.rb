@@ -8,6 +8,8 @@ module Parametric
       def inspect
         %(Undefined)
       end
+
+      def node_name = :undefined
     end
 
     TypeError = Class.new(::TypeError)
@@ -41,6 +43,15 @@ module Parametric
 
     module Steppable
       include Callable
+
+      def self.included(base)
+        nname = base.name.split('::').last
+        nname.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
+        nname.downcase!
+        nname.gsub!(/_class$/, '')
+        nname = nname.to_sym
+        base.define_method(:node_name) { nname }
+      end
 
       def self.wrap(callable)
         if callable.is_a?(Steppable)
@@ -77,6 +88,8 @@ module Parametric
       private def _inspect = self.class.name
 
       def inspect = name.to_s
+
+      def node_name = self.class.name.split('::').last.to_sym
 
       def ast
         raise NotImplementedError, "Implement #ast in #{self.class}"
@@ -119,11 +132,11 @@ module Parametric
       end
 
       def value(val)
-        self >> Types::Value[val]
+        self >> ValueClass.new(val)
       end
 
       def match(*args)
-        self >> Types::Match[*args]
+        self >> MatchClass.new(*args)
       end
 
       def [](val) = match(val)
@@ -141,13 +154,30 @@ module Parametric
                      Types::Static[val]
                    end
 
-        ((Types::Nothing >> val_type) | self).with_ast(
-          [:default, { default: val }, [ast]]
-        )
+        self | (Types::Nothing >> val_type)
       end
 
       def with_ast(the_ast)
         AST.new(self, the_ast)
+      end
+
+      class Node
+        include Steppable
+
+        attr_reader :node_name, :type, :attributes
+
+        def initialize(node_name, type, attributes = BLANK_HASH)
+          @node_name = node_name
+          @type = type
+          @attributes = attributes
+          freeze
+        end
+
+        def call(result) = type.call(result)
+      end
+
+      def as_node(node_name, metadata = BLANK_HASH)
+        Node.new(node_name, self, metadata)
       end
 
       def optional
@@ -201,10 +231,7 @@ module Parametric
       end
 
       def constructor(cns, factory_method = :new, &block)
-        block ||= ->(value) { cns.send(factory_method, value) }
-        (self >> ->(result) { result.success(block.call(result.value)) }).with_ast(
-          [:constructor, { constructor: cns, factory_method: }, [ast]]
-        )
+        self >> Constructor.new(cns, factory_method:, &block)
       end
 
       def pipeline(&block)
@@ -220,5 +247,6 @@ end
 
 require 'parametric/v2/deferred'
 require 'parametric/v2/transform'
+require 'parametric/v2/constructor'
 require 'parametric/v2/ast'
 require 'parametric/v2/metadata'

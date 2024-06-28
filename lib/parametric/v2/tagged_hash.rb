@@ -7,6 +7,8 @@ module Parametric
     class TaggedHash
       include Steppable
 
+      attr_reader :key, :types
+
       def initialize(hash_type, key, types)
         @hash_type = hash_type
         @key = Key.wrap(key)

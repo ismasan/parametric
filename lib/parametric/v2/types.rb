@@ -65,9 +65,6 @@ module Parametric
     Rules.define :respond_to, 'must respond to %<value>s' do |result, value|
       Array(value).all? { |m| result.value.respond_to?(m) }
     end
-    Rules.define :is_a, 'must be a %<value>s', metadata_key: :type do |result, value|
-      result.value.is_a? value
-    end
     Rules.define :size, 'must be of size %<value>s', expects: :size, metadata_key: :size do |result, value|
       value === result.value.size
     end
@@ -76,19 +73,18 @@ module Parametric
       extend TypeRegistry
 
       Any = AnyClass.new
-      Nothing = Any.rule(eq: Undefined)
-      String = Any.is_a(::String)
-      Symbol = Any.is_a(::Symbol)
-      Numeric = Any.is_a(::Numeric)
-      Integer = Any.is_a(::Integer)
-      Decimal = Any.is_a(BigDecimal)
+      Nothing = Any.value(Undefined)
+      String = Any[::String]
+      Symbol = Any[::Symbol]
+      Numeric = Any[::Numeric]
+      Integer = Any[::Integer]
+      Decimal = Any[BigDecimal]
       Static = StaticClass.new
-      Match = MatchClass.new
       Value = ValueClass.new
-      Nil = Any.is_a(::NilClass)
-      True = Any.is_a(::TrueClass)
-      False = Any.is_a(::FalseClass)
-      Boolean = (True | False).with_ast([:boolean, { type: 'boolean' }, []])
+      Nil = Any[::NilClass]
+      True = Any[::TrueClass]
+      False = Any[::FalseClass]
+      Boolean = (True | False).as_node(:boolean)
       Array = ArrayClass.new
       Tuple = TupleClass.new
       Hash = HashClass.new

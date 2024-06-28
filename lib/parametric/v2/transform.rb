@@ -7,6 +7,8 @@ module Parametric
     class Transform
       include Steppable
 
+      attr_reader :target_type
+
       def initialize(target_type, callable)
         @target_type = target_type
         @callable = callable

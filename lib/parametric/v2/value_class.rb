@@ -7,6 +7,8 @@ module Parametric
     class ValueClass
       include Steppable
 
+      attr_reader :value
+
       def initialize(value = Undefined)
         @value = value
       end

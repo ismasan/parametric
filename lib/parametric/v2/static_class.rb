@@ -7,7 +7,11 @@ module Parametric
     class StaticClass
       include Steppable
 
+      attr_reader :value
+
       def initialize(value = Undefined)
+        raise ArgumentError, 'value must be frozen' unless value.frozen?
+
         @value = value
         freeze
       end

@@ -9,11 +9,12 @@ module Parametric
         key.is_a?(Key) ? key : new(key)
       end
 
-      attr_reader :to_sym
+      attr_reader :to_sym, :node_name
 
       def initialize(key, optional: false)
         key_s = key.to_s
         match = OPTIONAL_EXP.match(key_s)
+        @node_name = :key
         @key = match[1]
         @to_sym = @key.to_sym
         @optional = !match[2].nil? ? true : optional

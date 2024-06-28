@@ -142,21 +142,15 @@ RSpec.describe Parametric::V2::Types do
       end
     end
 
-    specify '#is_a' do
-      pipeline = Types::Any.is_a(::Integer).transform(::Integer) { |v| v + 5 }
-      assert_result(pipeline.resolve(10), 15, true)
-      assert_result(pipeline.resolve('nope'), 'nope', false)
-    end
-
     specify '#cast' do
-      integer = Types::Any.is_a(::Integer)
+      integer = Types::Any[::Integer]
       expect { integer.cast('10') }.to raise_error(Parametric::V2::TypeError)
       expect(integer.cast(10)).to eq(10)
     end
 
     specify '#|' do
-      integer = Types::Any.is_a(::Integer)
-      string = Types::Any.is_a(::String)
+      integer = Types::Any[::Integer]
+      string = Types::Any[::String]
       to_s = Types::Any.transform(::Integer, &:to_s)
       title = Types::Any.transform(::Integer) { |v| "The number is #{v}" }
 
@@ -418,11 +412,6 @@ RSpec.describe Parametric::V2::Types do
         assert_result(Types::String.rule(respond_to: %i[strip chomp]).resolve('b'), 'b', true)
         assert_result(Types::String.rule(respond_to: %i[strip nope]).resolve('b'), 'b', false)
         assert_result(Types::String.rule(respond_to: :nope).resolve('b'), 'b', false)
-      end
-
-      specify ':is_a' do
-        assert_result(Types::Any.rule(is_a: String).resolve('b'), 'b', true)
-        assert_result(Types::Any.rule(is_a: String).resolve(1), 1, false)
       end
     end
 

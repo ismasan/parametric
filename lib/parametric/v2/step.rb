@@ -7,6 +7,8 @@ module Parametric
     class Step
       include Steppable
 
+      attr_reader :node_name
+
       def initialize(callable = nil, &block)
         @_metadata = callable.respond_to?(:metadata) ? callable.metadata : BLANK_HASH
         @callable = callable || block

@@ -77,6 +77,8 @@ module Parametric
       end
 
       # Ex. new(size: 3, match: /foo/)
+      attr_reader :rules
+
       def initialize(rule_specs, for_type)
         @rules = self.class.registry.resolve(rule_specs, for_type).freeze
         freeze

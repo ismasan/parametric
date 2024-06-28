@@ -10,8 +10,10 @@ module Parametric
     class ArrayClass
       include Steppable
 
+      attr_reader :element_type
+
       def initialize(element_type: Types::Any)
-        element_type = case element_type
+        @element_type = case element_type
                        when Steppable
                          element_type
                        when ::Hash
@@ -21,7 +23,6 @@ module Parametric
                                "element_type #{element_type.inspect} must be a Steppable"
                        end
 
-        @element_type = element_type
         freeze
       end
 
@@ -53,8 +54,6 @@ module Parametric
       end
 
       private
-
-      attr_reader :element_type
 
       def map_array_elements(list)
         # Reuse the same result object for each element

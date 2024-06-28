@@ -20,10 +20,6 @@ module Parametric
         %(#{name}[#{@matcher.inspect}])
       end
 
-      def [](matcher)
-        self.class.new(matcher)
-      end
-
       def ast
         [:match, { const: @matcher, type: @matcher.class }, BLANK_ARRAY]
       end

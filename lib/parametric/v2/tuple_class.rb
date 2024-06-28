@@ -7,6 +7,8 @@ module Parametric
     class TupleClass
       include Steppable
 
+      attr_reader :types
+
       def initialize(*types)
         @types = types.map { |t| t.is_a?(Steppable) ? t : Types::Any.value(t) }
       end

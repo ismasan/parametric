@@ -7,6 +7,8 @@ module Parametric
     class And
       include Steppable
 
+      attr_reader :left, :right
+
       def initialize(left, right)
         @left = left
         @right = right

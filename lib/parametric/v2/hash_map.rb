@@ -7,6 +7,8 @@ module Parametric
     class HashMap
       include Steppable
 
+      attr_reader :key_type, :value_type
+
       def initialize(key_type, value_type)
         @key_type = key_type
         @value_type = value_type

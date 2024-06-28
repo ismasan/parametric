@@ -20,6 +20,8 @@ module Parametric
         end
       end
 
+      attr_reader :type
+
       def initialize(type = Types::Any, &setup)
         @type = type
         @around_blocks = []

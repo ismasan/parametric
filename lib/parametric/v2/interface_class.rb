@@ -7,6 +7,8 @@ module Parametric
     class InterfaceClass
       include Steppable
 
+      attr_reader :method_names
+
       def initialize(method_names = [])
         @method_names = method_names
         freeze

@@ -11,6 +11,8 @@ module Parametric
     class HashClass
       include Steppable
 
+      attr_reader :_schema
+
       def initialize(schema = {})
         @_schema = wrap_keys_and_values(schema)
         freeze
@@ -104,10 +106,6 @@ module Parametric
 
         errors.any? ? result.halt(output, errors:) : result.success(output)
       end
-
-      protected
-
-      attr_reader :_schema
 
       private
 
