@@ -36,7 +36,6 @@ RSpec.describe Parametric::V2::Schema do
         }
       }
       result = schema.resolve(data)
-      debugger
       expect(result.success?).to be true
       expect(result.value).to eq({
                                    title: 'Mr',
@@ -301,6 +300,11 @@ RSpec.describe Parametric::V2::Schema do
     assert_result(field.resolve, Parametric::V2::Undefined, false)
     assert_result(field.resolve(nil), nil, true)
     expect(field.resolve.errors).to eq('is required')
+  end
+
+  specify 'Field#default' do
+    field = described_class::Field.new(:friends).default([].freeze).array(Test::Types::String)
+    assert_result(field.resolve(), [], true)
   end
 
   specify 'self-contained Array type' do

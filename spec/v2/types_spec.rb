@@ -183,6 +183,7 @@ RSpec.describe Parametric::V2::Types do
 
     specify '#default' do
       assert_result(Types::Any.default('hello').resolve('bye'), 'bye', true)
+      assert_result(Types::Any.default('hello').resolve(), 'hello', true)
       assert_result(Types::String.default('hello').resolve('bye'), 'bye', true)
       assert_result(Types::String.default('hello').resolve(nil), nil, false)
       assert_result(Types::String.default('hello').resolve(Undefined), 'hello', true)

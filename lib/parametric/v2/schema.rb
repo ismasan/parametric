@@ -35,6 +35,10 @@ module Parametric
         finish
       end
 
+      def inspect
+        "#{self.class}#{fields.keys.inspect}"
+      end
+
       def before(callable = nil, &block)
         @before >>= callable || block
         self
