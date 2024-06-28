@@ -14,7 +14,15 @@ module Parametric
       def on_missing_handler(type, props, method_name)
         return props.merge(type: type) if type.class == Class
 
-        puts "Missing handler for #{type.inspect} with props #{props.inspect} and :method_name #{method_name}"
+        puts "Missing handler for #{type.inspect} with props #{props.inspect} and method_name :#{method_name}"
+        props
+      end
+
+      on(:undefined) do |type, props|
+        props
+      end
+
+      on(:any) do |type, props|
         props
       end
 
@@ -69,7 +77,7 @@ module Parametric
       end
 
       on(:static) do |type, props|
-        visit(type.value, props)
+        props.merge(static: type.value)
       end
 
       on(:rules) do |type, props|

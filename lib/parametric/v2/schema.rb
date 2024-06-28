@@ -119,7 +119,6 @@ module Parametric
           @_type = Types::Any
         end
 
-        def ast = _type.ast
         def call(result) = _type.call(result)
 
         def type(steppable)
@@ -151,6 +150,8 @@ module Parametric
           @_type = @_type.meta(md) if md
           self
         end
+
+        def metadata = @_type.metadata
 
         def options(opts)
           @_type = @_type.rule(included_in: opts)

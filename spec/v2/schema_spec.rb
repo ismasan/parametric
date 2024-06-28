@@ -36,6 +36,7 @@ RSpec.describe Parametric::V2::Schema do
         }
       }
       result = schema.resolve(data)
+      debugger
       expect(result.success?).to be true
       expect(result.value).to eq({
                                    title: 'Mr',
@@ -277,7 +278,7 @@ RSpec.describe Parametric::V2::Schema do
     assert_result(field.resolve('aa'), 'aa', true)
     assert_result(field.resolve('cc'), 'cc', true)
     assert_result(field.resolve('dd'), 'dd', false)
-    expect(field.metadata[:options]).to eq(%w[aa bb cc])
+    expect(field.metadata[:included_in]).to eq(%w[aa bb cc])
   end
 
   specify 'Field#optional' do
