@@ -12,7 +12,7 @@ module Parametric
 
       # Any.default(value) must trigger default when value is Undefined
       def default(...)
-        Types::Nothing.not.default(...)
+        Types::Undefined.not.default(...)
       end
 
       def call(result) = result

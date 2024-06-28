@@ -89,10 +89,10 @@ RSpec.describe Parametric::V2::JSONSchemaVisitor do
       type = Parametric::V2::Types::String.default('foo')
       expect(described_class.visit(type)).to eq(type: 'string', default: 'foo')
 
-      type = Parametric::V2::Types::String | (Parametric::V2::Types::Nothing >> 'bar')
+      type = Parametric::V2::Types::String | (Parametric::V2::Types::Undefined >> 'bar')
       expect(described_class.visit(type)).to eq(type: 'string', default: 'bar')
 
-      type = (Parametric::V2::Types::Nothing >> 'bar2') | Parametric::V2::Types::String
+      type = (Parametric::V2::Types::Undefined >> 'bar2') | Parametric::V2::Types::String
       expect(described_class.visit(type)).to eq(type: 'string', default: 'bar2')
     end
 

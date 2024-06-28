@@ -151,7 +151,7 @@ module Parametric
                      Types::Static[val]
                    end
 
-        self | (Types::Nothing >> val_type)
+        self | (Types::Undefined >> val_type)
       end
 
       class Node

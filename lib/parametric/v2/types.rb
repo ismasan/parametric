@@ -73,7 +73,7 @@ module Parametric
       extend TypeRegistry
 
       Any = AnyClass.new
-      Nothing = Any.value(Undefined)
+      Undefined = Any.value(Parametric::V2::Undefined)
       String = Any[::String]
       Symbol = Any[::Symbol]
       Numeric = Any[::Numeric]
@@ -89,8 +89,9 @@ module Parametric
       Tuple = TupleClass.new
       Hash = HashClass.new
       Interface = InterfaceClass.new
+      # TODO: type-speficic concept of blank, via Rules
       Blank = (
-        Nothing \
+        Undefined \
         | Nil \
         | String.value(BLANK_STRING) \
         | Hash.value(BLANK_HASH) \

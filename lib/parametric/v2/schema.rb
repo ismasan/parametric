@@ -173,7 +173,7 @@ module Parametric
         end
 
         def required
-          @_type = Types::Nothing.halt(errors: 'is required') >> @_type
+          @_type = Types::Undefined.halt(errors: 'is required') >> @_type
           self
         end
 
