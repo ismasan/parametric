@@ -274,6 +274,56 @@ describe Parametric::Schema do
     end
   end
 
+  describe '#one_of' do
+    let(:kwh_schema) do
+      described_class.new do
+        field(:unit).type(:string).present.default('kwh').options(['kwh'])
+        field(:value).type(:integer).present
+      end
+    end
+
+    let(:euro_schema) do
+      described_class.new do
+        field(:unit).type(:string).present.default('euro').options(['euro'])
+        field(:value).type(:integer).present
+        field(:period).type(:string).options(['month', 'year'])
+      end
+    end
+
+    let(:schema) do
+      described_class.new do |sc, _|
+        sc.field(:consumption).type(:object).one_of(kwh_schema, euro_schema)
+      end
+    end
+
+    it 'picks the valid sub-schema' do
+      result = schema.resolve(consumption: { unit: 'kwh', value: 100 })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ consumption: { unit: 'kwh', value: 100 } })
+
+      result = schema.resolve(consumption: { unit: 'euro', value: 100, period: 'month' })
+      expect(result.valid?).to be true
+      expect(result.output).to eq({ consumption: { unit: 'euro', value: 100, period: 'month' } })
+
+      result = schema.resolve(consumption: { unit: 'euro', value: 100, period: 'nope' })
+      expect(result.valid?).to be false
+    end
+
+    it 'is invalid is more than one valid sub-schema' do
+      sub1 = described_class.new do
+        field(:name).type(:string).present
+      end
+      sub2 = described_class.new do
+        field(:name).type(:string).present
+      end
+      schema = described_class.new do |sc, _|
+        sc.field(:obj).type(:object).one_of(sub1, sub2)
+      end
+      result = schema.resolve(obj: { name: 'Joe' })
+      expect(result.valid?).to be false
+    end
+  end
+
   describe '#tagged_one_of for multiple sub-schemas' do
     let(:user_schema) do
       described_class.new do

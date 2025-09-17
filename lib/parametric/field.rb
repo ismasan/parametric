@@ -3,6 +3,7 @@
 require 'delegate'
 require 'parametric/field_dsl'
 require 'parametric/policy_adapter'
+require 'parametric/one_of'
 require 'parametric/tagged_one_of'
 
 module Parametric
@@ -48,6 +49,10 @@ module Parametric
 
     def tagged_one_of(instance = nil, &block)
       policy(instance || Parametric::TaggedOneOf.new(&block))
+    end
+
+    def one_of(*schemas)
+      policy OneOf.new(schemas)
     end
 
     def schema(sc = nil, &block)
