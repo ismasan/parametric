@@ -181,6 +181,68 @@ sc.field(:sub).type(:object).tagged_one_of do |sub|
 end
 ```
 
+## One Of (multiple nested schemas, pick first valid match)
+
+You can use `Field#one_of` to validate a field against multiple possible schemas and accept the first one that validates successfully.
+
+Unlike `tagged_one_of`, this doesn't require a discriminator field - it tries each schema in order until it finds one that validates the input data.
+
+```ruby
+user_schema = Parametric::Schema.new do |sc, _|
+  sc.field(:name).type(:string).present
+  sc.field(:age).type(:integer).present
+end
+
+company_schema = Parametric::Schema.new do |sc, _|
+  sc.field(:company_name).type(:string).present
+  sc.field(:company_code).type(:string).present
+end
+
+schema = Parametric::Schema.new do |sc, _|
+  # This field can be either a user or company object
+  # The schema will try user_schema first, then company_schema
+  sc.field(:entity).type(:object).one_of(user_schema, company_schema)
+end
+
+# This will validate against user_schema (first match)
+result = schema.resolve(entity: { name: 'Joe', age: 30 })
+result.output # => { entity: { name: 'Joe', age: 30 } }
+
+# This will validate against company_schema (user_schema fails, so it tries company_schema)
+result = schema.resolve(entity: { company_name: 'Acme Corp', company_code: 'ACME' })
+result.output # => { entity: { company_name: 'Acme Corp', company_code: 'ACME' } }
+```
+
+The validation fails if:
+- No schemas match the input data
+- Multiple schemas match the input data (ambiguous)
+
+```ruby
+# This fails because it doesn't match either schema
+result = schema.resolve(entity: { invalid_field: 'value' })
+result.valid? # => false
+result.errors # => { "$.entity" => ["No valid sub-schema found"] }
+```
+
+### Usage with Structs
+
+When used with `Parametric::Struct`, `one_of` automatically creates multiple nested struct classes:
+
+```ruby
+class MyStruct
+  include Parametric::Struct
+
+  schema do |sc, _|
+    sc.field(:data).type(:object).one_of(user_schema, company_schema)
+  end
+end
+
+# The appropriate struct class will be instantiated based on which schema validates
+instance = MyStruct.new!(data: { name: 'Joe', age: 30 })
+instance.data # => #<MyStruct::Data2:...> (User struct)
+instance.data.name # => 'Joe'
+```
+
 ## Built-in policies
 
 Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.

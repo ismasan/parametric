@@ -3,6 +3,7 @@
 require 'delegate'
 require 'parametric/field_dsl'
 require 'parametric/policy_adapter'
+require 'parametric/one_of'
 require 'parametric/tagged_one_of'
 
 module Parametric
@@ -48,6 +49,44 @@ module Parametric
 
     def tagged_one_of(instance = nil, &block)
       policy(instance || Parametric::TaggedOneOf.new(&block))
+    end
+
+    # Validate field value against multiple schemas, accepting the first valid match.
+    # 
+    # This method allows a field to accept one of several possible object structures.
+    # It validates the input against each provided schema in order and uses the output
+    # from the first schema that successfully validates the input.
+    # 
+    # The validation fails if:
+    # - No schemas match the input (invalid data)
+    # - Multiple schemas match the input (ambiguous structure)
+    # 
+    # @param schemas [Array<Schema>] Variable number of Schema objects to validate against
+    # @return [Field] Returns self for method chaining
+    # 
+    # @example Define a field that can be either a user or admin object
+    #   user_schema = Schema.new { field(:name).type(:string).present }
+    #   admin_schema = Schema.new { field(:role).type(:string).options(['admin']) }
+    #   
+    #   schema = Schema.new do |sc, _|
+    #     sc.field(:person).type(:object).one_of(user_schema, admin_schema)
+    #   end
+    # 
+    # @example With different data structures
+    #   payment_schema = Schema.new do
+    #     field(:amount).type(:number).present
+    #     field(:currency).type(:string).present
+    #   end
+    #   
+    #   credit_schema = Schema.new do
+    #     field(:credits).type(:integer).present
+    #   end
+    #   
+    #   schema = Schema.new do |sc, _|
+    #     sc.field(:transaction).type(:object).one_of(payment_schema, credit_schema)
+    #   end
+    def one_of(*schemas)
+      policy OneOf.new(schemas)
     end
 
     def schema(sc = nil, &block)

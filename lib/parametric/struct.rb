@@ -64,17 +64,33 @@ module Parametric
       def parametric_after_define_schema(schema)
         schema.fields.values.each do |field|
           if field.meta_data[:schema]
-            if field.meta_data[:schema].is_a?(Parametric::Schema)
+            case field.meta_data[:schema]
+            when Parametric::Schema
               klass = Class.new do
                 include Struct
               end
               klass.schema = field.meta_data[:schema]
               self.const_set(__class_name(field.key), klass)
               klass.parametric_after_define_schema(field.meta_data[:schema])
+            when Array
+              # Handle one_of fields: create multiple struct classes, one for each possible schema
+              # This allows the field to instantiate the appropriate nested struct based on which schema validates
+              classes = field.meta_data[:schema].map.with_index(1) do |sc, idx|
+                klass = Class.new do
+                  include Struct
+                end
+                klass.schema = sc
+                class_name = "#{__class_name(field.key)}#{idx}"
+                self.const_set(__class_name(class_name), klass)
+                klass.parametric_after_define_schema(sc)
+                klass
+              end
+              self.const_set(__class_name(field.key), classes)
             else
               self.const_set(__class_name(field.key), field.meta_data[:schema])
             end
           end
+
           self.class_eval <<-RUBY, __FILE__, __LINE__ + 1
             def #{field.key}
               _graph[:#{field.key}]
@@ -94,7 +110,17 @@ module Parametric
         when Hash
           # find constructor for field
           cons = self.const_get(__class_name(key))
-          cons ? cons.new(value) : value.freeze
+          case cons
+          when Class # Single nested struct
+            cons.new(value)
+          when Array # Array of possible nested structs (one_of)
+            # For one_of fields: instantiate all possible struct classes and return the first valid one
+            # This allows the struct to automatically choose the correct nested structure based on the data
+            structs = cons.map{|c| c.new(value) }
+            structs.find(&:valid?) || structs.first
+          else
+            value.freeze
+          end
         when Array
           value.map{|v| wrap(key, v) }.freeze
         else
