@@ -318,4 +318,25 @@ describe Parametric::Struct do
       expect(valid.title).to eq 'foo'
     end
   end
+
+  it 'works with Field#one_of(*schemas)' do
+    sub1 = Parametric::Schema.new do
+      field(:name).type(:string).present
+    end
+
+    sub2 = Parametric::Schema.new do
+      field(:age).type(:integer).present
+    end
+
+    klass = Class.new do
+      include Parametric::Struct
+
+      schema do
+        field(:user).type(:object).one_of(sub1, sub2)
+      end
+    end
+
+    valid = klass.new!(user: { age: '20' })
+    expect(valid.user.age).to eq 20
+  end
 end

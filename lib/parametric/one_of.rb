@@ -12,7 +12,7 @@ module Parametric
     end
 
     def meta_data
-      { type: :object, one_of: @schemas.map(&:meta_data) }
+      { type: :object, schema: @schemas }
     end
 
     class Runner
