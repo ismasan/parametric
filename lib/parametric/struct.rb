@@ -73,6 +73,8 @@ module Parametric
               self.const_set(__class_name(field.key), klass)
               klass.parametric_after_define_schema(field.meta_data[:schema])
             when Array
+              # Handle one_of fields: create multiple struct classes, one for each possible schema
+              # This allows the field to instantiate the appropriate nested struct based on which schema validates
               classes = field.meta_data[:schema].map.with_index(1) do |sc, idx|
                 klass = Class.new do
                   include Struct
@@ -112,6 +114,8 @@ module Parametric
           when Class # Single nested struct
             cons.new(value)
           when Array # Array of possible nested structs (one_of)
+            # For one_of fields: instantiate all possible struct classes and return the first valid one
+            # This allows the struct to automatically choose the correct nested structure based on the data
             structs = cons.map{|c| c.new(value) }
             structs.find(&:valid?) || structs.first
           else
