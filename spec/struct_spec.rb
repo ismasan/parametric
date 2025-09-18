@@ -338,5 +338,10 @@ describe Parametric::Struct do
 
     valid = klass.new!(user: { age: '20' })
     expect(valid.user.age).to eq 20
+    expect(valid.user).to be_a(klass.const_get('User2'))
+
+    invalid = klass.new(user: { nope: '20' })
+    expect(invalid.valid?).to be false
+    expect(invalid.errors['$.user']).not_to be_nil
   end
 end

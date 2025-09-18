@@ -73,11 +73,13 @@ module Parametric
               self.const_set(__class_name(field.key), klass)
               klass.parametric_after_define_schema(field.meta_data[:schema])
             when Array
-              classes = field.meta_data[:schema].map do |sc|
+              classes = field.meta_data[:schema].map.with_index(1) do |sc, idx|
                 klass = Class.new do
                   include Struct
                 end
                 klass.schema = sc
+                class_name = "#{__class_name(field.key)}#{idx}"
+                self.const_set(__class_name(class_name), klass)
                 klass.parametric_after_define_schema(sc)
                 klass
               end
