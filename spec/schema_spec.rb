@@ -322,6 +322,10 @@ describe Parametric::Schema do
       result = schema.resolve(obj: { name: 'Joe' })
       expect(result.valid?).to be false
     end
+
+    it 'does not break #walk' do
+      expect(schema.walk(:default).output).to be_a(Hash)
+    end
   end
 
   describe '#tagged_one_of for multiple sub-schemas' do

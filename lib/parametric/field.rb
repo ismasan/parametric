@@ -110,8 +110,12 @@ module Parametric
 
     def visit(meta_key = nil, &visitor)
       if sc = meta_data[:schema]
-        r = sc.schema.visit(meta_key, &visitor)
-        (meta_data[:type] == :array) ? [r] : r
+        if sc.is_a?(Array)
+          sc.map { |s| s.schema.visit(meta_key, &visitor) }
+        else
+          r = sc.schema.visit(meta_key, &visitor)
+          (meta_data[:type] == :array) ? [r] : r
+        end
       else
         meta_key ? meta_data[meta_key] : yield(self)
       end
