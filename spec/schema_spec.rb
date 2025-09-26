@@ -297,7 +297,7 @@ describe Parametric::Schema do
       end
     end
 
-    it 'delegates to .cast, #valid? interface' do
+    it 'delegates to .coerce, #errors interface' do
       result = schema.resolve(user: 'Joe')
       expect(result.valid?).to be true
       expect(result.output[:user]).to eq(user_type.new('Joe'))
@@ -309,6 +309,10 @@ describe Parametric::Schema do
       result = schema.resolve(user: user_type.new('Joe'))
       expect(result.valid?).to be true
       expect(result.output[:user]).to eq(user_type.new('Joe'))
+    end
+
+    it 'does not break #walk' do
+      expect(schema.walk(:default).output).to be_a(Hash)
     end
   end
 
