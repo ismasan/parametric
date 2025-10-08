@@ -243,7 +243,30 @@ instance.data # => #<MyStruct::Data2:...> (User struct)
 instance.data.name # => 'Joe'
 ```
 
-## Built-in policies
+## `wrap`
+
+This helper turns a custom object into a policy. The object must respond to `.coerce(value)` and return something that responds to `#errors() Hash`.
+
+```ruby
+UserType = Data.define(:name) do
+  def self.coerce(value)
+    return value if value.is_a?(self)
+    new(value)
+  end
+
+  def errors
+    return { name: ['cannot be blank'] } if name.nil? || name.strip.empty?
+    {}
+  end
+end
+
+schema = Parametric::Schema.new do
+  field(:user).wrap(UserType).present
+end
+
+```
+
+## Built-in policies                                             
 
 Type coercions (the `type` method) and validations (the `validate` method) are all _policies_.
 

@@ -274,6 +274,48 @@ describe Parametric::Schema do
     end
   end
 
+  describe '#wrap' do
+    let(:schema) do
+      described_class.new do |sc, _|
+        sc.field(:user).wrap(user_type).present
+      end
+    end
+
+    let(:user_type) do
+      Data.define(:name) do
+        def self.coerce(value)
+          return value if value.is_a?(self)
+
+          new(value)
+        end
+
+        def errors
+          return { name: ['cannot be blank'] } if name.nil? || name.strip.empty?
+
+          {}
+        end
+      end
+    end
+
+    it 'delegates to .coerce, #errors interface' do
+      result = schema.resolve(user: 'Joe')
+      expect(result.valid?).to be true
+      expect(result.output[:user]).to eq(user_type.new('Joe'))
+
+      result = schema.resolve(user: '')
+      expect(result.valid?).to be false
+      expect(result.errors['$.user']).to eq ['name cannot be blank']
+
+      result = schema.resolve(user: user_type.new('Joe'))
+      expect(result.valid?).to be true
+      expect(result.output[:user]).to eq(user_type.new('Joe'))
+    end
+
+    it 'does not break #walk' do
+      expect(schema.walk(:default).output).to be_a(Hash)
+    end
+  end
+
   describe '#one_of' do
     let(:kwh_schema) do
       described_class.new do

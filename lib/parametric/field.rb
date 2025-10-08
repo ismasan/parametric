@@ -5,6 +5,7 @@ require 'parametric/field_dsl'
 require 'parametric/policy_adapter'
 require 'parametric/one_of'
 require 'parametric/tagged_one_of'
+require 'parametric/wrapper'
 
 module Parametric
   class ConfigurationError < StandardError; end
@@ -87,6 +88,56 @@ module Parametric
     #   end
     def one_of(*schemas)
       policy OneOf.new(schemas)
+    end
+
+    # Wraps a field with a custom type that handles both coercion and validation.
+    #
+    # The wrapper object must implement two methods:
+    # - `coerce(value)`: Converts the input value to the desired type
+    # - `errors`: Returns a hash of validation errors (empty hash if valid)
+    #
+    # This is useful for integrating domain objects, value objects, or custom types
+    # that have their own validation logic into Parametric schemas.
+    #
+    # @param wrapper [Object] An object that responds to `coerce(value)` and has an `errors` method
+    # @return [Field] Returns self for method chaining
+    #
+    # @example Using with a Data class
+    #   UserType = Data.define(:name) do
+    #     def self.coerce(value)
+    #       return value if value.is_a?(self)
+    #       new(value)
+    #     end
+    #
+    #     def errors
+    #       return { name: ['cannot be blank'] } if name.nil? || name.strip.empty?
+    #       {}
+    #     end
+    #   end
+    #
+    #   schema = Parametric::Schema.new do
+    #     field(:user).wrap(UserType).present
+    #   end
+    #
+    # @example Using with a custom class
+    #   class EmailAddress
+    #     def self.coerce(value)
+    #       new(value.to_s)
+    #     end
+    #
+    #     def initialize(email)
+    #       @email = email.strip.downcase
+    #     end
+    #
+    #     def errors
+    #       return { email: ['invalid format'] } unless @email.match?(/\A[^@\s]+@[^@\s]+\z/)
+    #       {}
+    #     end
+    #   end
+    #
+    #   field(:email).wrap(EmailAddress)
+    def wrap(wrapper)
+      policy Wrapper.new(wrapper)
     end
 
     def schema(sc = nil, &block)
